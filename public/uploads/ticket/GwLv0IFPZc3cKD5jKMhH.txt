@@ -1,0 +1,41 @@
+Atenção você está adquirindo uma licença exclusiva para seu desenvolvimento, para alterar e comercializar, não envie este fonte para outros programadores.
+
+Eu não sou responsável técnico da emissão fiscal de seus clientes(usuários finais do sistema), sou o desenvolvendor do sistema, preencha os campos abaixo no arquivo .env com seus dados:
+RESP_CNPJ=seu cnpj ou de terceiros
+RESP_NOME=Seu nome
+RESP_EMAIL=seu email
+RESP_FONE=seu telefone
+
+Veja o video da pasta Fiscal/Delivery Todos são importantes!
+
+LINKS PARA DOWNLOAD:
+
+Link do sistema Monoempresa 2.0 com Ecommerce:
+https://drive.google.com/file/d/1phkbXfCELWqOE59ibF0yQ5ipAUQeBH0y/view?usp=sharing
+
+Link de videos use a pasta fiscal/delivery 2.0:
+https://drive.google.com/drive/folders/19-HdTe08c0nptrbv3R_uKISk5Y9b5Hq4
+
+Link app Comandas: (BRINDE)
+https://drive.google.com/drive/folders/1sY54DI0Z0wtjzvX3J9fshst6AxyJAM3u
+
+
+ALGUNS DETALHES IMPORTANTES:
+
+>> Use PHP 7.3 ou superior
+
+>> Assista aos videos para instalar e operar o sistema.
+
+>> Em localhost utilizar o servidor embutido do laravel como demonstrado no video de instalação em localhost.
+
+>> Para servidor subir os arquivos via FTP, na raiz do projeto ou subdomínios, em pastas não irá funcionar.
+
+>> No menu Fiscal/Configurar Emitente para teste mantenha o ambiente 2 - homologação e seta uma natureza de operação para emissão de NFCe.
+
+>> Arquivo .env é o arquivo de configuração do sistema as variáveis estão comentadas.
+
+Acesso do sistema:
+Login: usuario
+Senha: 123
+
+Abraço,
