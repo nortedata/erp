@@ -31,8 +31,17 @@
                     @endphp
                     @endif
                     @endforeach
-                    <div>
-                        <h3>Total de vendas: <strong class="text-success">{{ __moeda($soma) }}</strong></h3>
+                    <div class="row text-center mt-4">
+                        <div class="col-md-4 card">
+                            <h3>Total de vendas: <strong class="text-danger">{{ __moeda($soma) }}</strong></h3>
+                        </div>
+                        <div class="col-md-4 card">
+                            <h3>Venda de produtos: <strong class="text-danger">{{ __moeda($soma-$somaServicos) }}</strong></h3>
+                        </div>
+
+                        <div class="col-md-4 card">
+                            <h3>Venda de serviços: <strong class="text-danger">{{ __moeda($somaServicos) }}</strong></h3>
+                        </div>
                     </div>
                 </div>
                 <h3 class="text-center mt-3">Movimentações de Vendas</h3>
@@ -47,18 +56,37 @@
                                 </tr>
                             </thead>
                             <tbody>
+                                @php $somaLista = 0; @endphp
                                 @forelse($vendas as $i)
                                 <tr>
                                     <td>{{ $i->tipo }}</td>
-                                    <td>{{ __data_pt($i->created_at, 0) }}</td>
+                                    <td>{{ __data_pt($i->created_at, 1) }}</td>
+                                    @if($i->tipo != 'OS')
                                     <td>{{ __moeda($i->total) }}</td>
+                                    @else
+                                    <td>{{ __moeda($i->valor) }}</td>
+                                    @endif
                                 </tr>
+                                @php
+                                if($i->tipo != 'OS'){
+                                    $somaLista += $i->total;
+                                }else{
+                                    $somaLista += $i->valor;
+                                }
+                                @endphp
+
                                 @empty
                                 <tr>
                                     <td colspan="3" class="text-center">Nenhum registro</td>
                                 </tr>
                                 @endforelse
                             </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="2">Total</td>
+                                    <td>R$ {{ __moeda($somaLista) }}</td>
+                                </tr>
+                            </tfoot>
                         </table>
                     </div>
                 </div>

@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
 
             $table->foreignId('empresa_id')->nullable()->constrained('empresas');
-            $table->foreignId('funcionario_id')->nullable()->constrained('servicos');
+            $table->foreignId('funcionario_id')->nullable()->constrained('funcionarios');
             $table->foreignId('servico_id')->nullable()->constrained('servicos');
 
             $table->timestamps();

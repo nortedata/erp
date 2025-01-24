@@ -11,7 +11,7 @@ class Funcionario extends Model
 
     protected $fillable = [
         'empresa_id', 'usuario_id', 'nome', 'cpf_cnpj', 'telefone', 'cidade_id', 'rua', 'numero', 'bairro', 'comissao',
-        'salario'
+        'salario', 'codigo', 'status'
     ];
 
     public function cidade()
@@ -31,12 +31,17 @@ class Funcionario extends Model
 
     public function interrupcoes()
     {
-        return $this->belongsTo(Interrupcoes::class, 'funcionario_id');
+        return $this->hasMany(Interrupcoes::class, 'funcionario_id');
     }
 
     public function eventos()
     {
         return $this->hasMany(FuncionarioEvento::class, 'funcionario_id');
+    }
+
+    public function servicos()
+    {
+        return $this->hasMany(FuncionarioServico::class, 'funcionario_id');
     }
 
     public function eventosAtivos()

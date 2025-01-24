@@ -34,39 +34,55 @@
     </td>
 
     <td width="120">
-        <input value="{{ $prod->produto->ncm }}" class="form-control ncm" type="tel" name="ncm[]" id="inp-ncm">
+        <input value="{{ $prod->produto->ncm }}" class="form-control ncm" type="tel" name="ncm[]" id="inp-ncm2">
     </td>
     <td width="120">
         <input value="{{ $prod->produto->codigo_beneficio_fiscal }}" class="form-control ignore codigo_beneficio_fiscal" type="text" name="codigo_beneficio_fiscal[]">
     </td>
 
-    <td width="250">
+    <td>
         <select name="cst_csosn[]" class="form-control select2">
             @foreach(App\Models\Produto::listaCSTCSOSN() as $key => $c)
             <option @if($prod->produto->cst_csosn == $key) selected @endif value="{{$key}}">{{$c}}</option>
             @endforeach
         </select>
+        <div style="width: 400px"></div>
     </td>
-    <td width="250">
+    <td>
         <select name="cst_pis[]" class="form-control select2">
             @foreach(App\Models\Produto::listaCST_PIS_COFINS() as $key => $c)
             <option @if($prod->produto->cst_pis == $key) selected @endif value="{{$key}}">{{$c}}</option>
             @endforeach
         </select>
+        <div style="width: 400px"></div>
     </td>
-    <td width="250">
+    <td>
         <select name="cst_cofins[]" class="form-control select2">
             @foreach(App\Models\Produto::listaCST_PIS_COFINS() as $key => $c)
             <option @if($prod->produto->cst_cofins == $key) selected @endif value="{{$key}}">{{$c}}</option>
             @endforeach
         </select>
+        <div style="width: 400px"></div>
     </td>
-    <td width="250">
+    <td>
         <select name="cst_ipi[]" class="form-control select2">
             @foreach(App\Models\Produto::listaCST_IPI() as $key => $c)
             <option @if($prod->produto->cst_ipi == $key) selected @endif value="{{$key}}">{{$c}}</option>
             @endforeach
         </select>
+        <div style="width: 400px"></div>
+    </td>
+    <td>
+        <input class="form-control" maxlength="15" type="text" name="xPed[]">
+        <div style="width: 200px"></div>
+    </td>
+    <td>
+        <input class="form-control" maxlength="6" type="text" name="nItemPed[]">
+        <div style="width: 200px"></div>
+    </td>
+    <td>
+        <input class="form-control ignore" maxlength="200" type="text" name="infAdProd[]">
+        <div style="width: 300px"></div>
     </td>
     <td width="30">
         <button class="btn btn-danger btn-remove-tr">

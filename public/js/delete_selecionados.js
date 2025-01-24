@@ -23,7 +23,6 @@ function validaButtonDelete(){
     $('.check-delete').each(function(){
         if($(this).is(':checked')){
             let v = $(this).val()
-            console.log(v)
             $inp = "<input type='hidden' name='item_delete[]' value='"+v+"'>"
             $('#form-delete-select div').append($inp)
         }

@@ -12,7 +12,8 @@ class Plano extends Model
     protected $fillable = [
         'nome', 'descricao', 'maximo_nfes', 'maximo_nfces', 'imagem', 'visivel_clientes',
         'status', 'valor', 'intervalo_dias', 'maximo_ctes', 'maximo_cte_os', 'maximo_mdfes', 'modulos',
-        'visivel_contadores', 'auto_cadastro', 'segmento_id'
+        'visivel_contadores', 'auto_cadastro', 'segmento_id', 'fiscal', 'valor_implantacao', 'maximo_usuarios', 
+        'maximo_locais'
     ];
 
     public function getImgAttribute()

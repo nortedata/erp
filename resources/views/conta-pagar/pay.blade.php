@@ -38,3 +38,7 @@
 	</div>
 </div>
 @endsection
+
+@section('js')
+<script type="text/javascript" src="/js/controla_conta_empresa.js"></script>
+@endsection

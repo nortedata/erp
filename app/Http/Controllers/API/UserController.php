@@ -14,4 +14,17 @@ class UserController extends Controller
         $user->save();
         return response()->json("", 200);
     }
+
+    public function usuarios(Request $request){
+        try {
+            $data = User::where('usuario_empresas.empresa_id', $request->empresa_id)
+            ->select('users.*')
+            ->join('usuario_empresas', 'usuario_empresas.usuario_id', '=', 'users.id')
+            ->where('users.name', 'LIKE', "%$request->pesquisa%")
+            ->get();
+            return response()->json($data, 200);
+        } catch (\Exception $e) {
+            return response()->json($e->getMessage(), 401);
+        }
+    }
 }

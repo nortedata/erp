@@ -29,10 +29,12 @@ class EcommerceConfigController extends Controller
 
     public function store(Request $request)
     {
-        $this->_validate($request);
 
         $item = EcommerceConfig::where('empresa_id', $request->empresa_id)
         ->first();
+
+        $this->_validate($request, $item ? $item->id : null);
+
 
         if(!isset($request->tipos_pagamento)){
             $request->tipos_pagamento = [];
@@ -42,7 +44,8 @@ class EcommerceConfigController extends Controller
             'frete_gratis_valor' => $request->frete_gratis_valor ? __convert_value_bd($request->frete_gratis_valor) : null,
             'tipos_pagamento' => json_encode($request->tipos_pagamento),
             'politica_privacidade' => $request->politica_privacidade ?? '',
-            'termos_condicoes' => $request->termos_condicoes ?? ''
+            'termos_condicoes' => $request->termos_condicoes ?? '',
+            'dados_deposito' => $request->dados_deposito ?? ''
         ]);
 
         if ($item != null) {
@@ -77,9 +80,9 @@ class EcommerceConfigController extends Controller
         return redirect()->back();
     }
 
-    private function _validate(Request $request){
+    private function _validate(Request $request, $id){
         $rules = [
-            'loja_id' => [\Illuminate\Validation\Rule::unique('ecommerce_configs')->ignore($request->empresa_id)],
+            'loja_id' => [\Illuminate\Validation\Rule::unique('ecommerce_configs')->ignore($id)],
         ];
 
         $messages = [

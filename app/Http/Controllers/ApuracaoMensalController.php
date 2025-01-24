@@ -12,6 +12,15 @@ use Illuminate\Support\Facades\DB;
 
 class ApuracaoMensalController extends Controller
 {
+
+    public function __construct()
+    {
+        $this->middleware('permission:apuracao_mensal_create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:apuracao_mensal_edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:apuracao_mensal_view', ['only' => ['show', 'index']]);
+        $this->middleware('permission:apuracao_mensal_delete', ['only' => ['destroy']]);
+    }
+    
     public function index(Request $request)
     {
         $funcionario_id = $request->funcionario_id;
@@ -65,7 +74,7 @@ class ApuracaoMensalController extends Controller
     public function store(Request $request)
     {
         try {
-            DB::transaction(function () use ($request) {
+            $ap = DB::transaction(function () use ($request) {
                 $ap = [
                     'funcionario_id' => $request->funcionario_id,
                     'mes' => $request->mes,
@@ -88,9 +97,12 @@ class ApuracaoMensalController extends Controller
                         ]);
                     }
                 }
+                return $result;
             });
+            __createLog($request->empresa_id, 'Apuração Mensal', 'cadastrar', $ap->funcionario->nome . " - $ap->mes/$ap->ano");
             session()->flash("flash_success", "Apuração criada!");
         } catch (\Exception $e) {
+            __createLog($request->empresa_id, 'Apuração Mensal', 'erro', $e->getMessage());
             session()->flash('flash_error', 'Algo deu errado: ' . $e->getMessage());
         }
         return redirect()->route('apuracao-mensal.index');
@@ -107,6 +119,15 @@ class ApuracaoMensalController extends Controller
     {
         try {
             $item = ApuracaoMensal::findOrFail($id);
+
+            $local_id = null;
+            $caixa = __isCaixaAberto();
+            if($caixa != null){
+                $local_id = $caixa->local_id;
+            }else{
+                $local_id = __getLocalAtivo()->id;
+            }
+            
             $conta = [
                 'compra_id' => null,
                 'data_vencimento' => $request->data_vencimento,
@@ -116,7 +137,8 @@ class ApuracaoMensalController extends Controller
                 'descricao' => $request->descricao,
                 'tipo_pagamento' => $request->tipo_pagamento ?? '',
                 'fornecedor_id' => null,
-                'empresa_id' => request()->empresa_id
+                'empresa_id' => request()->empresa_id,
+                'local_id' => $local_id
             ];
             $result = ContaPagar::create($conta);
 
@@ -140,10 +162,18 @@ class ApuracaoMensalController extends Controller
     {
         $item = ApuracaoMensal::findOrFail($id);
         try {
+            $descricaoLog = $item->funcionario->nome . " - $item->mes/$item->ano";
+
+            if($item->contaPagar){
+                $item->contaPagar->delete();
+            }
             $item->eventos()->delete();
             $item->delete();
+            __createLog(request()->empresa_id, 'Apuração Mensal', 'excluir', $descricaoLog);
+
             session()->flash("flash_success", "Registro removido!");
         } catch (\Exception $e) {
+            __createLog(request()->empresa_id, 'Apuração Mensal', 'erro', $e->getMessage());
             session()->flash("flash_error", "Algo deu Errado: " . $e->getMessage());
         }
         return redirect()->back();

@@ -22,6 +22,18 @@
                     !!}
                 </div>
 
+                <div class="col-md-2">
+                    {!!Form::select('estado', 'Estado', ['aprovado' => 'Aprovado', 'cancelado' => 'Cancelado'])
+                    ->attrs(['class' => 'form-select'])
+                    !!}
+                </div>
+                @if(__countLocalAtivo() > 1)
+                <div class="col-md-2">
+                    {!!Form::select('local_id', 'Local', ['' => 'Selecione'] + __getLocaisAtivoUsuario()->pluck('descricao', 'id')->all())
+                    ->attrs(['class' => 'select2'])
+                    !!}
+                </div>
+                @endif
                 <div class="col-lg-4 col-12">
                     <br>
                     <button class="btn btn-primary" type="submit"> <i class="ri-search-line"></i>Pesquisar</button>
@@ -64,14 +76,35 @@
 
             @if(sizeof($data) > 0)
             <br>
-            <form method="get" action="{{ route('nfce-xml.download') }}">
-                <input type="hidden" name="start_date" value="{{ request()->start_date }}">
-                <input type="hidden" name="end_date" value="{{ request()->end_date }}">
-                <button class="btn btn-dark">
-                    <i class="ri-file-zip-line"></i>
-                    Download Zip
-                </button>
-            </form>
+            <div class="row">
+                <div class="col-md-6">
+                    <form method="get" action="{{ route('nfce-xml.download') }}">
+                        <input type="hidden" name="start_date" value="{{ request()->start_date }}">
+                        <input type="hidden" name="end_date" value="{{ request()->end_date }}">
+                        <input type="hidden" name="estado" value="{{ request()->estado }}">
+                        <input type="hidden" name="local_id" value="{{ request()->local_id }}">
+                        
+                        <button class="btn btn-dark">
+                            <i class="ri-file-zip-line"></i>
+                            Download Zip
+                        </button>
+                    </form>
+                </div>
+                @if($escritorio != null && $escritorio->email)
+                <div class="col-md-6 text-end">
+                    <form method="get" action="{{ route('nfce-xml.envio-contador') }}">
+                        <input type="hidden" name="start_date" value="{{ request()->start_date }}">
+                        <input type="hidden" name="end_date" value="{{ request()->end_date }}">
+                        <input type="hidden" name="estado" value="{{ request()->estado }}">
+                        <input type="hidden" name="local_id" value="{{ request()->local_id }}">
+                        <button class="btn btn-success">
+                            <i class="ri-mail-send-fill"></i>
+                            Enviar XML para o contador
+                        </button>
+                    </form>
+                </div>
+                @endif
+            </div>
             @else
             <p class="text-danger">Filtre por período para buscar os arquivos</p>
             @endif

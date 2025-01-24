@@ -4,12 +4,23 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\ListaPreco;
+use App\Models\User;
 use App\Models\Produto;
 use App\Models\ItemListaPreco;
+use App\Models\ListaPrecoUsuario;
 use Illuminate\Support\Facades\DB;
 
 class ListaPrecoController extends Controller
 {
+
+    public function __construct()
+    {
+        $this->middleware('permission:lista_preco_create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:lista_preco_edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:lista_preco_view', ['only' => ['show', 'index']]);
+        $this->middleware('permission:lista_preco_delete', ['only' => ['destroy']]);
+    }
+
     public function index(Request $request){
         $nome = $request->get('nome');
         $tipo_pagamento = $request->get('tipo_pagamento');
@@ -33,13 +44,31 @@ class ListaPrecoController extends Controller
     }
 
     public function create(){
-        return view('lista_preco.create');
+
+        $usuarios = User::where('usuario_empresas.empresa_id', request()->empresa_id)
+        ->join('usuario_empresas', 'users.id', '=', 'usuario_empresas.usuario_id')
+        ->select('users.*')
+        ->get();
+
+        return view('lista_preco.create', compact('usuarios'));
     }
 
     public function edit($id){
         $item = ListaPreco::findOrFail($id);
         __validaObjetoEmpresa($item);
-        return view('lista_preco.edit', compact('item'));
+
+        $usuarios = User::where('usuario_empresas.empresa_id', request()->empresa_id)
+        ->join('usuario_empresas', 'users.id', '=', 'usuario_empresas.usuario_id')
+        ->select('users.*')
+        ->get();
+
+        $users = [];
+        foreach($item->usuarios as $u){
+            $users[] = $u->usuario_id;
+        }
+        $item->usuarios = $users;
+
+        return view('lista_preco.edit', compact('item', 'usuarios'));
     }
 
     public function store(Request $request){
@@ -73,14 +102,23 @@ class ListaPrecoController extends Controller
                     ]);
 
                 }
+
+                for($i=0; $i<sizeof($request->usuarios); $i++){
+                    ListaPrecoUsuario::create([
+                        'lista_preco_id' => $item->id, 
+                        'usuario_id' => $request->usuarios[$i]
+                    ]);
+                }
+                __createLog($request->empresa_id, 'Lista de Preços', 'cadastrar', $request->nome);
                 return $item;
             });
 
             session()->flash("flash_success", "Lista cadastrada!");
             return redirect()->route('lista-preco.index');
         }catch(\Exception $e){
-            echo $e->getMessage() . '<br>' . $e->getLine();
-            die;
+            // echo $e->getMessage() . '<br>' . $e->getLine();
+            // die;
+            __createLog(request()->empresa_id, 'Lista de Preços', 'erro', $e->getMessage());
             session()->flash("flash_error", 'Algo deu errado: '. $e->getMessage());
         }
     }
@@ -120,10 +158,21 @@ class ListaPrecoController extends Controller
                     ]);
 
                 }
+
+                $item->usuarios()->delete();
+                for($i=0; $i<sizeof($request->usuarios); $i++){
+                    ListaPrecoUsuario::create([
+                        'lista_preco_id' => $item->id, 
+                        'usuario_id' => $request->usuarios[$i]
+                    ]);
+                }
+
+                __createLog($request->empresa_id, 'Lista de Preços', 'editar', $request->nome);
                 return $item;
             });
             session()->flash('flash_success', 'Alterado com sucesso');
         } catch (\Exception $e) {
+            __createLog(request()->empresa_id, 'Lista de Preços', 'erro', $e->getMessage());
             session()->flash('flash_error', 'Algo deu errado: ' . $e->getMessage());
         }
         return redirect()->route('lista-preco.index');
@@ -134,10 +183,13 @@ class ListaPrecoController extends Controller
         $item = ListaPreco::findOrFail($id);
         __validaObjetoEmpresa($item);
         try {
+            $descricaoLog = $item->nome;
             $item->itens()->delete();
             $item->delete();
+            __createLog(request()->empresa_id, 'Lista de Preços', 'excluir', $descricaoLog);
             session()->flash('flash_success', 'Lista removida com sucesso');
         } catch (\Exception $e) {
+            __createLog(request()->empresa_id, 'Lista de Preços', 'erro', $e->getMessage());
             session()->flash('flash_warning', 'Algo deu errado: ' . $e->getMessage());
         }
         return redirect()->route('lista-preco.index');
@@ -149,10 +201,14 @@ class ListaPrecoController extends Controller
         for($i=0; $i<sizeof($request->item_delete); $i++){
             $item = ListaPreco::findOrFail($request->item_delete[$i]);
             try {
+                $descricaoLog = $item->nome;
                 $item->itens()->delete();
                 $item->delete();
                 $removidos++;
+                __createLog(request()->empresa_id, 'Lista de Preços', 'excluir', $descricaoLog);
+
             } catch (\Exception $e) {
+                __createLog(request()->empresa_id, 'Lista de Preços', 'erro', $e->getMessage());
                 session()->flash("flash_error", 'Algo deu errado: '. $e->getMessage());
                 return redirect()->route('lista-preco.index');
             }

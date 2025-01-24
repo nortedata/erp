@@ -1,4 +1,4 @@
-<div class="modal fade" id="cliente" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+<div class="modal fade modal-select-cliente" id="cliente" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
@@ -9,8 +9,23 @@
             <div class="modal-body">
                 <div class="row m-2">
 
-                    <div class="col-12">
-                        {!! Form::select('cliente_id', 'Cliente') !!}
+                    <!-- <div class="col-12">
+                        {!! Form::select('cliente_id', 'Cliente')
+                        ->options(isset($cliente) ? [$cliente->id => $cliente->razao_social] : [])
+                        !!}
+                    </div> -->
+
+                    <div class="input-group flex-nowrap">
+                        <select id="inp-cliente_id" name="cliente_id" class="cliente_id">
+                            @if(isset($item) && $item->cliente)
+                            <option value="{{ $item->cliente_id }}">{{ $item->cliente->razao_social }}</option>
+                            @endif
+                        </select>
+                        @can('clientes_create')
+                        <button class="btn btn-dark btn-novo-cliente" type="button">
+                            <i class="ri-add-circle-fill"></i>
+                        </button>
+                        @endcan
                     </div>
 
                     @if($cashback == 1)
@@ -36,7 +51,7 @@
                     @endif
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-success cliente-venda" data-bs-dismiss="modal">Salvar</button>
+                    <button type="button" class="btn btn-success cliente-venda" data-bs-dismiss="modal">Selecionar</button>
                 </div>
             </div> 
         </div> 

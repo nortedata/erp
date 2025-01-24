@@ -15,7 +15,7 @@
                         ->multipart()
                         !!}
                         
-                        <div class="row mt-3">
+                        <div class="row mt-3 g-2">
                             <div class="col-md-4">
                                 {!!Form::text('name', 'Nome')
                                 ->required()
@@ -34,8 +34,14 @@
                                 !!}
                             </div>
                             <div class="col-md-4">
-                                {!!Form::text('email', 'E-mail')
+                                {!!Form::text('email', 'Email')
                                 ->required()
+                                !!}
+                            </div>
+                            <div class="col-md-2">
+                                {!!Form::select('usar_resp_tecnico', 'Usar Resp. Técnico', [0 => 'Não', 1 => 'Sim'])
+                                ->required()
+                                ->attrs(['class' => 'form-select'])
                                 !!}
                             </div>
                             <hr class="mt-4">
@@ -110,10 +116,22 @@
                                 ->attrs(['data-mask' => '00'])
                                 !!}
                             </div>
+
                             <hr class="mt-4">
+                            <h5 class="text-success">Api Rest</h5>
+
+                            <div class="col-md-4">
+                                <label for="" class="required">Token</label>
+                                <div class="input-group">
+                                    <input readonly required type="text" class="form-control" id="api_token" name="token_api" value="{{ isset($item) ? $item->token_api : '' }}">
+                                    <button type="button" class="btn btn-info" id="btn_token"><a class="ri-refresh-line text-white"></a></button>
+                                </div>
+                            </div>
+
                             <div class="col-12" style="text-align: right;">
                                 <button type="submit" class="btn btn-success px-5" id="btn-store">Salvar</button>
                             </div>
+                            
                         </div>
                         {!!Form::close()!!}
                     </div>
@@ -122,4 +140,34 @@
         </div>
     </div>
 </div>
+@endsection
+@section('js')
+<script type="text/javascript">
+    $('#btn_token').click(() => {
+
+        let token = generate_token(25);
+        swal({
+            title: "Atenção", 
+            text: "Esse token é o responsavel pela comunicação com a API!!", 
+            icon: "warning", 
+            buttons: true,
+            dangerMode: true
+        }).then((confirmed) => {
+            if (confirmed) {
+                $('#api_token').val(token)
+            }
+        });
+    })
+
+    function generate_token(length) {
+        var a = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890".split("");
+        var b = [];
+        for (var i = 0; i < length; i++) {
+            var j = (Math.random() * (a.length - 1)).toFixed(0);
+            b[i] = a[j];
+        }
+        return b.join("");
+    }
+
+</script>
 @endsection

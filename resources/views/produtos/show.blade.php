@@ -67,8 +67,13 @@
                                 <thead class="border-top border-bottom bg-light-subtle border-light">
                                     <tr>
                                         <th>#</th>
-                                        <th>Quantidade</th>
+                                        <th>Quantidade modificada</th>
+                                        <th>Quantidade estoque</th>
                                         <th>Tipo</th>
+                                        <th>Usuário</th>
+                                        <th>Data</th>
+                                        <th>Tipo</th>
+                                        <th>Variação</th>
                                         <th class="d-print-none">Ação</th>
                                     </tr>
                                 </thead>
@@ -77,7 +82,12 @@
                                     <tr>
                                         <td>{{ $i->id }}</td>
                                         <td>{{ number_format($i->quantidade, 2) }}</td>
+                                        <td>{{ $i->estoque_atual ? number_format($i->estoque_atual, 2) : '--' }}</td>
                                         <td>{{ $i->tipoTransacao() }}</td>
+                                        <td>{{ $i->user ? $i->user->name : '' }}</td>
+                                        <td>{{ __data_pt($i->created_at) }}</td>
+                                        <td>{{ $i->tipo == 'incremento' ? 'Incremento' : 'Redução' }}</td>
+                                        <td>{{ $i->produtoVariacao ? $i->produtoVariacao->descricao : '--' }}</td>
                                         <td class="d-print-none">
                                             <a class="btn btn-dark btn-sm" href="{{ route('produtos.movimentacao', [$i->id]) }}">
                                                 visualizar
@@ -110,6 +120,40 @@
                     </div> <!-- end col -->
                 </div>
                 <!-- end row-->
+
+                <div class="row">
+                    <div class="col-12">
+                        <h5>Fornecedores do produto</h5>
+
+                        <div class="table-responsive">
+                            <table class="table table-sm table-centered table-hover table-borderless mb-0 mt-3">
+                                <thead class="border-top border-bottom bg-light-subtle border-light">
+                                    <tr>
+                                        <th>Razão social</th>
+                                        <th>CPF/CNPJ</th>
+                                        <th>Rua</th>
+                                        <th>Número</th>
+                                        <th>Bairro</th>
+                                        <th>Cidade</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($item->fornecedores as $i)
+                                    <tr>
+                                        <td>{{ $i->fornecedor->razao_social }}</td>
+                                        <td>{{ $i->fornecedor->cpf_cnpj }}</td>
+                                        <td>{{ $i->fornecedor->rua }}</td>
+                                        <td>{{ $i->fornecedor->numero }}</td>
+                                        <td>{{ $i->fornecedor->bairro }}</td>
+                                        <td>{{ $i->fornecedor->cidade->info }}</td>
+
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div> <!-- end table-responsive-->
+                    </div> <!-- end col -->
+                </div>
 
                 <div class="d-print-none mt-4">
                     <div class="text-end">

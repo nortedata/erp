@@ -11,7 +11,9 @@
 			<th>Chave</th>
 			<th>Estado</th>
 			<th>Data</th>
-			
+			@if(__countLocalAtivo() > 1)
+			<th>Local</th>
+			@endif
 		</tr>
 	</thead>
 	<tbody>
@@ -25,7 +27,9 @@
 			<td>{{ $item->chave }}</td>
 			<td>{{ strtoupper($item->estado) }}</td>
 			<td>{{ __data_pt($item->created_at) }}</td>
-			
+			@if(__countLocalAtivo() > 1)
+			<td class="text-danger">{{ $item->localizacao->descricao }}</td>
+			@endif
 		</tr>
 		@endforeach
 	</tbody>

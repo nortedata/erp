@@ -21,6 +21,7 @@ class ContadorAdminNFeController extends Controller
         $start_date = $request->get('start_date');
         $end_date = $request->get('end_date');
         $tpNF = $request->get('tpNF');
+        $estado = $request->get('estado');
 
         $data = Nfe::where('empresa_id', $empresaSelecionada)->where('orcamento', 0)
         ->when(!empty($start_date), function ($query) use ($start_date) {
@@ -32,7 +33,9 @@ class ContadorAdminNFeController extends Controller
         ->when($tpNF != "", function ($query) use ($tpNF) {
             return $query->where('tpNF', $tpNF);
         })
-        ->where('estado', 'aprovado')
+        ->when($estado != "", function ($query) use ($estado) {
+            return $query->where('estado', $estado);
+        })
         ->orderBy('created_at', 'desc')
         ->paginate(env("PAGINACAO"));
 

@@ -20,6 +20,10 @@ return new class extends Migration
 
             $table->decimal('valor_total', 16, 7);
 
+            $table->boolean('gerar_conta_receber')->default(0);
+            $table->date('data_vencimento')->nullable();
+            $table->integer('conta_receber_id')->nullable();
+
             $table->enum('estado', ['novo', 'rejeitado', 'aprovado', 'cancelado', 'processando']);
             $table->string('serie', 3);
             $table->string('codigo_verificacao', 20);
@@ -48,6 +52,9 @@ return new class extends Migration
             $table->integer('ambiente');
 
             // alter table nota_servicos add column ambiente integer;
+            // alter table nota_servicos add column gerar_conta_receber boolean default null;
+            // alter table nota_servicos add column data_vencimento date default null;
+            // alter table nota_servicos add column conta_receber_id integer default null;
 
             $table->timestamps();
         });

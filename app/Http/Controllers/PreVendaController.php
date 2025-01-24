@@ -11,21 +11,36 @@ use App\Models\ItemPreVenda;
 use App\Models\NaturezaOperacao;
 use App\Models\PreVenda;
 use App\Models\Produto;
+use App\Models\Nfce;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use StringBackedEnum;
 use Svg\Tag\Rect;
 use Illuminate\Support\Str;
-
+use NFePHP\DA\NFe\CupomNaoFiscal;
 
 class PreVendaController extends Controller
 {
+
+    public function __construct()
+    {
+        $this->middleware('permission:pre_venda_create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:pre_venda_edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:pre_venda_view', ['only' => ['show', 'index']]);
+        $this->middleware('permission:pre_venda_delete', ['only' => ['destroy']]);
+    }
+
     public function index(Request $request)
     {
+
+        $locais = __getLocaisAtivoUsuario();
+        $locais = $locais->pluck(['id']);
+
         $start_date = $request->get('start_date');
         $end_date = $request->get('end_date');
         $cliente_id = $request->get('cliente_id');
         $status = $request->get('status');
+        $local_id = $request->get('local_id');
 
         $item = PreVenda::first();
 
@@ -46,6 +61,12 @@ class PreVendaController extends Controller
                 return $query->where('status', $status);
             }
         })
+        ->when($local_id, function ($query) use ($local_id) {
+            return $query->where('local_id', $local_id);
+        })
+        ->when(!$local_id, function ($query) use ($locais) {
+            return $query->whereIn('local_id', $locais);
+        })
         ->orderBy('id', 'desc')
         ->paginate(env("PAGINACAO"));
         return view('pre_venda.index', compact('data'));
@@ -59,7 +80,7 @@ class PreVendaController extends Controller
             return redirect()->route('caixa.create');
         }
 
-        $abertura = Caixa::where('empresa_id', request()->empresa_id)->where('usuario_id', get_id_user())
+        $abertura = Caixa::where('usuario_id', get_id_user())
         ->where('status', 1)
         ->first();
 
@@ -70,16 +91,39 @@ class PreVendaController extends Controller
             session()->flash("flash_warning", "Primeiro cadastre um natureza de operação!");
             return redirect()->route('natureza-operacao.create');
         }
-        return view('pre_venda.create', compact('abertura', 'categorias', 'funcionarios', 'naturezas'));
+        $caixa = __isCaixaAberto();
+
+        $tiposPagamento = Nfce::tiposPagamento();
+        // dd($tiposPagamento);
+        $config = Empresa::findOrFail(request()->empresa_id);
+        
+        if($config != null){
+            $config->tipos_pagamento_pdv = $config != null && $config->tipos_pagamento_pdv ? json_decode($config->tipos_pagamento_pdv) : [];
+            $temp = [];
+            if(sizeof($config->tipos_pagamento_pdv) > 0){
+                foreach($tiposPagamento as $key => $t){
+                    if(in_array($t, $config->tipos_pagamento_pdv)){
+                        $temp[$key] = $t;
+                    }
+                }
+                $tiposPagamento = $temp;
+            }
+        }
+
+        return view('pre_venda.create', compact('abertura', 'categorias', 'funcionarios', 'naturezas', 'caixa', 'tiposPagamento'));
     }
 
     public function store(Request $request)
     {
-        // dd($request);
+        if(!$request->produto_id){
+            session()->flash("flash_error", "Inclua ao menos 1 item na pré venda");
+            return redirect()->back();
+        }
         try {
             // $valor_total = $this->somaItens($request);
 
             $natureza = NaturezaOperacao::where('empresa_id', request()->empresa_id)->first();
+            $caixa = __isCaixaAberto();
             $request->merge([
                 'cliente_id' => $request->cliente_id,
                 'bandeira_cartao' => $request->bandeira_cartao ?? '',
@@ -91,6 +135,7 @@ class PreVendaController extends Controller
                 'observacao' => $request->observacao ?? '',
                 'qtd_volumes' => $request->qtd_volumes ?? 0,
                 'peso_liquido' => $request->peso_liquido ?? 0,
+                'funcionario_id' => $request->funcionario_id ?? null,
                 'peso_bruto' => $request->peso_bruto ?? 0,
                 'desconto' => $request->desconto ? __convert_value_bd($request->desconto) : 0,
                 'valor_total' => __convert_value_bd($request->valor_total),
@@ -100,11 +145,13 @@ class PreVendaController extends Controller
                 'tipo_pagamento' => $request->tipo_pagamento_row ? '99' : $request->tipo_pagamento,
                 'nome' => $request->nome,
                 'cpf' => $request->cpf ?? '',
+                'local_id' => $caixa->local_id,
                 'codigo' => Str::random(8)
             ]);
-
+            // dd($request->all());
+            
             $preVenda = PreVenda::create($request->all());
-
+            
             for ($i = 0; $i < sizeof($request->produto_id); $i++) {
                 $product = Produto::findOrFail($request->produto_id[$i]);
                 $cfop = 0;
@@ -135,13 +182,26 @@ class PreVendaController extends Controller
                     'vencimento' => $request->data_vencimento
                 ]);
             }
-            session()->flash("flash_success", "Pré-venda realizada com sucesso!");
+            session()->flash("flash_success", "Pré venda realizada com sucesso!");
         } catch (\Exception $e) {
             // echo $e->getMessage() . '<br>' . $e->getLine();
             // die;
             session()->flash("flash_error", "Algo deu errado por aqui: " . $e->getMessage());
         }
         return redirect()->back()->with(['codigo' => $preVenda->codigo]);
+    }
+
+    public function imprimir($codigo){
+        $item = PreVenda::where('codigo', $codigo)
+        ->where('empresa_id', request()->empresa_id)
+        ->first();
+        $config = Empresa::where('id', $item->empresa_id)
+        ->first();
+        $cupom = new CupomNaoFiscal($item, $config, 1);
+
+        $pdf = $cupom->render();
+        return response($pdf)
+        ->header('Content-Type', 'application/pdf');
     }
 
     private function somaItens($request)
@@ -158,7 +218,7 @@ class PreVendaController extends Controller
         $item = PreVenda::findOrFail($id);
         try {
             $item->delete();
-            session()->flash("flash_success", "Deletado com sucesso!");
+            session()->flash("flash_success", "Removido com sucesso!");
         } catch (\Exception $e) {
             session()->flash("flash_error", "Algo deu errado: " . $e->getMessage());
         }

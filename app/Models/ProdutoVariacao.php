@@ -16,6 +16,14 @@ class ProdutoVariacao extends Model
     public function produto(){
         return $this->belongsTo(Produto::class, 'produto_id');
     }
+
+    public function estoque(){
+        return $this->hasOne(Estoque::class, 'produto_variacao_id');
+    }
+
+    public function movimentacaoProduto(){
+        return $this->hasOne(MovimentacaoProduto::class, 'produto_variacao_id');
+    }
     
     public function getImgAttribute()
     {

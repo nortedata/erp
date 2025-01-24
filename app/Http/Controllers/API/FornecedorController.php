@@ -22,4 +22,15 @@ class FornecedorController extends Controller
             ->get();
         return response()->json($data, 200);
     }
+
+    public function store(Request $request){
+        $cliente = Fornecedor::where('empresa_id', $request->empresa_id)
+        ->where('cpf_cnpj', $request->cpf_cnpj)
+        ->first();
+        if($cliente != null){
+            return response()->json("Fornecedor já cadastrado", 401);
+        }
+        $cliente = Fornecedor::create($request->all());
+        return response()->json($cliente, 200);
+    }
 }

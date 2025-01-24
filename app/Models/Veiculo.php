@@ -13,8 +13,15 @@ class Veiculo extends Model
         'tipo', 'placa', 'uf', 'cor', 'marca', 'modelo', 'rntrc', 'tipo_carroceria',
         'tipo_rodado', 'tara', 'capacidade', 'proprietario_documento',
         'proprietario_nome', 'proprietario_ie', 'proprietario_uf', 'proprietario_tp', 'empresa_id',
-        'taf', 'renavam', 'numero_registro_estadual'
+        'taf', 'renavam', 'numero_registro_estadual', 'funcionario_id', 'status'
     ];
+
+    protected $appends = ['info' ];
+
+    public function getInfoAttribute()
+    {
+        return "$this->placa - $this->modelo";
+    }
 
     public static function tipos(){
         return [

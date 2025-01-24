@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Role;
+use App\Models\Empresa;
 use App\Models\UsuarioEmpresa;
+use App\Models\UsuarioLocalizacao;
 use App\Utils\UploadUtil;
 use GuzzleHttp\Promise\Create;
 use Illuminate\Http\Request;
@@ -16,35 +19,61 @@ class UsuarioController extends Controller
     public function __construct(UploadUtil $util)
     {
         $this->util = $util;
+        $this->middleware('permission:usuarios_create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:usuarios_edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:usuarios_view', ['only' => ['show', 'index']]);
+        $this->middleware('permission:usuarios_delete', ['only' => ['destroy']]);
     }
 
     public function index(Request $request)
     {
         $data = User::where('usuario_empresas.empresa_id', request()->empresa_id)
-            ->join('usuario_empresas', 'users.id', '=', 'usuario_empresas.usuario_id')
-            ->select('users.*')
-            ->when(!empty($request->name), function ($q) use ($request) {
-                return  $q->where(function ($quer) use ($request) {
-                    return $quer->where('name', 'LIKE', "%$request->name%");
-                });
-            })
-            ->paginate(env("PAGINACAO"));
+        ->join('usuario_empresas', 'users.id', '=', 'usuario_empresas.usuario_id')
+        ->select('users.*')
+        ->when(!empty($request->name), function ($q) use ($request) {
+            return  $q->where(function ($quer) use ($request) {
+                return $quer->where('name', 'LIKE', "%$request->name%");
+            });
+        })
+        ->paginate(env("PAGINACAO"));
+
         return view('usuarios.index', compact('data'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        return view('usuarios.create');
+        $roles = Role::orderBy('name', 'desc')
+        ->where('empresa_id', $request->empresa_id)
+        ->get();
+        $count = UsuarioEmpresa::where('empresa_id', request()->empresa_id)->count();
+        $count++;
+        $empresa = Empresa::findOrFail(request()->empresa_id);
+        $plano = $empresa->plano;
+
+        if($count >= $plano->plano->maximo_usuarios){
+            session()->flash("flash_warning", "Limite de usuários atingido!");
+            return redirect()->back();
+        }
+        return view('usuarios.create', compact('roles'));
     }
 
-    public function edit($id)
+    public function edit(Request $request, $id)
     {
         $item = User::findOrFail($id);
-        return view('usuarios.edit', compact('item'));
+        if(!__isMaster()){
+            __validaObjetoEmpresa($item);
+        }
+
+        $roles = Role::orderBy('name', 'desc')
+        ->where('empresa_id', $request->empresa_id)
+        ->get();
+        $passwdHidden = 1;
+        return view('usuarios.edit', compact('item', 'roles', 'passwdHidden'));
     }
 
     public function store(Request $request)
     {
+        $this->__validate($request);
         try {
             $file_name = '';
             if ($request->hasFile('image')) {
@@ -60,11 +89,37 @@ class UsuarioController extends Controller
                 'empresa_id' => $request->empresa_id,
                 'usuario_id' => $usuario->id
             ]);
+
+            $role = Role::findOrFail($request->role_id);
+            $usuario->assignRole($role->name);
+
+            if(isset($request->locais)){
+                for($i=0; $i<sizeof($request->locais); $i++){
+                    UsuarioLocalizacao::updateOrCreate([
+                        'usuario_id' => $usuario->id,
+                        'localizacao_id' => $request->locais[$i]
+                    ]);
+                }
+            }
+            __createLog($request->empresa_id, 'Usuário', 'cadastrar', $request->name);
             session()->flash("flash_success", "Usuário cadastrado!");
         } catch (\Exception $e) {
+            __createLog($request->empresa_id, 'Usuário', 'erro', $e->getMessage());
             session()->flash("flash_error", "Algo deu errado: " . $e->getMessage());
         }
         return redirect()->route('usuarios.index');
+    }
+
+    private function __validate(Request $request)
+    {
+        $rules = [
+            'email' => 'unique:users',
+        ];
+
+        $messages = [
+            'email.unique' => 'Email já utilizado!',
+        ];
+        $this->validate($request, $rules, $messages);
     }
 
     public function update(Request $request, $id)
@@ -89,8 +144,27 @@ class UsuarioController extends Controller
                 ]);
             }
             $usuario->fill($request->all())->save();
+
+            $role = Role::findOrFail($request->role_id);
+            $user_role = $usuario->roles->first();
+            foreach($usuario->roles as $r){
+                $usuario->removeRole($r->name);
+            }
+            $usuario->assignRole($role->name);
+
+            if(isset($request->locais)){
+                $usuario->locais()->delete();
+                for($i=0; $i<sizeof($request->locais); $i++){
+                    UsuarioLocalizacao::updateOrCreate([
+                        'usuario_id' => $usuario->id,
+                        'localizacao_id' => $request->locais[$i]
+                    ]);
+                }
+            }
+            __createLog($request->empresa_id, 'Usuário', 'editar', $request->name);
             session()->flash("flash_success", "Usuário alterado!");
         } catch (\Exception $e) {
+            __createLog($request->empresa_id, 'Usuário', 'erro', $e->getMessage());
             session()->flash("flash_error", "Algo deu errado: " . $e->getMessage());
         }
         return redirect()->route('usuarios.index');
@@ -99,14 +173,21 @@ class UsuarioController extends Controller
     public function destroy($id)
     {
         $item = User::findOrFail($id);
+        __validaObjetoEmpresa($item);
+
         try {
+
+            $descricaoLog = $item->name;
+
             $item->empresa->delete();
             $item->delete();
-            session()->flash("flash_success", "Apagado com sucesso!");
+            __createLog(request()->empresa_id, 'Usuário', 'excluir', $descricaoLog);
+            session()->flash("flash_success", "Usuário removido com sucesso!");
         } catch (\Exception $e) {
+            __createLog(request()->empresa_id, 'Usuário', 'erro', $e->getMessage());
             session()->flash("flash_error", "Algo deu errado: " . $e->getMessage());
         }
-        return redirect()->route('usuarios.index');
+        return redirect()->back();
     }
 
     public function profile($id)
@@ -123,4 +204,24 @@ class UsuarioController extends Controller
         $item = User::findOrFail($id);
         return view('usuarios.show', compact('item'));
     }
+
+    public function alterSenha($id)
+    {
+        $item = User::findOrFail($id);
+        return view('usuarios.alterar_senha', compact('item'));
+    }
+
+    public function updateSenha(Request $request, $id){
+        $item = User::findOrFail($id);
+        if($request->senha == $request->repita_senha){
+            $item->password = Hash::make($request->senha);
+            $item->save();
+            session()->flash("flash_success", "Senha alterada com sucesso!");
+            return redirect()->route('usuarios.index');
+        }else{
+            session()->flash("flash_error", "Senhas não coencidem!");
+            return redirect()->back();
+        }
+    }
+
 }

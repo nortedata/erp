@@ -34,7 +34,7 @@
                     <table class="table table-striped table-centered mb-0">
                         <thead class="table-dark">
                             <tr>
-                                <th>Cliente</th>
+                                <th>Fornecedor</th>
                                 <th>Número</th>
                                 <th>Chave</th>
                                 <th>Valor</th>
@@ -44,7 +44,7 @@
                             @foreach($data as $item)
                             @if(file_exists(public_path("xml_nfe/").$item->chave.".xml"))
                             <tr>
-                                <td>{{ $item->cliente ? $item->cliente->info : '--' }}</td>
+                                <td>{{ $item->fornecedor ? $item->fornecedor->info : '--' }}</td>
                                 <td>{{ $item->numero }}</td>
                                 <td>{{ $item->chave }}</td>
                                 <td>{{ __moeda($item->total) }}</td>
@@ -64,14 +64,32 @@
 
             @if(sizeof($data) > 0)
             <br>
-            <form method="get" action="{{ route('nfe-xml.download') }}">
-                <input type="hidden" name="start_date" value="{{ request()->start_date }}">
-                <input type="hidden" name="end_date" value="{{ request()->end_date }}">
-                <button class="btn btn-dark">
-                    <i class="ri-file-zip-line"></i>
-                    Download Zip
-                </button>
-            </form>
+            <div class="row">
+                <div class="col-md-6">
+                    <form method="get" action="{{ route('nfe-entrada-xml.download') }}">
+                        <input type="hidden" name="start_date" value="{{ request()->start_date }}">
+                        <input type="hidden" name="end_date" value="{{ request()->end_date }}">
+                        <button class="btn btn-dark">
+                            <i class="ri-file-zip-line"></i>
+                            Download Zip
+                        </button>
+                    </form>
+                </div>
+                @if($escritorio != null && $escritorio->email)
+                <div class="col-md-6 text-end">
+                    <form method="get" action="{{ route('nfe-entrada-xml.envio-contador') }}">
+                        <input type="hidden" name="start_date" value="{{ request()->start_date }}">
+                        <input type="hidden" name="end_date" value="{{ request()->end_date }}">
+                        <input type="hidden" name="estado" value="{{ request()->estado }}">
+                        <input type="hidden" name="local_id" value="{{ request()->local_id }}">
+                        <button class="btn btn-success">
+                            <i class="ri-mail-send-fill"></i>
+                            Enviar XML para o contador
+                        </button>
+                    </form>
+                </div>
+                @endif
+            </div>
             @else
             <p class="text-danger">Filtre por período para buscar os arquivos</p>
             @endif

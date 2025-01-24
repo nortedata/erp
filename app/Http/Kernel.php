@@ -72,12 +72,20 @@ class Kernel extends HttpKernel
         'validaNFe' => \App\Http\Middleware\ValidaNFe::class,
         'validaNFCe' => \App\Http\Middleware\ValidaNFCe::class,
         'validaCTe' => \App\Http\Middleware\ValidaCTe::class,
-        'validaMDFe' => \App\Http\Middleware\validaMDFe::class,
+        'validaMDFe' => \App\Http\Middleware\ValidaMDFe::class,
         'verificaMaster' => \App\Http\Middleware\VerificaMaster::class,
         'authCardapio' => \App\Http\Middleware\AuthCardapio::class,
         'authDelivery' => \App\Http\Middleware\AuthDelivery::class,
         'validaCashBack' => \App\Http\Middleware\ValidaCashBack::class,
         'validaEcommerce' => \App\Http\Middleware\ValidaEcommerce::class,
         'validaDelivery' => \App\Http\Middleware\ValidaDelivery::class,
+        'validaApiToken' => \App\Http\Middleware\ValidaApiToken::class,
+        'validaApiTokenSuperAdmin' => \App\Http\Middleware\ValidaApiTokenSuperAdmin::class,
+    ];
+
+    protected $routeMiddleware = [
+        'role' => \Spatie\Permission\Middlewares\RoleMiddleware::class,
+        'permission' => \Spatie\Permission\Middlewares\PermissionMiddleware::class,
+        'role_or_permission' => \Spatie\Permission\Middlewares\RoleOrPermissionMiddleware::class,
     ];
 }

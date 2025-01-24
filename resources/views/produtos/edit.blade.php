@@ -13,6 +13,7 @@
     <div class="card-body">
         {!!Form::open()->fill($item)
         ->put()
+        ->id('form-produto')
         ->route('produtos.update', [$item->id])
         ->multipart()
         !!}
@@ -22,4 +23,6 @@
         {!!Form::close()!!}
     </div>
 </div>
+@include('modals._marca')
+@include('modals._categoria_produto')
 @endsection

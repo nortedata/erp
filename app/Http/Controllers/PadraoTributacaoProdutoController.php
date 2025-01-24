@@ -38,8 +38,10 @@ class PadraoTributacaoProdutoController extends Controller
         try {
 
             $item->fill($request->all())->save();
+            __createLog($request->empresa_id, 'Padrão de Tributação', 'editar', $request->descricao);
             session()->flash("flash_success", "Padrão atualizado!");
         } catch (\Exception $e) {
+            __createLog(request()->empresa_id, 'Padrão de Tributação', 'erro', $e->getMessage());
             session()->flash("flash_error", "Algo deu errado: " . $e->getMessage());
         }
         return redirect()->route('produtopadrao-tributacao.index');
@@ -50,9 +52,12 @@ class PadraoTributacaoProdutoController extends Controller
         $item = PadraoTributacaoProduto::findOrFail($id);
         __validaObjetoEmpresa($item);
         try {
+            $descricaoLog = $item->descricao;
             $item->delete();
+            __createLog(request()->empresa_id, 'Padrão de Tributação', 'excluir', $descricaoLog);
             session()->flash("flash_success", "Padrão removido!");
         } catch (\Exception $e) {
+            __createLog(request()->empresa_id, 'Padrão de Tributação', 'erro', $e->getMessage());
             session()->flash("flash_error", "Algo deu Errado: " . $e->getMessage());
         }
         return redirect()->back();
@@ -64,9 +69,12 @@ class PadraoTributacaoProdutoController extends Controller
         for($i=0; $i<sizeof($request->item_delete); $i++){
             $item = PadraoTributacaoProduto::findOrFail($request->item_delete[$i]);
             try {
+                $descricaoLog = $item->descricao;
                 $item->delete();
                 $removidos++;
+                __createLog(request()->empresa_id, 'Padrão de Tributação', 'excluir', $descricaoLog);
             } catch (\Exception $e) {
+                __createLog(request()->empresa_id, 'Padrão de Tributação', 'erro', $e->getMessage());
                 session()->flash("flash_error", 'Algo deu errado: '. $e->getMessage());
                 return redirect()->back();
             }
@@ -88,8 +96,10 @@ class PadraoTributacaoProdutoController extends Controller
         try {
 
             PadraoTributacaoProduto::create($request->all());
+            __createLog($request->empresa_id, 'Padrão de Tributação', 'cadastrar', $request->descricao);
             session()->flash("flash_success", "Padrão cadastrado!");
         } catch (\Exception $e) {
+            __createLog(request()->empresa_id, 'Padrão de Tributação', 'erro', $e->getMessage());
             session()->flash("flash_error", "Algo deu errado: " . $e->getMessage());
         }
         return redirect()->route('produtopadrao-tributacao.index');
@@ -99,7 +109,7 @@ class PadraoTributacaoProdutoController extends Controller
     {
         $rules = [
             'descricao' => 'required',
-            'ncm' => 'required',
+            // 'ncm' => 'required',
             'perc_icms' => 'required',
             'perc_pis' => 'required',
             'perc_cofins' => 'required',

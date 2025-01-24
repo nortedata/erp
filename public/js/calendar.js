@@ -3,7 +3,7 @@ var SERVICOS = []
 ! function (l) {
     "use strict";
     let agendamentos = JSON.parse($('#agendamentos').val())
-    console.log(agendamentos)
+
     function e() {
         this.$body = l("body"), this.$modal = new bootstrap.Modal(document.getElementById("event-modal"), {
             backdrop: "static"
@@ -12,7 +12,7 @@ var SERVICOS = []
     e.prototype.onEventClick = function (e) {
         this.$formEvent[0].reset(), this.$formEvent.removeClass("was-validated"), this.$newEventData = null, this.$btnDeleteEvent.show(), this.$modalTitle.text("Edit Event"), this.$selectedEvent = e.event, l("#event-title").val(this.$selectedEvent.title), l("#event-category").val(this.$selectedEvent.classNames[0])
     }, e.prototype.onSelect = function (e) {
-        this.$formEvent[0].reset(), this.$formEvent.removeClass("was-validated"), this.$selectedEvent = null, this.$newEventData = e, this.$btnDeleteEvent.hide(), this.$modalTitle.text("Adiconar Novo Evento"), this.$modal.show(), this.$calendarObj.unselect()
+        this.$formEvent[0].reset(), this.$formEvent.removeClass("was-validated"), this.$selectedEvent = null, this.$newEventData = e, this.$btnDeleteEvent.hide(), this.$modalTitle.text("Adiconar Novo Agendamento"), this.$modal.show(), this.$calendarObj.unselect()
     }, e.prototype.init = function () {
         var e = new Date(l.now()),
         e = (new FullCalendar.Draggable(document.getElementById("external-events"), {
@@ -60,6 +60,10 @@ var SERVICOS = []
             selectable: !0,
             dateClick: function (e) {
 
+                if($('#create_permission').val() == 0){
+                    swal("Erro", "Usuário não tem permissão para cadastrar eventos", "error")
+                    $('#event-modal').modal('close')
+                }
                 $('#servicos').val(null).trigger('change');
                 SERVICOS = []
                 setModalFuncionario()

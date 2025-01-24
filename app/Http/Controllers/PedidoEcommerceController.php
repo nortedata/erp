@@ -50,23 +50,30 @@ class PedidoEcommerceController extends Controller
         ->first();
 
         $alterados = [];
-        \MercadoPago\SDK::setAccessToken($config->mercadopago_access_token);
-        foreach($data as $p){
-            if($p->transacao_id){
-                $payStatus = \MercadoPago\Payment::find_by_id($p->transacao_id);
-                if($payStatus){
+        if($config == null){
+            return $alterados;
+        }
+        try{
+            \MercadoPago\SDK::setAccessToken($config->mercadopago_access_token);
+            foreach($data as $p){
+                if($p->transacao_id){
+                    $payStatus = \MercadoPago\Payment::find_by_id($p->transacao_id);
+                    if($payStatus){
                     // $payStatus->status = 'apprsoved';
-                    if($payStatus->status != $p->status_pagamento){
-                        array_push($alterados, [
-                            'hash_pedido' => $p->hash_pedido,
-                            'status' => $payStatus->status
-                        ]);
+                        if($payStatus->status != $p->status_pagamento){
+                            array_push($alterados, [
+                                'hash_pedido' => $p->hash_pedido,
+                                'status' => $payStatus->status
+                            ]);
 
-                        $p->status_pagamento = $payStatus->status;
-                        $p->save();
+                            $p->status_pagamento = $payStatus->status;
+                            $p->save();
+                        }
                     }
                 }
             }
+        }catch(\Exception $e){
+
         }
         return $alterados;
     }
@@ -137,10 +144,15 @@ class PedidoEcommerceController extends Controller
         } 
         // $produtos = Produto::where('empresa_id', request()->empresa_id)->get();
         $empresa = Empresa::findOrFail(request()->empresa_id);
+
+        $caixa = __isCaixaAberto();
+        $empresa = __objetoParaEmissao($empresa, $caixa->local_id);
+        
         $numeroNfe = Nfe::lastNumero($empresa);
 
         $isPedidoEcommerce = 1;
-        return view('nfe.create', compact('item', 'cidades', 'transportadoras', 'naturezas', 'isPedidoEcommerce', 'numeroNfe'));
+        return view('nfe.create', compact('item', 'cidades', 'transportadoras', 'naturezas', 'isPedidoEcommerce', 'numeroNfe', 
+            'caixa'));
     }
 
 }

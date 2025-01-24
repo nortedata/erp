@@ -8,6 +8,7 @@ use App\Models\CategoriaProduto;
 use App\Models\EcommerceConfig;
 use App\Models\Produto;
 use App\Models\Carrinho;
+use Illuminate\Support\Str;
 
 class HomeController extends Controller
 {
@@ -15,9 +16,36 @@ class HomeController extends Controller
     public function __construct(){
         session_start();
     }
+
+    private function _validaHash($config){
+        $categorias = CategoriaProduto::where('ecommerce', 1)
+        ->where('empresa_id', $config->empresa_id)
+        ->orderBy('nome', 'asc')
+        ->where('hash_delivery', null)
+        ->get();
+
+        foreach($categorias as $c){
+            $c->hash_ecommerce = Str::random(50);
+            $c->save();
+        }
+
+        $produtos = Produto::where('empresa_id', $config->empresa_id)
+        ->where('status', 1)
+        ->where('ecommerce', 1)
+        ->where('hash_delivery', null)
+        ->get();
+
+        foreach($produtos as $p){
+            $p->hash_ecommerce = Str::random(50);
+            $p->save();
+        }
+
+    }
     
     public function index(Request $request){
         $config = EcommerceConfig::findOrfail($request->loja_id);
+        $this->_validaHash($config);
+
         $categorias = CategoriaProduto::where('ecommerce', 1)
         ->where('empresa_id', $config->empresa_id)->get();
 
@@ -50,7 +78,7 @@ class HomeController extends Controller
 
         $carrinho = $this->_getCarrinho();
 
-        $produtos = Produto::where('produtos.empresa_id', $config->empresa_id)
+        $data = Produto::where('produtos.empresa_id', $config->empresa_id)
         ->select('produtos.*')
         ->where('produtos.status', 1)
         ->where('produtos.ecommerce', 1)
@@ -62,6 +90,18 @@ class HomeController extends Controller
             return $query->where('produtos.nome', 'like', "%$pesquisa%");
         })
         ->get();
+
+        $produtos = [];
+        foreach($data as $item){
+            if($item->gerenciar_estoque){
+
+                if($item->estoque && $item->estoque->quantidade > 0){
+                    array_push($produtos, $item);
+                }
+            }else{
+                array_push($produtos, $item);
+            }
+        }
 
         return view('loja.pesquisa', compact('config', 'categorias', 'produtos', 'carrinho', 'categoria_pesquisa', 'pesquisa'));
     }
@@ -85,10 +125,22 @@ class HomeController extends Controller
         if($categoria == null){
             abort(404);
         }
-        $produtos = Produto::where('empresa_id', $config->empresa_id)
+        $data = Produto::where('empresa_id', $config->empresa_id)
         ->where('categoria_id', $categoria->id)
         ->where('status', 1)
         ->where('ecommerce', 1)->get();
+
+        $produtos = [];
+        foreach($data as $item){
+            if($item->gerenciar_estoque){
+
+                if($item->estoque && $item->estoque->quantidade > 0){
+                    array_push($produtos, $item);
+                }
+            }else{
+                array_push($produtos, $item);
+            }
+        }
 
         $carrinho = $this->_getCarrinho();
 
@@ -96,10 +148,22 @@ class HomeController extends Controller
     }
 
     private function produtosEmDestaque($empresa_id){
-        return Produto::where('empresa_id', $empresa_id)
+        $data =  Produto::where('empresa_id', $empresa_id)
         ->where('destaque_ecommerce', 1)
         ->where('status', 1)
         ->where('ecommerce', 1)->get();
+        $produtos = [];
+        foreach($data as $item){
+            if($item->gerenciar_estoque){
+
+                if($item->estoque && $item->estoque->quantidade > 0){
+                    array_push($produtos, $item);
+                }
+            }else{
+                array_push($produtos, $item);
+            }
+        }
+        return $produtos;
     }
 
     public function produtoDetalhe(Request $request, $hash){

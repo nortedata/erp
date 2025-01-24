@@ -5,7 +5,7 @@
     <div class="card-header">
         <h4>Abrir Caixa</h4>
         <div style="text-align: right; margin-top: -35px;">
-            <a href="{{ route('clientes.index') }}" class="btn btn-danger btn-sm px-3">
+            <a href="{{ route('caixa.index') }}" class="btn btn-danger btn-sm px-3">
                 <i class="ri-arrow-left-double-fill"></i>Voltar
             </a>
         </div>
@@ -14,7 +14,6 @@
         {!!Form::open()
         ->post()
         ->route('caixa.store')
-        ->multipart()
         !!}
         <div class="pl-lg-4">
             @include('caixa._forms')
@@ -25,5 +24,5 @@
 @endsection
 
 @section('js')
-
+<script type="text/javascript" src="/js/controla_conta_empresa.js"></script>
 @endsection

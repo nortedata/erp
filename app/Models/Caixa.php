@@ -11,7 +11,7 @@ class Caixa extends Model
 
     protected $fillable = [
         'empresa_id', 'usuario_id', 'valor_abertura', 'data_fechamento', 'observacao', 'status', 'valor_fechamento', 'valor_dinheiro',
-        'valor_cheque', 'valor_outros'
+        'valor_cheque', 'valor_outros', 'conta_empresa_id', 'local_id'
     ];
 
     public function usuario()
@@ -19,4 +19,13 @@ class Caixa extends Model
         return $this->belongsTo(User::class, 'usuario_id');
     }
 
+    public function contaEmpresa()
+    {
+        return $this->belongsTo(ContaEmpresa::class, 'conta_empresa_id');
+    }
+
+    public function localizacao()
+    {
+        return $this->belongsTo(Localizacao::class, 'local_id');
+    }
 }

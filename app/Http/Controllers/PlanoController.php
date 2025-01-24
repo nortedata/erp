@@ -44,7 +44,7 @@ class PlanoController extends Controller
         $modulos = $this->moduloUtil->getModulos();
         $item->modulos = json_decode($item->modulos);
         if($item->modulos == null){
-           $item->modulos = []; 
+            $item->modulos = []; 
         }
 
         $segmentos = Segmento::orderBy('nome', 'desc')
@@ -67,6 +67,7 @@ class PlanoController extends Controller
             $request->merge([
                 'descricao' => $request->descricao ?? '',
                 'valor' => __convert_value_bd($request->valor),
+                'valor_implantacao' => $request->valor_implantacao ? __convert_value_bd($request->valor_implantacao) : 0,
                 'imagem' => $file_name,
             ]);
 
@@ -89,13 +90,12 @@ class PlanoController extends Controller
 
     public function update(Request $request, $id)
     {
-
         $this->_validate($request);
         if($request->auto_cadastro == 1){
             Plano::where('auto_cadastro', 1)->update(['auto_cadastro' => 0]);
         }
         $item = Plano::findOrfail($id);
-        
+
         try {
             $file_name = $item->imagem;
             if ($request->hasFile('image')) {
@@ -105,10 +105,11 @@ class PlanoController extends Controller
             $request->merge([
                 'descricao' => $request->descricao ?? '',
                 'valor' => __convert_value_bd($request->valor),
+                'valor_implantacao' => $request->valor_implantacao ? __convert_value_bd($request->valor_implantacao) : 0,
                 'imagem' => $file_name,
             ]);
 
-             if(!isset($request->modulos)){
+            if(!isset($request->modulos)){
                 $request->merge([
                     'modulos' => '[]'
                 ]);

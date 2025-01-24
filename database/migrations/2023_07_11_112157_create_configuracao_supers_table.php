@@ -16,8 +16,9 @@ return new class extends Migration
             
             $table->string('cpf_cnpj', 20);
             $table->string('name');
-            $table->string('email')->unique();
+            $table->string('email');
             $table->string('telefone', 20);
+            $table->boolean('usar_resp_tecnico')->default(0);
 
             $table->string('mercadopago_public_key', 120)->nullable();
             $table->string('mercadopago_access_token', 120)->nullable();
@@ -37,6 +38,9 @@ return new class extends Migration
             $table->integer('timeout_cte')->default(8);
             $table->integer('timeout_mdfe')->default(8);
 
+            $table->string('token_api', 50);
+            $table->string('token_integra_notas', 255)->nullable();
+            
             // alter table configuracao_supers add column sms_key varchar(120) default null;
             // alter table configuracao_supers add column token_whatsapp varchar(120) default null;
 
@@ -53,6 +57,10 @@ return new class extends Migration
             // alter table configuracao_supers add column timeout_nfce integer default 8;
             // alter table configuracao_supers add column timeout_cte integer default 8;
             // alter table configuracao_supers add column timeout_mdfe integer default 8;
+            // alter table configuracao_supers add column usar_resp_tecnico boolean default 0;
+            
+            // alter table configuracao_supers add column token_api varchar(50) default null;
+            // alter table configuracao_supers add column token_integra_notas varchar(255) default null;
             
             $table->timestamps();
         });

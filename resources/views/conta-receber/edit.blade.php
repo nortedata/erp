@@ -14,6 +14,7 @@
         {!!Form::open()->fill($item)
         ->put()
         ->route('conta-receber.update', [$item->id])
+        ->multipart()
         !!}
         <div class="pl-lg-4">
             @include('conta-receber._forms', ['edit' => true])

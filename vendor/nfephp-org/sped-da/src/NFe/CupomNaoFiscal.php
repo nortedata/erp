@@ -21,6 +21,7 @@ use NFePHP\DA\Legacy\Pdf;
 use NFePHP\DA\Common\DaCommon;
 use Com\Tecnick\Barcode\Barcode;
 use App\Models\Filial;
+use App\Models\ConfigGeral;
 
 class CupomNaoFiscal extends DaCommon
 {
@@ -55,7 +56,7 @@ class CupomNaoFiscal extends DaCommon
     protected $imgQRCode;
     protected $urlQR = '';
     protected $pdf;
-    protected $margem = 2;
+    protected $margem = 0;
     protected $flagResume = false;
     protected $hMaxLinha = 5;
     protected $hBoxLinha = 6;
@@ -67,11 +68,11 @@ class CupomNaoFiscal extends DaCommon
     protected $canceled = false;
     protected $submessage = null;
 
-    protected $bloco1H = 18.0; //cabecalho
+    protected $bloco1H = 48.0; //cabecalho
     protected $bloco2H = 12.0; //informação fiscal
     
     protected $bloco3H = 0.0; //itens
-    protected $bloco4H = 16.0; //totais
+    protected $bloco4H = 22.0; //totais
     protected $bloco5H = 0.0; //formas de pagamento
     
     protected $bloco6H = 10.0; //informação para consulta
@@ -81,6 +82,9 @@ class CupomNaoFiscal extends DaCommon
     protected $bloco10H = 5.0; //informações do integrador
     protected $venda = null;
     protected $config = null;
+    protected $isPreVenda = null;
+    protected $troca = null;
+    protected $configGeral = null;
 
     use Traits2\TraitBlocoI;
     use Traits2\TraitBlocoII;
@@ -100,15 +104,21 @@ class CupomNaoFiscal extends DaCommon
      *
      * @throws Exception
      */
-    public function __construct($venda = '', $config = null) {
+    public function __construct($venda = '', $config = null, $isPreVenda = false, $troca = null) {
         $this->config = $config;
         $this->venda = $venda;
+        $this->isPreVenda = $isPreVenda;
+        $this->troca = $troca;
 
         if($this->venda->filial_id > 0){
             $this->config = Filial::where('id', $this->venda->filial_id)->first();
         }
 
+        $this->configGeral = ConfigGeral::where('id', $this->venda->empresa_id)->first();
 
+        if($this->configGeral != null && $this->configGeral->cabecalho_pdv == 0){
+            $this->bloco1H = 10;
+        }
         //carrega dados do xml
     }
 
@@ -143,10 +153,10 @@ class CupomNaoFiscal extends DaCommon
      *
      * @param string $font
      */
-    public function setFont($font = 'times')
+    public function setFont($font = 'arial')
     {
         if (!in_array($font, ['times', 'arial'])) {
-            $this->fontePadrao = 'times';
+            $this->fontePadrao = 'arial';
         } else {
             $this->fontePadrao = $font;
         }
@@ -197,6 +207,7 @@ class CupomNaoFiscal extends DaCommon
     public function render($logo = '')
     {
         $this->monta($logo);
+
         //$this->papel = 80;
         return $this->pdf->getPdf();
     }
@@ -353,6 +364,7 @@ class CupomNaoFiscal extends DaCommon
     private function calculatePaperLength()
     {
         $wprint = $this->paperwidth - (2 * $this->margem);
+        
         $this->bloco3H = $this->calculateHeightItens($wprint * $this->descPercent, $this->venda->itens);
         $this->bloco5H = $this->calculateHeightPag($this->venda->fatura);
         $this->bloco9H = $this->calculateHeighBlokIX();
@@ -414,7 +426,6 @@ class CupomNaoFiscal extends DaCommon
         if ($this->infNFe->getAttribute("versao") == "4.00") {
             $this->pag = $this->dom->getElementsByTagName("detPag");
             $tagPag = $this->dom->getElementsByTagName("pag")->item(0);
-            $this->vTroco = $this->getTagValue($tagPag, "vTroco");
         } else {
             $this->pag = $this->dom->getElementsByTagName("pag");
         }

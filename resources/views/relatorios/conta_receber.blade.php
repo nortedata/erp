@@ -8,12 +8,15 @@
 			<th>Valor</th>
             <th>Data Vencimento</th>
 			<th>Estado</th>
+			@if(__countLocalAtivo() > 1)
+			<th>Local</th>
+			@endif
 		</tr>
 	</thead>
 	<tbody>
 		@foreach($data as $key => $item)
 		<tr class="@if($key%2 == 0) pure-table-odd @endif">
-			<td>{{ $item->cliente->razao_social }}</td>
+			<td>{{ $item->cliente ? $item->cliente->razao_social : '' }}</td>
 			<td>{{ __moeda($item->valor_integral) }}</td>
 			<td>{{ __data_pt($item->data_vencimento, 0) }}</td>
             <td>
@@ -23,6 +26,9 @@
                 Recebido
                 @endif
             </td>
+            @if(__countLocalAtivo() > 1)
+			<td class="text-danger">{{ $item->localizacao->descricao }}</td>
+			@endif
 		</tr>
 		@endforeach
 	</tbody>

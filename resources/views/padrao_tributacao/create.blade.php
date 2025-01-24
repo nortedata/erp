@@ -22,3 +22,15 @@
     </div>
 </div>
 @endsection
+
+@section('js')
+<script type="text/javascript">
+    $(document).on("blur", "#inp-cfop_estadual", function () {
+
+        let v = $(this).val().substring(1,4)
+        $("#inp-cfop_outro_estado").val('6'+v)
+        $("#inp-cfop_entrada_estadual").val('1'+v)
+        $("#inp-cfop_entrada_outro_estado").val('2'+v)
+    })
+</script>
+@endsection

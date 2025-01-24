@@ -24,14 +24,19 @@
         !!}
     </div>
 
+    <div class="col-md-2">
+        {!!Form::select('status', 'Ativo', ['1' => 'Sim', '0' => 'Não'])
+        ->attrs(['class' => 'form-select'])->required()
+        !!}
+    </div>
 
     <div class="col-md-4">
-        <label class="form-label">Motivo</label>
+        <label class="form-label required">Motivo</label>
         <div class="input-group" style="margin-top: -8px">
             <select required type="text" name="motivo" id="motivo" class="form-select">
                 <option value="">Selecione</option>
                 @foreach($motivos as $m)
-                <option value="{{ $m->motivo }}">{{ $m->motivo }}</option>
+                <option @isset($item) @if($item->motivo == $m->motivo) selected @endif @endif value="{{ $m->motivo }}">{{ $m->motivo }}</option>
                 @endforeach
             </select>
             <div class="input-group-text bg-danger" onclick="novoMotivo()">

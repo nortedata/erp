@@ -7,14 +7,22 @@ use Illuminate\Http\Request;
 use App\Models\Cte;
 use App\Models\Empresa;
 use App\Services\CTeService;
+use App\Utils\EmailUtil;
 
 class CTePainelController extends Controller
 {
+
+    protected $emailUtil;
+    public function __construct(EmailUtil $util){
+        $this->emailUtil = $util;
+    }
+
     public function emitir(Request $request){
 
         $item = Cte::findOrFail($request->id);
 
         $empresa = Empresa::findOrFail($item->empresa_id);
+        $empresa = __objetoParaEmissao($empresa, $item->local_id);
 
         $cte_service = new CTeService([
             "atualizacao" => date('Y-m-d h:i:s'),
@@ -53,10 +61,21 @@ class CTePainelController extends Controller
                     'recibo' => $resultado['success'],
                     'chave' => $item->chave
                 ];
+
+                $descricaoLog = "Emitida número $item->numero - $item->chave APROVADA";
+                __createLog($item->empresa_id, 'CTe', 'transmitir', $descricaoLog);
+
+                try{
+                    $fileDir = public_path('xml_cte/').$item->chave.'.xml';
+                    $this->emailUtil->enviarXmlContador($empresa->id, $fileDir, 'CTe', $item->chave);
+                }catch(\Exception $e){
+
+                }
+
                 return response()->json($data, 200);
             }else{
                 $error = $resultado['error'];
-
+                $motivo = '';
                 if(isset($error['protCTe'])){
                     $motivo = $error['protCTe']['infProt']['xMotivo'];
                     $cStat = $error['protCTe']['infProt']['cStat'];
@@ -66,6 +85,8 @@ class CTePainelController extends Controller
                 $item->estado = 'rejeitado';
                 $item->save();
 
+                $descricaoLog = "REJEITADA $item->chave - $motivo";
+                __createLog($item->empresa_id, 'CTe', 'erro', $descricaoLog);
                 if(isset($error['protCTe'])){
                     return response()->json("[$cStat] $motivo", 403);
                 }else{
@@ -84,6 +105,8 @@ class CTePainelController extends Controller
         $item = Cte::findOrFail($request->id);
         $empresa = Empresa::findOrFail($item->empresa_id);
         if ($item != null) {
+            $empresa = __objetoParaEmissao($empresa, $item->local_id);
+
             $cnpj = preg_replace('/[^0-9]/', '', $empresa->cpf_cnpj);
             $cte_service = new CTeService([
                 "atualizacao" => date('Y-m-d h:i:s'),
@@ -117,6 +140,8 @@ class CTePainelController extends Controller
         $empresa = Empresa::findOrFail($item->empresa_id);
 
         if ($item != null) {
+            $empresa = __objetoParaEmissao($empresa, $item->local_id);
+            
             $cnpj = preg_replace('/[^0-9]/', '', $empresa->cpf_cnpj);
             $cte_service = new CTeService([
                 "atualizacao" => date('Y-m-d h:i:s'),
@@ -157,7 +182,8 @@ class CTePainelController extends Controller
         $item = Cte::findOrFail($request->id);
 
         $empresa = Empresa::findOrFail($item->empresa_id);
-
+        $empresa = __objetoParaEmissao($empresa, $item->local_id);
+        
         $cnpj = preg_replace('/[^0-9]/', '', $empresa->cpf_cnpj);
         $cte_service = new CTeService([
             "atualizacao" => date('Y-m-d h:i:s'),

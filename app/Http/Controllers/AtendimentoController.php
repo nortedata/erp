@@ -10,7 +10,16 @@ use Illuminate\Support\Facades\Auth;
 class AtendimentoController extends Controller
 {
 
+    public function __construct()
+    {
+        $this->middleware('permission:atendimentos_create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:atendimentos_edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:atendimentos_view', ['only' => ['show', 'index']]);
+        $this->middleware('permission:atendimentos_delete', ['only' => ['destroy']]);
+    }
+
     public function index(Request $request){
+
         $funcionario_id = $request->get('funcionario_id');
         
         $data = DiaSemana::where('empresa_id', $request->empresa_id)

@@ -689,12 +689,16 @@
         <div class="row text-right">
             <div class="col-12" style="margin-top: -50px;">
                 <small class="float-right" style="color:grey; font-size: 11px;">Emissão:
-                    {{ date('d/m/Y - H:i') }}</small><br>
+                {{ date('d/m/Y - H:i') }}</small><br>
             </div>
         </div>
 
         <div class="row">
+            @if($item->tpNF == 1)
             <h4 style="text-align:center; margin-top: -50px;">Pedido de Venda</h4>
+            @else
+            <h4 style="text-align:center; margin-top: -50px;">Pedido de Compra</h4>
+            @endif
         </div>
 
     </div>
@@ -713,7 +717,7 @@
                 Razão social: <strong>{{$config->nome}}</strong>
             </td>
             <td class="b-top" style="width: 247px;">
-                Documento: <strong>{{$config->cpf_cnpj}}</strong>
+                Documento: <strong>{{ __setMask($config->cpf_cnpj) }}</strong>
             </td>
         </tr>
     </table>
@@ -733,7 +737,7 @@
                 CEP: <strong>{{$config->cep}}</strong>
             </td>
             <td class="b-top b-bottom text-left" style="width: 200px;">
-                Telefone: <strong>{{$config->fone}}</strong>
+                Telefone: <strong>{{$config->celular}}</strong>
             </td>
         </tr>
     </table>
@@ -746,6 +750,59 @@
         </tr>
     </table>
     <br>
+    @if($item->tpNF == 0)
+    <table>
+        <tr>
+            <td class="text-left" style="width: 700px;">
+                <strong>Dados do fornecedor</strong>
+            </td>
+        </tr>
+    </table>
+    <table>
+        <tr>
+            <td class="b-top text-left" style="width: 450px;">
+                Nome: <strong>{{$item->fornecedor->razao_social}}</strong>
+            </td>
+            <td class="b-top" style="width: 247px;">
+                CPF/CNPJ: <strong>{{$item->fornecedor->cpf_cnpj}}</strong>
+            </td>
+        </tr>
+    </table>
+    <table>
+        <tr>
+            <td class="b-top text-left" style="width: 500px;">
+                Endereço: <strong>{{$item->fornecedor->rua}}, {{$item->fornecedor->numero}} - {{$item->fornecedor->bairro}} - {{$item->fornecedor->cidade->nome}} ({{$item->fornecedor->cidade->uf}})</strong>
+            </td>
+
+            <td class="b-top text-left" style="width: 200px;">
+                CEP: <strong>{{$item->fornecedor->cep}}</strong>
+            </td>
+        </tr>
+    </table>
+
+    <table>
+        <tr>
+            <td class="b-top text-left" style="width: 300px;">
+                Complemento: <strong>{{$item->fornecedor->complemento }}</strong>
+            </td>
+
+            <td class="b-top text-left" style="width: 200px;">
+                Telefone: <strong>{{$item->fornecedor->telefone}}</strong>
+            </td>
+            
+        </tr>
+    </table>
+
+    <table>
+        <tr>
+            <td class="b-top text-left" style="width: 700px;">
+                Email: <strong>{{$item->fornecedor->email}}</strong>
+            </td>
+
+        </tr>
+    </table>
+    @else
+
     <table>
         <tr>
             <td class="text-left" style="width: 700px;">
@@ -787,6 +844,7 @@
             
         </tr>
     </table>
+
     <table>
         <tr>
             <td class="b-top text-left" style="width: 700px;">
@@ -796,10 +854,13 @@
         </tr>
     </table>
 
+    @endif
+
+
     <table>
         <tr>
             <td class="b-top text-left" style="width: 350px;">
-                Nº Doc: <strong>{{$item->id}}</strong>
+                Nº Doc: <strong>{{ $item->numero_sequencial }}</strong>
             </td>
             <td class="b-top" style="width: 347px;">
 
@@ -851,7 +912,7 @@
                 <th class="b-top">
                     {{$i->descricao()}}
 
-                </th class="b-top">
+                </th>
                 <th class="b-top">
                     {{__moeda($i->quantidade)}}
                     @if($i->largura > 0 || $i->esquerda > 0)
@@ -866,11 +927,11 @@
             $somaItens += $i->quantidade;
             $somaTotalItens += $i->quantidade * $i->valor_unitario;
             if($i->altura > 0 || $i->esquerda > 0){
-            $tipoDimensao = true;
+                $tipoDimensao = true;
             }
 
             if($i->produto->receita){
-            $tipoReceita = true;
+                $tipoReceita = true;
             }
             @endphp
 
@@ -887,11 +948,54 @@
 
             <td class="b-top b-bottom" style="width: 350px;">
                 <center><strong>Valor Total dos Itens:
-                        {{__moeda($somaTotalItens)}}
-                    </strong></center>
+                    {{__moeda($somaTotalItens)}}
+                </strong></center>
             </td>
         </tr>
     </table>
+
+    @if(sizeof($item->produtoUnicos) > 0)
+    <table>
+        <tr>
+            <td class="b-top b-bottom" style="width: 700px; height: 50px;">
+                <strong>IDENTIFICAÇÃO DOS PRODUTOS</strong>
+            </td>
+        </tr>
+    </table>
+
+    <table>
+        <thead>
+            <tr>
+                <td class="" style="width: 210px;">
+                    Produto
+                </td>
+                <td class="" style="width: 130px;">
+                    Código
+                </td>
+                <td class="" style="width: 350px;">
+                    Observação
+                </td>
+                
+            </tr>
+        </thead>
+        <tbody>
+            @foreach($item->produtoUnicos as $p)
+            <tr>
+                <th class="b-top">
+                    {{ $p->produto->nome }}
+                </th>
+                <th class="b-top">
+                    {{ $p->codigo }}
+                </th>
+                <th class="b-top">
+                    {{ $p->observacao }}
+                </th>
+            </tr>
+            @endforeach
+        </tbody>
+    </table>
+    <br>
+    @endif
 
     @if(sizeof($item->fatura) > 0)
     <table>
@@ -944,7 +1048,7 @@
             <td class="" style="width: 350px;">
                 Vendedor: <strong>
                     {{$item->usuario->nome}}
-            </strong>
+                </strong>
             </td>
             @endif --}}
             <td class="text-left" style="width: 230px;">
@@ -969,16 +1073,16 @@
     <table>
         <tr>
             <td class="text-left" style="width: 250px;">
-                Data da venda: <strong>{{\Carbon\Carbon::parse($item->created_at)->format('d/m/Y H:i')}}</strong>
+                Data da venda: <strong>{{ __data_pt($item->created_at) }}</strong>
             </td>
             @if($item->vendedor_id)
             <td class="" style="width: 250px;">
                 Vendedor: <strong>{{ $item->vendedor_setado->funcionario->nome }}</strong>
             </td>
             @endif
-            <td class="" style="width: 200px;">
+            <td class="" style="width: 250px;">
                 @if($item->data_entrega != null)
-                Data da entrega: <strong>{{\Carbon\Carbon::parse($item->data_entrega)->format('d/m/Y')}}</strong>
+                Data de entrega: <strong>{{ __data_pt($item->data_entrega, 0) }}</strong>
                 @endif
             </td>
         </tr>
@@ -1050,7 +1154,11 @@
                 <strong>
                     ________________________________________
                 </strong><br>
+                @if($item->tpNF == 1)
                 <span style="font-size: 11px;">{{$item->cliente->razao_social}}</span>
+                @else
+                <span style="font-size: 11px;">{{$item->fornecedor->razao_social}}</span>
+                @endif
             </td>
         </tr>
     </table>
@@ -1155,7 +1263,7 @@
             $somaItens += $i->quantidade;
             $somaTotalItens += $i->quantidade * $i->valor;
             if($i->altura > 0 || $i->esquerda > 0){
-            $tipoDimensao = true;
+                $tipoDimensao = true;
             }
             @endphp
 
@@ -1322,26 +1430,26 @@
     @foreach($item->itens as $i)
     @if($i->produto->info_tecnica_composto != "")
     <p><strong>{{$i->produto->nome}}: {!! $i->produto->info_tecnica_composto !!}</p>
-    @endif
-    @endforeach
+        @endif
+        @endforeach
 
-    @endif
+        @endif
 
 
-</body>
-<footer id="footer_imagem">
-    <table style="width: 100%; border-top: 1px solid #999;">
-        <tbody>
-            <tr>
-                <td class="text-left ml-3 mb-3">
-                    {{env('SITE_SUPORTE')}}
-                </td>
-                <td class="text-right">
+    </body>
+    <footer id="footer_imagem">
+        <table style="width: 100%; border-top: 1px solid #999;">
+            <tbody>
+                <tr>
+                    <td class="text-left ml-3 mb-3">
+                        {{env('SITE_SUPORTE')}}
+                    </td>
+                    <td class="text-right">
 
-                    <img src="{{'data:image/png;base64,' . base64_encode(file_get_contents(@public_path('logo.png')))}}" alt="Logo" class="mr-3">
-                </td>
-            </tr>
-        </tbody>
-    </table>
-</footer>
-</html>
+                        <img src="{{'data:image/png;base64,' . base64_encode(file_get_contents(@public_path('logo.png')))}}" alt="Logo" class="mr-3">
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </footer>
+    </html>

@@ -27,7 +27,7 @@
 					</div>
 					<div class="col-md-6">
 						<h5>Data de vencimento: <strong class="">{{ __data_pt($item->data_vencimento, false) }}</strong></h5>
-						<h5>Referência: <strong class="">{{ $item->referencia }}</strong></h5>
+						<h5>Referência: <strong class="">{{ $item->referencia ? $item->referencia : '--' }}</strong></h5>
 					</div>
 				</div>
 				@include('conta-receber._forms_pay')
@@ -36,4 +36,8 @@
 		</div>
 	</div>
 </div>
+@endsection
+
+@section('js')
+<script type="text/javascript" src="/js/controla_conta_empresa.js"></script>
 @endsection

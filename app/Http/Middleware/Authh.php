@@ -12,7 +12,7 @@ class Authh
 		if(!auth::user()){
 			return redirect('/login');
 		}
-
+		
 		if(auth::user()->email == env("MAILMASTER")){
 			auth::user()->master = 1;
 		}

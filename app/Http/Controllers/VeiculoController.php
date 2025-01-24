@@ -3,13 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Models\Veiculo;
+use App\Models\Funcionario;
 use Illuminate\Http\Request;
 
 class VeiculoController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    public function __construct()
+    {
+        $this->middleware('permission:veiculos_create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:veiculos_edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:veiculos_view', ['only' => ['show', 'index']]);
+        $this->middleware('permission:veiculos_delete', ['only' => ['destroy']]);
+    }
+
     public function index(Request $request)
     {
         $data = Veiculo::where('empresa_id', request()->empresa_id)
@@ -23,17 +29,14 @@ class VeiculoController extends Controller
         return view('veiculos.index', compact('data'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
+   
     public function create()
     {
-        return view('veiculos.create');
+        $funcionarios = Funcionario::where('empresa_id', request()->empresa_id)
+        ->get();
+        return view('veiculos.create', compact('funcionarios'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         try{
@@ -69,7 +72,9 @@ class VeiculoController extends Controller
     public function edit(string $id)
     {
         $item = Veiculo::findOrFail($id);
-        return view('veiculos.edit', compact('item'));
+        $funcionarios = Funcionario::where('empresa_id', request()->empresa_id)
+        ->get();
+        return view('veiculos.edit', compact('item', 'funcionarios'));
     }
 
     /**

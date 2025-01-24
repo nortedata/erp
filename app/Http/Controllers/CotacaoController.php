@@ -6,12 +6,24 @@ use Illuminate\Http\Request;
 use App\Models\Cotacao;
 use App\Models\ItemCotacao;
 use App\Models\Fornecedor;
+use App\Models\EmailConfig;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Mail;
+use App\Utils\EmailUtil;
 
 class CotacaoController extends Controller
 {
+
+    protected $util;
+    public function __construct(EmailUtil $util){
+        $this->util = $util;
+        $this->middleware('permission:cotacao_create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:cotacao_edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:cotacao_view', ['only' => ['show', 'index']]);
+        $this->middleware('permission:cotacao_delete', ['only' => ['destroy']]);
+    }
+
     public function index(Request $request)
     {
         $start_date = $request->get('start_date');
@@ -55,7 +67,9 @@ class CotacaoController extends Controller
 
     public function create()
     {
-        $fornecedores = Fornecedor::where('empresa_id', request()->empresa_id)->get();
+        $fornecedores = Fornecedor::where('empresa_id', request()->empresa_id)
+        ->orderBy('razao_social')
+        ->get();
         return view('cotacoes.create', compact('fornecedores'));
     }
 
@@ -69,7 +83,7 @@ class CotacaoController extends Controller
     public function store(Request $request){
         try{
             DB::transaction(function () use ($request) {
-                $referencia = Str::random(15);
+                $referencia = Str::random(7);
 
                 for($i=0; $i<sizeof($request->fornecedor_id); $i++){
                     $fornecedor = Fornecedor::findOrFail($request->fornecedor_id[$i]);
@@ -89,7 +103,7 @@ class CotacaoController extends Controller
                             'produto_id' => $request->produto_id[$j],
                         ]);
                     }
-
+                    __createLog($request->empresa_id, 'Cotação', 'cadastrar', $cotacao->fornecedor->info . " - #$cotacao->hash_link");
                     $this->enviarEmailCotacao($cotacao);
                 }
             });
@@ -98,6 +112,7 @@ class CotacaoController extends Controller
         } catch (\Exception $e) {
             // echo $e->getMessage() . '<br>' . $e->getLine();
             // die;
+            __createLog($request->empresa_id, 'Cotação', 'erro', $e->getMessage());
             session()->flash("flash_error", 'Algo deu errado: '. $e->getMessage());
             return redirect()->back();
         }
@@ -105,14 +120,25 @@ class CotacaoController extends Controller
 
     private function enviarEmailCotacao($cotacao){
         if($cotacao->fornecedor->email != ''){
-            $email = $cotacao->fornecedor->email;
-            $teste = Mail::send('mail.cotacao', ['cotacao' => $cotacao], function($m) use ($email){
 
-                $nomeEmail = env('MAIL_FROM_NAME');
-                $m->from(env('MAIL_USERNAME'), $nomeEmail);
-                $m->subject('envio de cotação');
-                $m->to($email);
-            });
+            $email = $cotacao->fornecedor->email;
+
+            $emailConfig = EmailConfig::where('empresa_id', request()->empresa_id)
+            ->where('status', 1)
+            ->first();
+            if($emailConfig != null){
+
+                $body = view('mail.cotacao', compact('cotacao'));
+                $result = $this->util->enviaEmailPHPMailer($email, 'Envio de cotação', $body, $emailConfig);
+            }else{
+                Mail::send('mail.cotacao', ['cotacao' => $cotacao], function($m) use ($email){
+
+                    $nomeEmail = env('MAIL_FROM_NAME');
+                    $m->from(env('MAIL_USERNAME'), $nomeEmail);
+                    $m->subject('Envio de cotação');
+                    $m->to($email);
+                });
+            }
         }
     }
 
@@ -131,12 +157,14 @@ class CotacaoController extends Controller
                         'produto_id' => $request->produto_id[$j],
                     ]);
                 }
+                __createLog($request->empresa_id, 'Cotação', 'editar', $cotacao->fornecedor->info . " - #$cotacao->hash_link");
             });
             session()->flash("flash_success", 'Cotação atualizada!');
             return redirect()->route('cotacoes.index');
         } catch (\Exception $e) {
             // echo $e->getMessage() . '<br>' . $e->getLine();
             // die;
+            __createLog($request->empresa_id, 'Cotação', 'erro', $e->getMessage());
             session()->flash("flash_error", 'Algo deu errado: '. $e->getMessage());
             return redirect()->back();
         }
@@ -157,11 +185,15 @@ class CotacaoController extends Controller
     {
         $item = Cotacao::findOrFail($id);
         try {
+            $descricaoLog = $item->fornecedor->info . " - #$item->hash_link";
+
             $item->itens()->delete();
             $item->fatura()->delete();
             $item->delete();
+            __createLog(request()->empresa_id, 'Cotação', 'excluir', $descricaoLog);
             session()->flash("flash_success", "Cotação removida com sucesso!");
         } catch (\Exception $e) {
+            __createLog(request()->empresa_id, 'Cotação', 'erro', $e->getMessage());
             session()->flash("flash_error", 'Algo deu errado.', $e->getMessage());
         }
         return redirect()->route('cotacoes.index');

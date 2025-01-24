@@ -15,7 +15,7 @@
                 @else
                 <img class="logo" src="/imgs/logo.png" style="height: 50px">
                 @endif
-                <p class="">Email: {{getenv("MAILMASTER")}}</p>
+                <p class="">Email: {{ env("MAILMASTER") }}</p>
             </div>
             <div class="col s7 center-align">
                 <h5>{{$config->razao_social}}</h5>

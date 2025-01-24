@@ -23,7 +23,7 @@ class CardapioController extends Controller
         ->first();
 
         if($item == null){
-            return response()->json("Configuração não encontrado", 401);
+            return response()->json("Configuração não encontrada!", 401);
         }
         return response()->json($item, 200);
     }
@@ -52,7 +52,7 @@ class CardapioController extends Controller
     public function categoria(Request $request, $id){
         $item = CategoriaProduto::where('empresa_id', $request->empresa_id)
         ->where('id', $id)
-        ->with('produtos')
+        ->with('produtosCardapio')
         ->first();
         return response()->json($item, 200);
     }
@@ -264,6 +264,7 @@ class CardapioController extends Controller
     public function pesquisa(Request $request){
         $data = Produto::where('empresa_id', $request->empresa_id)
         ->where('nome', 'like', "%$request->pesquisa%")
+        ->where('cardapio', 1)
         ->get();
 
         return response()->json($data, 200);

@@ -7,7 +7,7 @@
                 <div class="col-12">
                     <a href="{{ route('motoboys.create') }}" class="btn btn-success">
                         <i class="ri-add-circle-fill"></i>
-                        Nova Motoboy
+                        Novo Motoboy
                     </a>
 
                     <a href="{{ route('motoboys-comissao.index') }}" class="btn btn-dark float-end">

@@ -7,6 +7,16 @@ $(function(){
     $('#tamanho_id-hidden').val('')
 })
 
+function print(id){
+    var disp_setting="toolbar=yes,location=no,";
+    disp_setting+="directories=yes,menubar=yes,";
+    disp_setting+="scrollbars=yes,width=850, height=600, left=100, top=25";
+
+    var docprint=window.open(path_url+"pedidos-cardapio-print/"+id,"",disp_setting);
+    
+    docprint.focus();
+}
+
 $('#btn-save-sabores').click(() => {
     if(SABORESSELECIONADOS.length > 0){
         $('#pizzas-hidden').val(SABORESSELECIONADOS)
@@ -70,7 +80,7 @@ $('#inp-produto_cardapio').on("change", function () {
 
             changePizza(success)
         }
-        if(success.tipo_carne){
+        if(success.tipo_carne == 1){
             $('.div-tp-carne').removeClass('d-none')
             $('.div-tp-carne').find('select').attr('required', 1)
         }

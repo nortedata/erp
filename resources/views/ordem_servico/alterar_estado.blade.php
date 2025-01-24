@@ -26,19 +26,27 @@
                 @if($ordem->estado != 'fz' && $ordem->estado != 'rp')
 
                 <div class="row">
-                    <div class="form-group validated col-12 col-lg-3">
+                    <div class=" col-md-2">
+                        <label>Estado</label>
                         @if($ordem->estado == 'pd')
-                        <select class="form-select" id="sigla_uf" name="novo_estado">
+                        <select required class="form-select" id="estado" name="novo_estado">
                             <option value="ap">APROVADO</option>
                             <option value="rp">REPROVADO</option>
                         </select>
                         @elseif($ordem->estado == 'ap')
-                        <select class="form-select" id="sigla_uf" name="novo_estado">
+                        <select class="form-select" id="estado" name="novo_estado">
                             <option value="fz">FINALIZADO</option>
                         </select>
                         @endif
                     </div>
+
+                    <div class="col-md-2 d-none div-fatura">
+                        {!!Form::select('faturar', 'Gerar faturamento', [0 => 'Não', 1 => 'Sim'])
+                        ->attrs(['class' => 'form-select'])->required()
+                        !!}
+                    </div>
                     <div class="form-group validated col-sm-4 col-lg-4">
+                        <br>
                         <button type="submit" class="btn btn-success px-5">Alterar</button>
                     </div>
                 </div>
@@ -59,10 +67,32 @@
                     </a>
                 </div>
                 @endif
+
+                
             </div>
             {!!Form::close()!!}
         </div>
     </div>
 </div>
 
+@endsection
+@section('js')
+<script type="text/javascript">
+    $(function(){
+        changeEstado()
+    })
+
+    $('#estado').change(() => {
+        changeEstado()
+    })
+
+    function changeEstado(){
+        let estado = $('#estado').val()
+        if(estado == 'fz'){
+            $('.div-fatura').removeClass('d-none')
+        }else{
+            $('.div-fatura').addClass('d-none')
+        }
+    }
+</script>
 @endsection

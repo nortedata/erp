@@ -11,6 +11,7 @@ use App\Models\Plano;
 use App\Models\PlanoEmpresa;
 use App\Models\UsuarioEmpresa;
 use App\Utils\UploadUtil;
+use App\Utils\EmpresaUtil;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use NFePHP\Common\Certificate;
@@ -18,10 +19,12 @@ use NFePHP\Common\Certificate;
 class ConfigController extends Controller
 {
     protected $util;
+    protected $empresaUtil;
 
-    public function __construct(UploadUtil $util)
+    public function __construct(UploadUtil $util, EmpresaUtil $empresaUtil)
     {
         $this->util = $util;
+        $this->empresaUtil = $empresaUtil;
     }
 
     public function index()
@@ -57,7 +60,11 @@ class ConfigController extends Controller
                 'id' => $publicKey->commonName
             ];
         } catch (\Exception $e) {
-            return [];
+
+            return [
+                'erro' => 1,
+                'mensagem' => $e->getMessage()
+            ];
         }
     }
 
@@ -81,7 +88,7 @@ class ConfigController extends Controller
                         'arquivo' => $fileTemp ?? '',
                         'cpf_cnpj' => preg_replace('/[^0-9]/', '', $request->cpf_cnpj),
                         'usuario_id' => $request->usuario_id ?? '',
-                        'senha' => Hash::make($request['senha_certificado']) ?? '',
+                        'senha' => $request['senha_certificado'] ?? '',
                         'token' => $request->token ?? ''
                     ]);
                 }
@@ -91,6 +98,7 @@ class ConfigController extends Controller
                     'logo' => $file_name,
                 ]);
                 $empresa = Empresa::create($request->all());
+                
                 if ($request->usuario) {
                     $usuario = User::create([
                         'name' => $request->usuario ?? null,
@@ -104,7 +112,7 @@ class ConfigController extends Controller
                     'usuario_id' => $usuario->id
                 ]);
 
-                if($plano){
+                if($plano != null){
                     $intervalo = $plano->intervalo_dias;
                     $exp = date('Y-m-d', strtotime(date('Y-m-d') . "+ $intervalo days"));
                     PlanoEmpresa::create([
@@ -116,6 +124,8 @@ class ConfigController extends Controller
                     ]);
                     // session()->flash("flash_success", "Plano atribuído!");
                 }
+                $this->empresaUtil->initLocation($empresa);
+                
                 return true;
             });
             session()->flash("flash_success", "Empresa cadastrada!");
@@ -205,5 +215,18 @@ class ConfigController extends Controller
             'numero_serie_nfce.required' => 'Campo Obrigatório'
         ];
         $this->validate($request, $rules, $messages);
+    }
+
+    public function removerLogo(Request $request){
+        try{
+            $item = Empresa::findOrFail($request->empresa_id);
+            $this->util->unlinkImage($item, '/logos');
+            $item->logo = '';
+            $item->save();
+            session()->flash("flash_success", "Logo removida!");
+        }catch(\Exception $e){
+            session()->flash("flash_error", "Algo deu errado: " . $e->getMessage());
+        }
+        return redirect()->route('config.index');
     }
 }

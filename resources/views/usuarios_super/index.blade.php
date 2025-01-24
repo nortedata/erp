@@ -23,7 +23,12 @@
                     ->get()
                     !!}
                     <div class="row mt-3">
-                        <div class="col-md-4">
+                        <div class="col-md-3">
+                            {!!Form::select('empresa', 'Pesquisar por empresa')
+                            ->options($empresa != null ? [$empresa->id => $empresa->info] : [])
+                            !!}
+                        </div>
+                        <div class="col-md-2">
                             {!!Form::text('name', 'Pesquisar por nome')
                             !!}
                         </div>
@@ -43,6 +48,7 @@
                                     <th>Nome</th>
                                     <th>Email</th>
                                     <th>Empresa</th>
+                                    <th>Controle de acesso</th>
                                     <th width="10%">Ações</th>
                                 </tr>
                             </thead>
@@ -55,6 +61,7 @@
                                         {{ $item->empresa ? $item->empresa->empresa->nome : '' }}
                                         @if($item->email == env('MAILMASTER')) SUPER @endif
                                     </td>
+                                    <td>{{ sizeof($item->roles) > 0 ? $item->roles->first()->description : '' }}</td>
                                     <td>
                                         @if($item->email != env('MAILMASTER'))
                                         <form action="{{ route('usuario-super.destroy', $item->id) }}" method="post" id="form-{{$item->id}}">

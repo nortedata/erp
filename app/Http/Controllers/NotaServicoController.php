@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Empresa;
 use App\Models\NotaServico;
+use App\Models\ContaReceber;
+use App\Models\Reserva;
+use App\Models\ConfigGeral;
 use App\Models\ItemNotaServico;
 use Illuminate\Support\Facades\DB;
 use CloudDfe\SdkPHP\Nfse;
@@ -20,6 +23,11 @@ class NotaServicoController extends Controller
         if (!is_dir(public_path('xml_nota_servico_cancelada'))) {
             mkdir(public_path('xml_nota_servico_cancelada'), 0777, true);
         }
+
+        $this->middleware('permission:nfse_create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:nfse_edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:nfse_view', ['only' => ['show', 'index']]);
+        $this->middleware('permission:nfse_delete', ['only' => ['destroy']]);
     }
 
     public function index(Request $request){
@@ -51,6 +59,10 @@ class NotaServicoController extends Controller
     }
 
     public function create(){
+        if (!__isCaixaAberto()) {
+            session()->flash("flash_warning", "Abrir caixa antes de continuar!");
+            return redirect()->route('caixa.create');
+        }
         return view('nota_servico.create');
     }
 
@@ -90,6 +102,7 @@ class NotaServicoController extends Controller
                     'complemento' => $request->complemento ?? '',
                     'cidade_id' => $request->cidade_id,
                     'email' => $request->email ?? '',
+                    'gerar_conta_receber' => $request->gerar_conta_receber,
                     'telefone' => $request->telefone ?? ''
                 ]);
 
@@ -123,6 +136,28 @@ class NotaServicoController extends Controller
                     'responsavel_retencao_iss' => $request->responsavel_retencao_iss ?? 1,
 
                 ]);
+
+                if(isset($request->reserva_id)){
+                    $reserva = Reserva::findOrFail($request->reserva_id);
+                    $reserva->nfse_id = $nfse->id;
+                    $reserva->save();
+                }
+
+                if($request->data_vencimento){
+                    $caixa = __isCaixaAberto();
+
+                    $conta = ContaReceber::create([
+                        'empresa_id' => $request->empresa_id,
+                        'cliente_id' => $request->cliente_id,
+                        'valor_integral' => $totalServico,
+                        'data_vencimento' => $request->data_vencimento,
+                        'local_id' => $caixa->local_id,
+                    ]);
+
+                    $nfse->data_vencimento = $request->data_vencimento;
+                    $nfse->conta_receber_id = $conta->id;
+                    $nfse->save();
+                }
                 session()->flash("flash_success", "NFSe criada com sucesso!");
 
             });
@@ -155,6 +190,7 @@ public function update(Request $request, $id){
                 'cliente_id' => $request->cliente_id,
                 'natureza_operacao' => $request->natureza_operacao,
                 'documento' => $request->documento,
+                'gerar_conta_receber' => $request->gerar_conta_receber,
                 'razao_social' => $request->razao_social,
                 'im' => $request->im ?? '',
                 'ie' => $request->ie ?? '',
@@ -169,48 +205,69 @@ public function update(Request $request, $id){
             ]);
 
             if($item->servico){
-             $item->servico->delete();
-         }
+                $item->servico->delete();
+            }
 
-         ItemNotaServico::create([
-            'nota_servico_id' => $item->id,
-            'discriminacao' => $request->discriminacao,
-            'valor_servico' => __convert_value_bd($request->valor_servico),
-            'servico_id' => $request->servico_id,
-            'codigo_cnae' => $request->codigo_cnae ?? '',
-            'codigo_servico' => $request->codigo_servico ?? '',
-            'codigo_tributacao_municipio' => $request->codigo_tributacao_municipio ?? '',
-            'exigibilidade_iss' => $request->exigibilidade_iss,
-            'iss_retido' => $request->iss_retido,
-            'data_competencia' => $request->data_competencia ?? null,
-            'estado_local_prestacao_servico' => $request->estado_local_prestacao_servico ?? '',
-            'cidade_local_prestacao_servico' => $request->cidade_local_prestacao_servico ?? '',
-            'valor_deducoes' => $request->valor_deducoes ? __convert_value_bd($request->valor_deducoes) : 0,
-            'desconto_incondicional' => $request->desconto_incondicional ? __convert_value_bd($request->desconto_incondicional) : 0,
-            'desconto_condicional' => $request->desconto_condicional ? __convert_value_bd($request->desconto_condicional) : 0,
-            'outras_retencoes' => $request->outras_retencoes ? __convert_value_bd($request->outras_retencoes) : 0,
-            'aliquota_iss' => $request->aliquota_iss ? __convert_value_bd($request->aliquota_iss) : 0,
-            'aliquota_pis' => $request->aliquota_pis ? __convert_value_bd($request->aliquota_pis) : 0,
-            'aliquota_cofins' => $request->aliquota_cofins ? __convert_value_bd($request->aliquota_cofins) : 0,
-            'aliquota_inss' => $request->aliquota_inss ? __convert_value_bd($request->aliquota_inss) : 0,
-            'aliquota_ir' => $request->aliquota_ir ? __convert_value_bd($request->aliquota_ir) : 0,
-            'aliquota_csll' => $request->aliquota_csll ? __convert_value_bd($request->aliquota_csll) : 0,
-            'intermediador' => $request->intermediador ?? 'n',
-            'documento_intermediador' => $request->documento_intermediador ?? '',
-            'nome_intermediador' => $request->nome_intermediador ?? '',
-            'im_intermediador' => $request->im_intermediador ?? '',
-            'responsavel_retencao_iss' => $request->responsavel_retencao_iss ?? 1,
+            ItemNotaServico::create([
+                'nota_servico_id' => $item->id,
+                'discriminacao' => $request->discriminacao,
+                'valor_servico' => __convert_value_bd($request->valor_servico),
+                'servico_id' => $request->servico_id,
+                'codigo_cnae' => $request->codigo_cnae ?? '',
+                'codigo_servico' => $request->codigo_servico ?? '',
+                'codigo_tributacao_municipio' => $request->codigo_tributacao_municipio ?? '',
+                'exigibilidade_iss' => $request->exigibilidade_iss,
+                'iss_retido' => $request->iss_retido,
+                'data_competencia' => $request->data_competencia ?? null,
+                'estado_local_prestacao_servico' => $request->estado_local_prestacao_servico ?? '',
+                'cidade_local_prestacao_servico' => $request->cidade_local_prestacao_servico ?? '',
+                'valor_deducoes' => $request->valor_deducoes ? __convert_value_bd($request->valor_deducoes) : 0,
+                'desconto_incondicional' => $request->desconto_incondicional ? __convert_value_bd($request->desconto_incondicional) : 0,
+                'desconto_condicional' => $request->desconto_condicional ? __convert_value_bd($request->desconto_condicional) : 0,
+                'outras_retencoes' => $request->outras_retencoes ? __convert_value_bd($request->outras_retencoes) : 0,
+                'aliquota_iss' => $request->aliquota_iss ? __convert_value_bd($request->aliquota_iss) : 0,
+                'aliquota_pis' => $request->aliquota_pis ? __convert_value_bd($request->aliquota_pis) : 0,
+                'aliquota_cofins' => $request->aliquota_cofins ? __convert_value_bd($request->aliquota_cofins) : 0,
+                'aliquota_inss' => $request->aliquota_inss ? __convert_value_bd($request->aliquota_inss) : 0,
+                'aliquota_ir' => $request->aliquota_ir ? __convert_value_bd($request->aliquota_ir) : 0,
+                'aliquota_csll' => $request->aliquota_csll ? __convert_value_bd($request->aliquota_csll) : 0,
+                'intermediador' => $request->intermediador ?? 'n',
+                'documento_intermediador' => $request->documento_intermediador ?? '',
+                'nome_intermediador' => $request->nome_intermediador ?? '',
+                'im_intermediador' => $request->im_intermediador ?? '',
+                'responsavel_retencao_iss' => $request->responsavel_retencao_iss ?? 1,
 
-        ]);
-         session()->flash("flash_success", "NFSe atualizada com sucesso!");
+            ]);
 
-     });
-        return redirect()->route('nota-servico.index');
-    }catch (\Exception $e) {
+            if($request->data_vencimento){
+
+                $caixa = __isCaixaAberto();
+
+                if($item->contaReceber){
+                    $item->contaReceber->delete();
+                }
+
+                $conta = ContaReceber::create([
+                    'empresa_id' => $request->empresa_id,
+                    'cliente_id' => $request->cliente_id,
+                    'valor_integral' => $totalServico,
+                    'data_vencimento' => $request->data_vencimento,
+                    'local_id' => $caixa->local_id,
+                ]);
+
+                $item->data_vencimento = $request->data_vencimento;
+                $item->conta_receber_id = $conta->id;
+                $item->save();
+            }
+            session()->flash("flash_success", "NFSe atualizada com sucesso!");
+
+        });
+return redirect()->route('nota-servico.index');
+}catch (\Exception $e) {
             // echo $e->getMessage();
-        session()->flash("flash_error", 'Algo deu errado: ' . $e->getMessage());
-        return redirect()->back();
-    }
+    session()->flash("flash_error", 'Algo deu errado: ' . $e->getMessage());
+    return redirect()->back();
+}
 }
 
 public function destroy($id)
@@ -262,7 +319,13 @@ public function preview($id){
         $im = preg_replace('/[^0-9]/', '', $item->im);
         $ie = preg_replace('/[^0-9]/', '', $item->ie);
         $novoNumeroNFse = $empresa->numero_ultima_nfse+1;
-        
+        $config = ConfigGeral::where('empresa_id', $item->empresa_id)
+        ->first();
+
+        $regimeTributacao = null;
+        if($config != null){
+            $regimeTributacao = $config->regime_nfse;
+        }
         $payload = [
             "numero" => $novoNumeroNFse,
             "serie" => $empresa->numero_serie_nfse,
@@ -270,7 +333,8 @@ public function preview($id){
             "status" => "1",
             "data_emissao" => date("Y-m-d\TH:i:sP"),
             "data_competencia" => date("Y-m-d\TH:i:sP"),
-
+            "regime_tributacao" => $regimeTributacao,
+            
             "tomador" => [
                 "cnpj" => strlen($doc) == 14 ? $doc : null,
                 "cpf" => strlen($doc) == 11 ? $doc : null,
@@ -295,6 +359,7 @@ public function preview($id){
                 "valor_servicos" => $servico->valor_servico,
                 "valor_pis" => $servico->aliquota_pis,
                 "valor_aliquota" => $servico->aliquota_iss,
+                "codigo_cnae" => $servico->codigo_cnae,
                 "itens" => [
                     [
                         "codigo" => $servico->codigo_servico,
@@ -304,6 +369,7 @@ public function preview($id){
                         "valor_servicos" => $servico->valor_servico,
                         "valor_pis" => $servico->aliquota_pis,
                         "valor_aliquota" => $servico->aliquota_iss,
+                        "codigo_cnae" => $servico->codigo_cnae,
                     ]
                 ]
             ]

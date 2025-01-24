@@ -45,13 +45,48 @@
     </div>
     @endif
     
+    @if(!isset($passwdHidden))
     <div class="col-md-2">
-        <label for="">Senha</label>
+        <label class="required">Senha</label>
         <div class="input-group" id="show_hide_password">
-            <input type="password" class="form-control" id="senha" name="password" autocomplete="off" @if(isset($senhaCookie)) value="{{$senhaCookie}}" @endif>
+            <input required type="password" class="form-control" id="senha" name="password" autocomplete="off" @if(isset($senhaCookie)) value="{{$senhaCookie}}" @endif>
             <a class="input-group-text"><i class='ri-eye-line'></i></a>
         </div>
     </div>
+    @endif
+
+    <div class="col-md-3">
+        {!!Form::select('role_id', 'Controle de acesso', ['' => 'Selecione'] + $roles->pluck('description', 'id')->all())
+        ->attrs(['class' => 'select2'])
+        ->value(isset($item) && $item->roles ? $item->roles->first()->id : null)
+        ->required()
+        !!}
+    </div>
+
+    @if(__countLocalAtivo() > 1)
+    <div class="col-md-4">
+        <label for="">Locais de acesso</label>
+
+        <select required class="select2 form-control select2-multiple" data-toggle="select2" name="locais[]" multiple="multiple">
+            @foreach(__getLocaisAtivos() as $local)
+            <option @if(in_array($local->id, (isset($item) ? $item->locais->pluck('localizacao_id')->toArray() : []))) selected @endif value="{{ $local->id }}">{{ $local->descricao }}</option>
+            @endforeach
+        </select>
+    </div>
+    @else
+    <input type="hidden" value="{{ __getLocalAtivo() ? __getLocalAtivo()->id : '' }}" name="local_id">
+    @endif
+
+    <div class="col-md-3">
+        {!!Form::select('escolher_localidade_venda', 'Escolher localização em compra e venda', [0 => 'Não', 1 => 'Sim'])
+        ->attrs(['class' => 'form-select tooltipp'])
+        !!}
+
+        <div class="text-tooltip d-none">
+            Marcar como sim se for escolher a localização ao realizar a venda, compra e devolução
+        </div>
+    </div>
+
     <hr>
     <div class="card col-md-3 mt-3 form-input">
         <p>Selecione uma imagem de perfil</p>

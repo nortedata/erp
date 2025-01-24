@@ -15,13 +15,16 @@ use Database\Seeders\CidadeSeed;
 use Illuminate\Support\Facades\Hash;
 use NFePHP\Common\Certificate;
 use Illuminate\Support\Facades\DB;
-
+use App\Utils\EmpresaUtil;
 
 class EmpresaController extends Controller
 {
 
-    public function __construct()
+    protected $empresaUtil;
+
+    public function __construct(EmpresaUtil $empresaUtil)
     {
+        $this->empresaUtil = $empresaUtil;
         if (!is_dir(public_path('logos'))) {
             mkdir(public_path('logos'), 0777, true);
         }
@@ -29,6 +32,7 @@ class EmpresaController extends Controller
 
     public function index(Request $request)
     {
+        $this->empresaUtil->createPermissions();
         $data = Empresa::when(!empty($request->nome), function ($q) use ($request) {
             return $q->where('nome', 'LIKE', "%$request->nome%");
         })
@@ -37,6 +41,7 @@ class EmpresaController extends Controller
         })
         ->where('tipo_contador', 0)
         ->paginate(env("PAGINACAO"));
+
         return view('empresas.index', compact('data'));
     }
 
@@ -96,6 +101,8 @@ class EmpresaController extends Controller
                         'cpf_cnpj' => preg_replace('/[^0-9]/', '', $request->cpf_cnpj),
                         'senha' => $request->senha_certificado,
                         'token' => $request->token ?? '',
+                        'csc' => $request->csc ? $request->csc : 'AAAAAA',
+                        'csc_id' => $request->csc_id ? $request->csc_id : '000001',
                     ]);
                 }
 
@@ -105,7 +112,6 @@ class EmpresaController extends Controller
                 ]);
 
                 $empresa = Empresa::create($request->all());
-
                 if ($request->usuario) {
 
                     $usuario = User::create([
@@ -115,7 +121,7 @@ class EmpresaController extends Controller
                         'remember_token' => Hash::make($request['remember_token']) ?? ''
                     ]);
 
-                    UsuarioEmpresa::create([
+                    $usuarioEmpresa = UsuarioEmpresa::create([
                         'empresa_id' => $empresa->id,
                         'usuario_id' => $usuario->id ?? null
                     ]);
@@ -128,6 +134,8 @@ class EmpresaController extends Controller
                     ]);
                 }
 
+                $this->empresaUtil->initLocation($empresa);
+                $this->empresaUtil->defaultPermissions($empresa->id);
                 return true;
             });
             session()->flash("flash_success", "Empresa cadastrada!");
@@ -189,31 +197,273 @@ class EmpresaController extends Controller
             $item->delete();
             session()->flash("flash_success", "Empresa removida!");
         } catch (\Exception $e) {
+            // echo $e->getMessage();
+            // die;
             session()->flash("flash_error", "Algo deu Errado: " . $e->getMessage());
         }
         return redirect()->back();
     }
 
     private function deleteRegistros($empresa_id){
+
+        \App\Models\ContaPagar::where('empresa_id', $empresa_id)->delete();
+        \App\Models\ContaReceber::where('empresa_id', $empresa_id)->delete();
+        \App\Models\ComissaoVenda::where('empresa_id', $empresa_id)->delete();
+        \App\Models\ConfiguracaoCardapio::where('empresa_id', $empresa_id)->delete();
+        $prevendas = \App\Models\PreVenda::where('empresa_id', $empresa_id)->get();
+        foreach($prevendas as $n){
+            $n->itens()->delete();
+            $n->fatura()->delete();
+            $n->delete();
+        }
+
+        $data = \App\Models\PedidoMercadoLivre::where('empresa_id', $empresa_id)->get();
+        foreach($data as $t){
+            $t->itens()->delete();
+            $t->delete();
+        }
+
+        $data = \App\Models\WoocommercePedido::where('empresa_id', $empresa_id)->get();
+        foreach($data as $t){
+            $t->itens()->delete();
+            $t->delete();
+        }
+
+        $data = \App\Models\PedidoDelivery::where('empresa_id', $empresa_id)->get();
+        foreach($data as $t){
+            $t->itens()->delete();
+            $t->delete();
+        }
+
+        $data = \App\Models\CarrinhoDelivery::where('empresa_id', $empresa_id)->get();
+        // $data = \App\Models\CarrinhoDelivery::all();
+        foreach($data as $t){
+            foreach($t->itens as $it){
+                $it->adicionais()->delete();
+                $it->sabores()->delete();
+                $it->pizzas()->delete();
+                $it->delete();
+            }
+            $t->delete();
+        }
+
+        $data = \App\Models\EnderecoEcommerce::where('clientes.empresa_id', $empresa_id)
+        ->select('endereco_ecommerces.*')
+        ->join('clientes', 'endereco_ecommerces.cliente_id', '=', 'clientes.id')->get();
+        foreach($data as $t){
+            $t->delete();
+        }
+
+        $data = \App\Models\Troca::where('empresa_id', $empresa_id)->get();
+        foreach($data as $t){
+            $t->itens()->delete();
+            $t->delete();
+        }
+
+        $data = \App\Models\ListaPreco::where('empresa_id', $empresa_id)->get();
+        foreach($data as $t){
+            $t->itens()->delete();
+            $t->usuarios()->delete();
+            $t->delete();
+        }
+
+        $data = \App\Models\Agendamento::where('empresa_id', $empresa_id)->get();
+        foreach($data as $a){
+            $a->itens()->delete();
+            $a->delete();
+        }
+
+        $data = \App\Models\ApuracaoMensal::where('funcionarios.empresa_id', $empresa_id)
+        ->select('apuracao_mensals.*')
+        ->join('funcionarios', 'apuracao_mensals.funcionario_id', '=', 'funcionarios.id')->get();
+        foreach($data as $a){
+            $a->eventos()->delete();
+            $a->delete();
+        }
+
+        $data = \App\Models\NotaServico::where('empresa_id', $empresa_id)->get();
+        foreach($data as $a){
+            $a->servico()->delete();
+            $a->delete();
+        }
+
+        $data = \App\Models\Cte::where('empresa_id', $empresa_id)->get();
+        foreach($data as $n){
+            $n->chaves_nfe()->delete();
+            $n->componentes()->delete();
+            $n->medidas()->delete();
+            $n->delete();
+        }
+
+        $data = \App\Models\CteOs::where('empresa_id', $empresa_id)->delete();
+
+        $data = \App\Models\Mdfe::where('empresa_id', $empresa_id)->get();
+        foreach($data as $n){
+            $n->municipiosCarregamento()->delete();
+            $n->ciots()->delete();
+            $n->percurso()->delete();
+            $n->valesPedagio()->delete();
+            $n->infoDescarga()->delete();
+            $n->delete();
+        }
+
         $nfe = \App\Models\Nfe::where('empresa_id', $empresa_id)->get();
         foreach($nfe as $n){
             $n->itens()->delete();
+            $n->fatura()->delete();
             $n->delete();
         }
+
+        $nfce = \App\Models\Nfce::where('empresa_id', $empresa_id)->get();
+        foreach($nfce as $n){
+            $n->itens()->delete();
+            $n->itensServico()->delete();
+            $n->fatura()->delete();
+            $n->delete();
+        }
+
+        $carrinhos = \App\Models\Carrinho::where('empresa_id', $empresa_id)->get();
+        foreach($carrinhos as $c){
+            $c->itens()->delete();
+            $c->delete();
+        }
+
+        $data = \App\Models\OrdemServico::where('empresa_id', $empresa_id)->get();
+        foreach($data as $t){
+            $t->itens()->delete();
+            $t->servicos()->delete();
+            $t->relatorios()->delete();
+            $t->funcionarios()->delete();
+            $t->delete();
+        }
+
+        \App\Models\DiaSemana::where('empresa_id', $empresa_id)->delete();
+        \App\Models\FuncionarioServico::where('empresa_id', $empresa_id)->delete();
+        \App\Models\Servico::where('empresa_id', $empresa_id)->delete();
+
+        $funcionarios = \App\Models\Funcionario::where('empresa_id', $empresa_id)->get();
+        foreach($funcionarios as $f){
+            $f->eventos()->delete();
+            $f->funcionamento()->delete();
+            $f->interrupcoes()->delete();
+            $f->delete();
+        }
+
+        $data = \App\Models\Reserva::where('empresa_id', $empresa_id)->get();
+        foreach($data as $t){
+            $t->consumoProdutos()->delete();
+            $t->consumoServicos()->delete();
+            $t->notas()->delete();
+            $t->hospedes()->delete();
+            $t->fatura()->delete();
+            $t->delete();
+        }
+
+        $data = \App\Models\Ticket::where('empresa_id', $empresa_id)->get();
+        foreach($data as $t){
+            $t->mensagens()->delete();
+            $t->delete();
+        }
+
+        $data = \App\Models\TransferenciaEstoque::where('empresa_id', $empresa_id)->get();
+        foreach($data as $t){
+            $t->itens()->delete();
+            $t->delete();
+        }
+        
+        $data = \App\Models\Pedido::where('empresa_id', $empresa_id)->get();
+        foreach($data as $t){
+            $t->itens()->delete();
+            $t->delete();
+        }
+
+        $data = \App\Models\PedidoEcommerce::where('empresa_id', $empresa_id)->get();
+        foreach($data as $t){
+            $t->itens()->delete();
+            $t->delete();
+        }
+        
+        \App\Models\CashBackConfig::where('empresa_id', $empresa_id)->delete();
+        \App\Models\CashBackCliente::where('empresa_id', $empresa_id)->delete();
+
+        $data = \App\Models\Cliente::where('empresa_id', $empresa_id)->get();
+        foreach($data as $c){
+            $c->enderecos()->delete();
+            $c->enderecosEcommerce()->delete();
+            $c->enderecosDelivery()->delete();
+            $c->delete();
+        }
+        
         Caixa::where('empresa_id', $empresa_id)->delete();
+        \App\Models\MotivoInterrupcao::where('empresa_id', $empresa_id)->delete();
+        \App\Models\Notificacao::where('empresa_id', $empresa_id)->delete();
+        \App\Models\EcommerceConfig::where('empresa_id', $empresa_id)->delete();
+        \App\Models\MarketPlaceConfig::where('empresa_id', $empresa_id)->delete();
+        \App\Models\ModeloEtiqueta::where('empresa_id', $empresa_id)->delete();
+        $data = \App\Models\VariacaoModelo::where('empresa_id', $empresa_id)->get();
+        foreach($data as $c){
+            $c->itens()->delete();
+            $c->delete();
+        }
+
+        $data = \App\Models\VendaSuspensa::where('empresa_id', $empresa_id)->get();
+        foreach($data as $c){
+            $c->itens()->delete();
+            $c->delete();
+        }
+
         $produtos = \App\Models\Produto::where('empresa_id', $empresa_id)->get();
+        \App\Models\ProdutoCombo::
+        select('produto_combos.*')
+        ->join('produtos', 'produtos.id', '=', 'produto_combos.produto_id')
+        ->where('produtos.empresa_id', $empresa_id)->delete();
+
         foreach($produtos as $p){
             $p->movimentacoes()->delete();
+            $p->locais()->delete();
             $p->variacoes()->delete();
-            $p->estoque->delete();
+            $p->fornecedores()->delete();
+
+            if($p->estoque){
+                $p->estoque->delete();
+            }
             $p->delete();
         }
+
+        \App\Models\ConfigGeral::where('empresa_id', $empresa_id)->delete();
+        \App\Models\AcaoLog::where('empresa_id', $empresa_id)->delete();
+        \App\Models\PlanoPendente::where('empresa_id', $empresa_id)->delete();
         \App\Models\Marca::where('empresa_id', $empresa_id)->delete();
+        
         \App\Models\CategoriaProduto::where('empresa_id', $empresa_id)->delete();
-        \App\Models\Cliente::where('empresa_id', $empresa_id)->delete();
+
         \App\Models\Fornecedor::where('empresa_id', $empresa_id)->delete();
+        \App\Models\NuvemShopConfig::where('empresa_id', $empresa_id)->delete();
         \App\Models\NaturezaOperacao::where('empresa_id', $empresa_id)->delete();
         \App\Models\PadraoTributacaoProduto::where('empresa_id', $empresa_id)->delete();
+        \App\Models\Role::where('empresa_id', $empresa_id)->delete();
+        \App\Models\FinanceiroPlano::where('empresa_id', $empresa_id)->delete();
+        \App\Models\ContadorEmpresa::where('empresa_id', $empresa_id)->delete();
+        \App\Models\DiaSemana::where('empresa_id', $empresa_id)->delete();
+
+        $usuarios = UsuarioEmpresa::where('empresa_id', $empresa_id)->get();
+        // echo $usuarios;
+        // die;
+        
+        \App\Models\UsuarioLocalizacao::
+        select('usuario_localizacaos.*')
+        ->join('localizacaos', 'localizacaos.id', '=', 'usuario_localizacaos.localizacao_id')
+        ->where('localizacaos.empresa_id', $empresa_id)->delete();
+
+        \App\Models\Localizacao::where('empresa_id', $empresa_id)->delete();
+        $planos = \App\Models\PlanoConta::where('empresa_id', $empresa_id)
+        ->orderBy('descricao', 'desc')
+        ->get();
+
+        foreach($planos as $t){
+            $t->delete();
+        }
+
     }
 
     private function __validate(Request $request)
@@ -223,22 +473,11 @@ class EmpresaController extends Controller
             'cpf_cnpj' => 'required',
             'ie' => 'required',
             'celular' => 'required',
-            'csc' => 'required',
-            'csc_id' => 'required',
             'cep' => 'required',
             'rua' => 'required',
             'numero' => 'required',
             'bairro' => 'required',
             'cidade_id' => 'required',
-            // 'numero_ultima_nfe_producao' => 'required',
-            // 'numero_ultima_nfe_homologacao' => 'required',
-            // 'numero_serie_nfe' => 'required',
-            // 'numero_ultima_nfce_producao' => 'required',
-            // 'numero_ultima_nfce_homologacao' => 'required',
-            // 'numero_serie_nfce' => 'required',
-            // 'numero_ultima_cte_producao' => 'required',
-            // 'numero_ultima_cte_homologacao' => 'required',
-            // 'numero_serie_cte' => 'required',
             'email' => 'unique:users',
         ];
         $messages = [

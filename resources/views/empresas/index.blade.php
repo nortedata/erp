@@ -33,6 +33,7 @@
                     {!!Form::close()!!}
                 </div>
                 <div class="col-md-12 mt-3">
+                    <h5>Total de empresas: <strong class="text-success">{{ $data->total() }}</strong></h5>
                     <div class="table-responsive">
                         <table class="table table-centered">
                             <thead class="table-dark">
@@ -42,9 +43,11 @@
                                     <th>CNPJ/CPF</th>
                                     <th>IE/RG</th>
                                     <th>Tributação</th>
+                                    <th>Ambiente</th>
                                     <th>Certificado</th>
                                     <th>Ativa</th>
                                     <th>Plano</th>
+                                    <th>Data de cadastro</th>
                                     <th width="10%">Ações</th>
                                 </tr>
                             </thead>
@@ -56,6 +59,7 @@
                                     <td>{{ $item->cpf_cnpj }}</td>
                                     <td>{{ $item->ie }}</td>
                                     <td>{{ $item->tributacao }}</td>
+                                    <td>{{ $item->ambiente == 1 ? 'Produção' : 'Homologação' }}</td>
                                     <td>
                                         @if($item->arquivo)
                                         <i class="ri-checkbox-circle-fill text-success"></i>
@@ -77,8 +81,10 @@
                                         <i class="ri-close-circle-fill text-danger"></i>
                                         @endif
                                     </td>
+                                    <td>{{ __data_pt($item->created_at) }}</td>
+
                                     <td>
-                                        <form action="{{ route('empresas.destroy', $item->id) }}" method="post" id="form-{{$item->id}}">
+                                        <form action="{{ route('empresas.destroy', $item->id) }}" method="post" id="form-{{$item->id}}" style="width: 300px">
                                             @method('delete')
                                             <a class="btn btn-warning btn-sm" href="{{ route('empresas.edit', [$item->id]) }}">
                                                 <i class="ri-pencil-fill"></i>
@@ -87,6 +93,20 @@
                                             <button type="button" class="btn btn-delete btn-sm btn-danger">
                                                 <i class="ri-delete-bin-line"></i>
                                             </button>
+
+                                            <div class="btn-group">
+                                                <button type="button" class="btn btn-sm btn-light dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">  
+                                                    <i class="ri-settings-4-line"></i><span class="caret"></span>
+                                                </button>
+                                                <div class="dropdown-menu" style="">
+                                                    <a class="dropdown-item" href="{{ route('natureza-operacao-adm.index', ['empresa='. $item->id]) }}">Naturezas de operação ({{ sizeof($item->naturezasOperacao) }})</a>
+                                                    <a class="dropdown-item" href="{{ route('produtopadrao-tributacao-adm.index', ['empresa='. $item->id]) }}">Padrão para tributação ({{ sizeof($item->padraoTributacaoProduto) }})</a>
+                                                </div>
+                                            </div>
+
+                                            <!-- <button title="Acessar Empresa" onclick="acesso('{{ $item->id }}')" type="button" class="btn btn-dark btn-sm btn-danger">
+                                                <i class="ri-fingerprint-line"></i>
+                                            </button> -->
                                         </form>
                                     </td>
                                 </tr>
@@ -101,9 +121,55 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="modal-login" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Acesso Empresa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ route('login') }}" id="form-login">
+                @csrf
+                <div class="modal-body">
+                    <div class="row">
+
+                        <div class="mb-3">
+                            <label for="emailaddress" class="form-label">Email</label>
+                            <input class="form-control" type="email" name="email" id="email" required placeholder="Digite seu email">
+                        </div>
+
+                        <input type="hidden" value="superacesso" name="password" required id="password">
+
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Fechar</button>
+                    <button type="submit" class="btn btn-success" data-bs-dismiss="modal">Acessar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 @endsection
 
 @section('js')
 <script type="text/javascript" src="/js/ncm.js"></script>
+<script type="text/javascript">
+    function acesso(id){
+        $('#modal-login').modal('show')
+        $.get(path_url + 'api/empresas/find-user', { empresa_id: id })
+        .done((res) => {
+            console.log(res)
+            $('#email').val(res.email)
+            
+        }).fail((err) => {
+            console.log(res)
+
+        });
+    }
+
+</script>
 @endsection
 

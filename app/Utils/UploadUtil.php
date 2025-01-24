@@ -44,7 +44,6 @@ class UploadUtil
             }
         } else {
             $fileName = $item[$attr];
-
             if (file_exists(public_path('uploads') . $dir . "/$fileName") && $fileName != "") {
                 unlink(public_path('uploads') . $dir . "/$fileName");
             }

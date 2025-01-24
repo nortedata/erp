@@ -8,22 +8,35 @@ use Illuminate\Support\Str;
 
 class CategoriaProdutoController extends Controller
 {
+
+    public function __construct()
+    {
+        $this->middleware('permission:categoria_produtos_create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:categoria_produtos_edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:categoria_produtos_view', ['only' => ['show', 'index']]);
+        $this->middleware('permission:categoria_produtos_delete', ['only' => ['destroy']]);
+    }
+
     public function index(Request $request)
     {
+
         $data = CategoriaProduto::where('empresa_id', request()->empresa_id)
         ->when(!empty($request->nome), function ($q) use ($request) {
-            return $q->where(function ($quer) use ($request) {
-                return $quer->where('nome', 'LIKE', "%$request->nome%");
-            });
+            return $q->where('nome', 'LIKE', "%$request->nome%");
         })
+        ->where('categoria_id', null)
         ->orderBy('nome', 'asc')
         ->paginate(env("PAGINACAO"));
         return view('categoria_produtos.index', compact('data'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        return view('categoria_produtos.create');
+        $delivery = 0;
+        if (isset($request->delivery)) {
+            $delivery = 1;
+        }
+        return view('categoria_produtos.create', compact('delivery'));
     }
 
     public function edit($id)
@@ -49,8 +62,10 @@ class CategoriaProdutoController extends Controller
                 ]);
             }
             CategoriaProduto::create($request->all());
+            __createLog($request->empresa_id, 'Categoria de Produto', 'cadastrar', $request->nome);
             session()->flash("flash_success", "Categoria criada com sucesso!");
         } catch (\Exception $e) {
+            __createLog($request->empresa_id, 'Categoria de Produto', 'erro', $e->getMessage());
             session()->flash("flash_error", 'Algo deu errado: '. $e->getMessage());
         }
         return redirect()->route('categoria-produtos.index');
@@ -73,8 +88,10 @@ class CategoriaProdutoController extends Controller
                 ]);
             }
             $item->fill($request->all())->save();
+            __createLog($request->empresa_id, 'Categoria de Produto', 'editar', $request->nome);
             session()->flash("flash_success", "Categoria alterada com sucesso!");
         } catch (\Exception $e) {
+            __createLog($request->empresa_id, 'Categoria de Produto', 'erro', $e->getMessage());
             session()->flash("flash_error", 'Algo deu errado: '. $e->getMessage());
         }
         return redirect()->route('categoria-produtos.index');
@@ -85,9 +102,12 @@ class CategoriaProdutoController extends Controller
         $item = CategoriaProduto::findOrFail($id);
         __validaObjetoEmpresa($item);
         try {
+            $descricaoLog = $item->nome;
             $item->delete();
+            __createLog(request()->empresa_id, 'Categoria de Produto', 'excluir', $descricaoLog);
             session()->flash("flash_success", "Categoria removida com sucesso!");
         } catch (\Exception $e) {
+            __createLog(request()->empresa_id, 'Categoria de Produto', 'erro', $e->getMessage());
             session()->flash("flash_error", 'Algo deu errado: '. $e->getMessage());
         }
         return redirect()->route('categoria-produtos.index');
@@ -99,9 +119,12 @@ class CategoriaProdutoController extends Controller
         for($i=0; $i<sizeof($request->item_delete); $i++){
             $item = CategoriaProduto::findOrFail($request->item_delete[$i]);
             try {
+                $descricaoLog = $item->nome;
                 $item->delete();
+                __createLog(request()->empresa_id, 'Categoria de Produto', 'excluir', $descricaoLog);
                 $removidos++;
             } catch (\Exception $e) {
+                __createLog(request()->empresa_id, 'Categoria de Produto', 'erro', $e->getMessage());
                 session()->flash("flash_error", 'Algo deu errado: '. $e->getMessage());
                 return redirect()->route('categoria-produtos.index');
             }

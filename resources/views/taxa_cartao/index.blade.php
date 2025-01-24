@@ -5,10 +5,12 @@
         <div class="card">
             <div class="card-body">
                 <div class="col-md-4">
+                    @can('taxa_pagamento_create')
                     <a href="{{ route('taxa-cartao.create') }}" class="btn btn-success">
                         <i class="ri-add-circle-fill"></i>
                         Nova Taxa
                     </a>
+                    @endcan
                 </div>
                 <hr class="mt-3">
                 <div class="col-md-12 mt-3">
@@ -29,15 +31,20 @@
                                     <td>{{ $item->bandeira_cartao ? $item->getBandeira() : '--' }}</td>
                                     <td>{{ __moeda($item->taxa) }}</td>
                                     <td>
-                                        <form action="{{ route('taxa-cartao.destroy', $item->id) }}" method="post" id="form-{{$item->id}}">
+                                        <form action="{{ route('taxa-cartao.destroy', $item->id) }}" method="post" id="form-{{$item->id}}" style="width: 100px;">
                                             @method('delete')
+                                            @can('taxa_pagamento_edit')
                                             <a class="btn btn-warning btn-sm" href="{{ route('taxa-cartao.edit', [$item->id]) }}">
                                                 <i class="ri-edit-line"></i>
                                             </a>
+                                            @endcan
                                             @csrf
+
+                                            @can('taxa_pagamento_delete')
                                             <button type="button" class="btn btn-delete btn-sm btn-danger">
                                                 <i class="ri-delete-bin-line"></i>
                                             </button>
+                                            @endcan
                                         </form>
                                     </td>
                                 </tr>

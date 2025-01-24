@@ -14,7 +14,9 @@ return new class extends Migration
         Schema::create('item_pedido_deliveries', function (Blueprint $table) {
             $table->id();
 
-            $table->foreignId('produto_id')->constrained('produtos');
+            $table->foreignId('produto_id')->nullable()->constrained('produtos');
+            $table->foreignId('servico_id')->nullable()->constrained('servicos');
+
             $table->foreignId('pedido_id')->constrained('pedido_deliveries');
             $table->foreignId('tamanho_id')->nullable()->constrained('tamanho_pizzas');
             $table->boolean('status'); 
@@ -25,6 +27,9 @@ return new class extends Migration
             $table->decimal('sub_total', 12,2);
             $table->string('observacao', 50)->nullable();
 
+            // alter table item_pedido_deliveries add column servico_id integer default null;
+            // alter table item_pedido_deliveries modify column produto_id bigint unsigned default null;
+            
             $table->timestamps();
         });
     }

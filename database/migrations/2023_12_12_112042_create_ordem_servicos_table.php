@@ -29,8 +29,20 @@ return new class extends Migration
             $table->timestamp('data_entrega')->nullable();
             $table->integer('nfe_id')->default(0);
             $table->integer('codigo_sequencial')->nullable();
+            $table->foreignId('caixa_id')->nullable()->constrained('caixas');
+            
+            $table->integer('local_id')->nullable();
+            
+            $table->decimal('adiantamento', 10, 2)->default(0);
+
             // alter table ordem_servicos modify column descricao text;
             // alter table ordem_servicos add column codigo_sequencial integer default null;
+            // alter table ordem_servicos add column caixa_id integer default null;
+
+            // alter table ordem_servicos add column local_id integer default null;
+            // alter table ordem_servicos add column status_entrega boolean default 0;
+            // alter table ordem_servicos add column adiantamento decimal(10,2) default 0;
+            
 
             $table->timestamps();
         });

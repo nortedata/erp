@@ -14,17 +14,22 @@ trait TraitBlocoI
         $y = $this->margem;
         //$aFont = ['font'=> $this->fontePadrao, 'size' => 7, 'style' => ''];
         //$this->pdf->textBox($this->margem, $y, $this->wPrint, $this->bloco1H, '', $aFont, 'T', 'C', true, '', false);
+        $emitRazao = "";
+        $xFant = "";
+        $emitCnpj = "";
+
         $emitRazao = $config->razao_social;
         $xFant = $config->nome_fantasia;
         $emitCnpj = $config->cpf_cnpj;
+
         // $emitCnpj = str_replace(" ", "", $emitCnpj);
         $emitIE = $config->ie;
-        // $emitCnpj = $this->formatField($emitCnpj, "###.###.###/####-##");
-        $emitLgr = $config->logradouro;
+        $emitCnpj = $this->formatField($emitCnpj, "###.###.###/####-##");
+        $emitLgr = "$config->rua, $config->numero $config->bairro";
         $emitNro = $config->numero;
         $emitBairro = $config->bairro;
-        $emitMun = $config->municipio;
-        $emitUF = $config->UF;
+        $emitMun = $config->cidade->nome;
+        $emitUF = $config->cidade->uf;
         $h = 0;
         $maxHimg = $this->bloco1H - 4;
 
@@ -51,50 +56,53 @@ trait TraitBlocoI
             $alignH = 'C';
         }
         //COLOCA RAZÃO SOCIAL
+        // if($this->configGeral == null || ($this->configGeral == null && $this->configGeral->cabecalho_pdv == 1)){
+        if($this->configGeral == null || ($this->configGeral != null && $this->configGeral->cabecalho_pdv == 1)){
 
-        $aFont = ['font'=>$this->fontePadrao, 'size' => 8, 'style' => ''];
-        $texto = "{$emitRazao}";
-        $y += $this->pdf->textBox(
-            $xRs+2,
-            $this->margem,
-            $wRs-2,
-            $this->bloco1H-$this->margem-1,
-            $texto,
-            $aFont,
-            'T',
-            $alignH,
-            false,
-            '',
-            true
-        );
+            $aFont = ['font' => 'arial', 'size' => 14, 'style' => 'B'];
+            $texto = "{$emitRazao}";
+            $y += $this->pdf->textBox(
+                $xRs+2,
+                $this->margem,
+                $wRs-2,
+                $this->bloco1H-$this->margem-1,
+                $texto,
+                $aFont,
+                'T',
+                $alignH,
+                false,
+                '',
+                true
+            );
 
-        $texto = "{$xFant}";
-        $y += $this->pdf->textBox(
-            $xRs+2,
-            $y,
-            $wRs-2,
-            $this->bloco1H-$this->margem-1,
-            $texto,
-            $aFont,
-            'T',
-            $alignH,
-            false,
-            '',
-            true
-        );
-        if ($this->pdf->fontSizePt < 8) {
-            $aFont = ['font'=>$this->fontePadrao, 'size' => $this->pdf->fontSizePt, 'style' => ''];
+            $texto = "{$xFant}";
+            $y += $this->pdf->textBox(
+                $xRs+2,
+                $y,
+                $wRs-2,
+                $this->bloco1H-$this->margem-1,
+                $texto,
+                $aFont,
+                'T',
+                $alignH,
+                false,
+                '',
+                true
+            );
+            if ($this->pdf->fontSizePt < 8) {
+                $aFont = ['font'=>$this->fontePadrao, 'size' => $this->pdf->fontSizePt, 'style' => ''];
+            }
+
+            $texto = "CNPJ: {$emitCnpj}
+            Inscrição Estadual: {$emitIE}
+            {$emitLgr}
+            {$emitMun} - {$emitUF}
+            Telefone: $config->celular";
+            $y += $this->pdf->textBox($xRs+2, $y, $wRs-2, 3, $texto, $aFont, 'T', $alignH, false, '', true);
+            $this->pdf->dashedHLine($this->margem, $this->bloco1H, $this->wPrint, 0.1, 30);
+            return $this->bloco1H;
+        }else{
+            return 10;
         }
-
-        $texto = "CNPJ: {$emitCnpj} IE: {$emitIE}";
-        $y += $this->pdf->textBox($xRs+2, $y, $wRs-2, 3, $texto, $aFont, 'T', $alignH, false, '', true);
-        $texto = $emitLgr . ", " . $emitNro;
-        $y += $this->pdf->textBox($xRs+2, $y, $wRs-2, 3, $texto, $aFont, 'T', $alignH, false, '', true);
-        $texto = $emitBairro . " | " . $emitMun . "-" . $emitUF;
-        $y += $this->pdf->textBox($xRs+2, $y, $wRs-2, 3, $texto, $aFont, 'T', $alignH, false, '', true);
-        // $texto = $emitMun . "-" . $emitUF;
-        // $y += $this->pdf->textBox($xRs+2, $y, $wRs-2, 3, $texto, $aFont, 'T', $alignH, false, '', true);
-        $this->pdf->dashedHLine($this->margem, $this->bloco1H, $this->wPrint, 0.1, 30);
-        return $this->bloco1H;
     }
 }

@@ -5,10 +5,12 @@
         <div class="card">
             <div class="card-body">
                 <div class="col-md-2">
+                    @can('cte_create')
                     <a href="{{ route('cte.create') }}" class="btn btn-success">
                         <i class="ri-add-circle-fill"></i>
                         Nova CTe
                     </a>
+                    @endcan
                 </div>
                 <hr class="mt-3">
                 <div class="col-lg-12">
@@ -35,6 +37,15 @@
                             ->attrs(['class' => 'form-select'])
                             !!}
                         </div>
+
+                        @if(__countLocalAtivo() > 1)
+                        <div class="col-md-2">
+                            {!!Form::select('local_id', 'Local', ['' => 'Selecione'] + __getLocaisAtivoUsuario()->pluck('descricao', 'id')->all())
+                            ->attrs(['class' => 'select2'])
+                            !!}
+                        </div>
+                        @endif
+
                         <div class="col-md-2">
                             <br>
 
@@ -51,6 +62,9 @@
                                 <tr>
                                     <th>Remetente</th>
                                     <th>Destinatário</th>
+                                    @if(__countLocalAtivo() > 1)
+                                    <th>Local</th>
+                                    @endif
                                     <th>Valor de transporte</th>
                                     <th>Valor da carga</th>
                                     <th>Número</th>
@@ -66,6 +80,9 @@
                                 <tr>
                                     <td>{{ $item->remetente ? $item->remetente->razao_social : "--" }}</td>
                                     <td>{{ $item->destinatario ? $item->destinatario->razao_social : "--" }}</td>
+                                    @if(__countLocalAtivo() > 1)
+                                    <td class="text-danger">{{ $item->localizacao->descricao }}</td>
+                                    @endif
                                     <td>{{ __moeda($item->valor_transporte) }}</td>
                                     <td>{{ __moeda($item->valor_carga) }}</td>
                                     <td>{{ $item->numero ? $item->numero : '--' }}</td>
@@ -111,15 +128,18 @@
                                             </button>
                                             @endif
                                             @if($item->estado == 'novo' || $item->estado == 'rejeitado')
-
+                                            @can('cte_edit')
                                             <a class="btn btn-warning btn-sm" href="{{ route('cte.edit', $item->id) }}">
                                                 <i class="ri-edit-line"></i>
                                             </a>
+                                            @endcan
 
                                             <a target="_blank" title="XML temporário" class="btn btn-light btn-sm" href="{{ route('cte.xml-temp', $item->id) }}">
                                                 <i class="ri-file-line"></i>
                                             </a>
+                                            @can('cte_delete')
                                             <button type="button" class="btn btn-danger btn-sm btn-delete"><i class="ri-delete-bin-line"></i></button>
+                                            @endcan
 
                                             <button title="Transmitir CTe" type="button" class="btn btn-success btn-sm" onclick="transmitir('{{$item->id}}')">
                                                 <i class="ri-send-plane-fill"></i>
@@ -139,7 +159,7 @@
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="10" class="text-center">Nada encontrado</td>
+                                    <td colspan="11" class="text-center">Nada encontrado</td>
                                 </tr>
                                 @endforelse
                             </tbody>

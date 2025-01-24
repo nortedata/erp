@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
 
             $table->foreignId('empresa_id')->constrained('empresas')->onDelete('cascade');
+            $table->integer('numero_sequencial')->nullable();
             
             $table->string('nome', 60);
             $table->decimal('valor', 10,2);
@@ -36,11 +37,25 @@ return new class extends Migration
             $table->decimal('aliquota_inss', 6, 2)->nullable();
             $table->string('imagem', 25)->nullable();
             $table->boolean('status')->default(1);
+            $table->boolean('reserva')->default(0);
+            $table->boolean('padrao_reserva_nfse')->default(0);
+            $table->boolean('marketplace')->default(0);
             $table->string('codigo_tributacao_municipio', 30)->nullable();
+            $table->string('hash_delivery', 50)->nullable();
+            $table->text('descricao');
+            $table->boolean('destaque_marketplace')->nullable();
             
             // alter table servicos add column imagem varchar(25) default null;
             // alter table servicos add column status boolean default 1;
+            // alter table servicos add column reserva boolean default 0;
+            // alter table servicos add column padrao_reserva_nfse boolean default 0;
+            // alter table servicos add column marketplace boolean default 0;
             // alter table servicos add column codigo_tributacao_municipio varchar(30) default null;
+            // alter table servicos add column hash_delivery varchar(50) default null;
+            // alter table servicos add column descricao text;
+            
+            // alter table servicos add column destaque_marketplace boolean default null;
+            // alter table servicos add column numero_sequencial integer default null;
             
             $table->timestamps();
         });

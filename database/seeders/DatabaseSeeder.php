@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
         // ]);
 
         $this->call([
+            DefenderSeeder::class,
             CidadeSeed::class,
             UsuarioSeed::class
         ]);

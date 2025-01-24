@@ -39,6 +39,7 @@
                                     <th>Valor</th>
                                     <th>Status</th>
                                     <th>Auto cadastro</th>
+                                    <th>Fiscal</th>
                                     <th>Segmento</th>
                                     <th>Ações</th>
                                 </tr>
@@ -60,6 +61,13 @@
                                     </td>
                                     <td>
                                         @if($item->auto_cadastro)
+                                        <i class="ri-checkbox-circle-fill text-success"></i>
+                                        @else
+                                        <i class="ri-close-circle-fill text-danger"></i>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if($item->fiscal)
                                         <i class="ri-checkbox-circle-fill text-success"></i>
                                         @else
                                         <i class="ri-close-circle-fill text-danger"></i>

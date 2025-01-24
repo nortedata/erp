@@ -12,6 +12,28 @@
 	transition: opacity 0.75s, visibility 0.75s;
 }
 
+.sticky-col {
+	position: -webkit-sticky;
+	position: sticky;
+	z-index: 999;
+}
+
+@media screen and (min-width: 800px) {
+	.first-col {
+		width: 400px;
+		min-width: 400px;
+		max-width: 400px;
+		left: 0px;
+	}
+
+	.second-col {
+		width: 150px;
+		min-width: 150px;
+		max-width: 150px;
+		left: 100px;
+	}
+}
+
 .card-header h4{
 	/*color: #49526B;*/
 }
@@ -54,6 +76,12 @@ input[type=tel]:read-only {
 .img-60{
 	height: 60px;
 	width: 60px;
+	border-radius: 10px;
+}
+
+.img-120{
+	height: 60px;
+	width: 120px;
 	border-radius: 10px;
 }
 
@@ -193,7 +221,7 @@ body.loading .modal-loading {
 	height: 100%;
 	width: 100%;
 	background: rgba(255, 255, 255, 0.8)
-	url("http://i.stack.imgur.com/FhHRx.gif") 50% 50% no-repeat;
+	url("/loading.gif") 50% 50% no-repeat;
 }
 
 .required:after {
@@ -202,7 +230,7 @@ body.loading .modal-loading {
 	margin-left: 2px;
 }
 
-.btn-tooltip, .btn-tooltip2, .btn-tooltip3{
+.btn-tooltip, .btn-tooltip2, .btn-tooltip3, .btn-tooltip4{
 	margin-top: -38px;
 	margin-left: -10px;
 	font-size: 20px;
@@ -661,3 +689,17 @@ input:checked + .slider:before {
 .bg-finalizado td{
 	color: #fff;
 }
+/*
+.btn-sm{
+	padding: 7px;
+	height: 35px;
+}*/
+
+.card{
+	border-radius: 10px;
+}
+input, select, .select2{
+	box-shadow: 1px 1px 2px rgba(0,0,0,0.2) !important;
+}
+
+

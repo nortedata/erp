@@ -4,7 +4,14 @@
     <div class="row">
         <div class="card">
             <div class="card-body">
-                
+                <div class="col-md-2">
+                    @can('categoria_produtos_create')
+                    <a href="{{ route('categoria-produtos.create', ['delivery=1']) }}" class="btn btn-success">
+                        <i class="ri-add-circle-fill"></i>
+                        Nova Categoria
+                    </a>
+                    @endcan
+                </div>
                 <hr class="mt-3">
                 <div class="col-lg-12">
                     {!!Form::open()->fill(request()->all())

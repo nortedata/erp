@@ -5,39 +5,89 @@ namespace App\Utils;
 use Illuminate\Support\Str;
 use App\Models\Estoque;
 use App\Models\Produto;
+use App\Models\Localizacao;
 use App\Models\MovimentacaoProduto;
+use Illuminate\Support\Facades\Auth;
 
 class EstoqueUtil
 {
-    public function incrementaEstoque($produto_id, $quantidade, $produto_variacao_id = null)
+    public function incrementaEstoque($produto_id, $quantidade, $produto_variacao_id, $local_id = null)
     {
+        if(!$local_id){
+            $usuario_id = Auth::user()->id;
+            $local = Localizacao::where('usuario_localizacaos.usuario_id', $usuario_id)
+            ->select('localizacaos.*')
+            ->join('usuario_localizacaos', 'usuario_localizacaos.localizacao_id', '=', 'localizacaos.id')
+            ->first();
+            if($local){
+                $local_id = $local->id;
+            }
+        }
         $item = Estoque::where('produto_id', $produto_id)
         ->when($produto_variacao_id != null, function ($q) use ($produto_variacao_id) {
             return $q->where('produto_variacao_id', $produto_variacao_id);
         })
+        ->where('local_id', $local_id)
         ->first();
-        if ($item != null) {
-            $item->quantidade += (float)$quantidade;
-            $item->save();
-        } else {
-            Estoque::create([
-                'produto_id' => $produto_id,
-                'quantidade' => $quantidade,
-                'produto_variacao_id' => $produto_variacao_id
-            ]);
+
+        $produto = Produto::findOrFail($produto_id);
+        if($produto->combo){
+
+            foreach($produto->itensDoCombo as $c){
+                $this->incrementaEstoque($c->item_id, $c->quantidade * $quantidade, $produto_variacao_id, $local_id);
+            }
+        }else{
+
+            if ($item != null) {
+                $item->quantidade += (float)$quantidade;
+                $item->save();
+            } else {
+                Estoque::create([
+                    'produto_id' => $produto_id,
+                    'quantidade' => $quantidade,
+                    'produto_variacao_id' => $produto_variacao_id,
+                    'local_id' => $local_id
+                ]);
+            }
         }
     }
 
-    public function reduzEstoque($produto_id, $quantidade, $produto_variacao_id = null)
+    public function reduzEstoque($produto_id, $quantidade, $produto_variacao_id, $local_id = null)
     {
+        if(!$local_id){
+            $usuario_id = Auth::user()->id;
+            $local = Localizacao::where('usuario_localizacaos.usuario_id', $usuario_id)
+            ->select('localizacaos.*')
+            ->join('usuario_localizacaos', 'usuario_localizacaos.localizacao_id', '=', 'localizacaos.id')
+            ->first();
+            if($local){
+                $local_id = $local->id;
+            }
+        }
         $item = Estoque::where('produto_id', $produto_id)
         ->when($produto_variacao_id != null, function ($q) use ($produto_variacao_id) {
             return $q->where('produto_variacao_id', $produto_variacao_id);
         })
+        ->where('local_id', $local_id)
         ->first();
+        
         if ($item != null) {
-            $item->quantidade -= (float)$quantidade;
-            $item->save();
+            $produto = $item->produto;
+            if($produto->combo){
+                foreach($produto->itensDoCombo as $c){
+                    $this->reduzEstoque($c->item_id, $c->quantidade * $quantidade, $produto_variacao_id, $local_id);
+                }
+            }else{
+                $item->quantidade -= $quantidade;
+                $item->save();
+            }
+        }else{
+            $produto = Produto::findOrFail($produto_id);
+            if($produto->combo){
+                foreach($produto->itensDoCombo as $c){
+                    $this->reduzEstoque($c->item_id, $c->quantidade * $quantidade, $produto_variacao_id, $local_id);
+                }
+            }
         }
     }
 
@@ -70,15 +120,40 @@ class EstoqueUtil
 
     }
 
-    public function movimentacaoProduto($produto_id, $quantidade, $tipo, $codigo_transacao, $tipo_transacao, 
+    public function verificaEstoqueCombo($produto, $quantidade)
+    {
+
+        $mensagem = "";
+        foreach ($produto->itensDoCombo as $item) {
+            $qtd = $item->quantidade * $quantidade;
+            if($item->produtoDoCombo->gerenciar_estoque){
+                if($item->produtoDoCombo->estoque){
+                    if($qtd > $item->produtoDoCombo->estoque->quantidade){
+                        $mensagem .= $item->produtoDoCombo->nome . " com estoque insuficiente | ";
+                    }
+                }else{
+                    $mensagem .= $item->produtoDoCombo->nome . " sem nenhum estoque cadastrado | ";
+                }
+            }
+        }
+        $mensagem = substr($mensagem, 0, strlen($mensagem)-2);
+        return $mensagem;
+
+    }
+
+    public function movimentacaoProduto($produto_id, $quantidade, $tipo, $codigo_transacao, $tipo_transacao, $user_id,
         $produto_variacao_id = null){
+
+        $estoque = Estoque::where('produto_id', $produto_id)->first();
         MovimentacaoProduto::create([
             'produto_id' => $produto_id,
             'quantidade' => $quantidade,
             'tipo' => $tipo,
             'codigo_transacao' => $codigo_transacao,
             'tipo_transacao' => $tipo_transacao,
-            'produto_variacao_id' => $produto_variacao_id
+            'produto_variacao_id' => $produto_variacao_id,
+            'user_id' => $user_id,
+            'estoque_atual' => $estoque ? $estoque->quantidade : 0
         ]);
     }
 

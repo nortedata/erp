@@ -22,4 +22,7 @@
         {!!Form::close()!!}
     </div>
 </div>
+
+@include('modals._novo_fornecedor')
+
 @endsection

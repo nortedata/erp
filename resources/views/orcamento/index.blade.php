@@ -4,7 +4,16 @@
     <div class="row">
         <div class="card">
             <div class="card-body">
-
+                <div class="row">
+                    @can('orcamento_create')
+                    <div class="col-md-2">
+                        <a href="{{ route('nfe.create', ['orcamento=1']) }}" class="btn btn-success">
+                            <i class="ri-add-circle-fill"></i>
+                            Novo Orçamento
+                        </a>
+                    </div>
+                    @endcan
+                </div>
                 <hr class="mt-3">
                 <div class="col-lg-12">
                     {!!Form::open()->fill(request()->all())
@@ -61,14 +70,20 @@
                                             <a class="btn btn-primary btn-sm" target="_blank" href="{{ route('orcamentos.imprimir', [$item->id]) }}">
                                                 <i class="ri-printer-line"></i>
                                             </a>
-                                            <a class="btn btn-warning btn-sm" href="{{ route('nfe.edit', $item->id) }}">
+                                            @can('orcamento_edit')
+                                            <a class="btn btn-warning btn-sm" href="{{ route('orcamentos.edit', $item->id) }}">
                                                 <i class="ri-edit-line"></i>
                                             </a>
+                                            @endcan
+                                            @can('orcamento_delete')
                                             <button type="button" class="btn btn-danger btn-sm btn-delete"><i class="ri-delete-bin-line"></i></button>
+                                            @endcan
 
+                                            @can('nfe_create')
                                             <a title="Gerar venda" class="btn btn-dark btn-sm" href="{{ route('orcamentos.show', $item->id) }}">
                                                 <i class="ri-file-line"></i>
                                             </a>
+                                            @endcan
                                         </form>
                                     </td>
                                 </tr>
@@ -79,104 +94,20 @@
                     {!! $data->appends(request()->all())->links() !!}
                 </div>
                 <h5>Soma: <strong class="text-success">R$ {{ __moeda($data->sum('total')) }}</strong></h5>
+
+                @if(sizeof($data) > 0 && request()->cliente_id)
+                <form method="get" action="{{ route('orcamentos.gerar-venda-multipla') }}">
+                    @foreach($data as $item)
+                    <input type="hidden" value="{{ $item->id }}" name="orcamento_id[]">
+                    @endforeach
+                    <button class="btn btn-dark" type="submit">
+                        Gerar venda dos orçamentos
+                    </button>
+                </form>
+                @endif
             </div>
         </div>
     </div>
 </div>
 
-<div class="modal fade" id="modal-cancelar" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-
-            <div class="modal-header">
-                <h5 class="modal-title" id="exampleModalLabel">Cancelar NFe <strong class="ref-numero"></strong></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="row">
-
-                    <div class="col-md-12">
-                        {!!Form::text('motivo-cancela', 'Motivo')
-                        ->required()
-
-                        !!}
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Fechar</button>
-                <button type="button" id="btn-cancelar" class="btn btn-danger">Cancelar</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-
-<div class="modal fade" id="modal-corrigir" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-
-            <div class="modal-header">
-                <h5 class="modal-title" id="exampleModalLabel">Corrigir NFe <strong class="ref-numero"></strong></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="row">
-
-                    <div class="col-md-12">
-                        {!!Form::text('motivo-corrigir', 'Motivo')
-                        ->required()
-
-                        !!}
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Fechar</button>
-                <button type="button" id="btn-corrigir" class="btn btn-warning">Corrigir</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-@endsection
-
-@section('js')
-<script type="text/javascript">
-    function info(motivo_rejeicao, chave, estado, recibo) {
-
-        if (estado == 'rejeitado') {
-            let text = "Motivo: " + motivo_rejeicao + "\n"
-            text += "Chave: " + chave + "\n"
-            swal("", text, "warning")
-        } else {
-            let text = "Chave: " + chave + "\n"
-            text += "Recibo: " + recibo + "\n"
-            swal("", text, "success")
-        }
-    }
-
-    $('#btn-consulta-sefaz').click(() => {
-        $.post(path_url + 'api/nfe_painel/consulta-status-sefaz', {
-                empresa_id: $('#empresa_id').val()
-            })
-            .done((res) => {
-                let msg = "cStat: " + res.cStat
-                msg += "\nMotivo: " + res.xMotivo
-                msg += "\nAmbiente: " + (res.tpAmb == 2 ? "Homologação" : "Produção")
-                msg += "\nverAplic: " + res.verAplic
-
-                swal("Sucesso", msg, "success")
-            })
-            .fail((err) => {
-                try {
-                    swal("Erro", err.responseText, "error")
-                } catch {
-                    swal("Erro", "Algo deu errado", "error")
-                }
-            })
-    })
-
-</script>
-<script type="text/javascript" src="/js/nfe_transmitir.js"></script>
 @endsection

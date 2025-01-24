@@ -5,11 +5,23 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Fornecedor;
 use App\Models\Cidade;
+use App\Models\Nfe;
+use App\Models\ItemNfe;
+use App\Models\ContaPagar;
 use App\Imports\ProdutoImport;
 use Maatwebsite\Excel\Facades\Excel;
 
 class FornecedorController extends Controller
 {
+
+    public function __construct()
+    {
+        $this->middleware('permission:fornecedores_create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:fornecedores_edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:fornecedores_view', ['only' => ['show', 'index']]);
+        $this->middleware('permission:fornecedores_delete', ['only' => ['destroy']]);
+    }
+
     public function index(Request $request)
     {
         $data = Fornecedor::where('empresa_id', request()->empresa_id)
@@ -35,6 +47,7 @@ class FornecedorController extends Controller
     public function edit($id)
     {
         $item = Fornecedor::findOrFail($id);
+        __validaObjetoEmpresa($item);
         return view('fornecedores.edit', compact('item'));
     }
 
@@ -42,10 +55,13 @@ class FornecedorController extends Controller
     {
         $this->__validate($request);
         try {
+
             $request->merge(['ie' => $request->ie ?? '']);
             Fornecedor::create($request->all());
+            __createLog($request->empresa_id, 'Fornecedor', 'cadastrar', $request->razao_social);
             session()->flash("flash_success", "Fornecedor cadastrado!");
         } catch (\Exception $e) {
+            __createLog($request->empresa_id, 'Fornecedor', 'erro', $e->getMessage());
             session()->flash("flash_error", "Algo deu errado: " . $e->getMessage());
         }
         return redirect()->route('fornecedores.index');
@@ -58,8 +74,10 @@ class FornecedorController extends Controller
         try {
             $request->merge(['ie' => $request->ie ?? '']);
             $item->fill($request->all())->save();
+            __createLog($request->empresa_id, 'Fornecedor', 'editar', $request->razao_social);
             session()->flash("flash_success", "Fornecedor atualizado!");
         } catch (\Exception $e) {
+            __createLog($request->empresa_id, 'Fornecedor', 'erro', $e->getMessage());
             session()->flash("flash_error", "Algo deu errado: " . $e->getMessage());
         }
         return redirect()->route('fornecedores.index');
@@ -96,10 +114,21 @@ class FornecedorController extends Controller
     public function destroy($id)
     {
         $item = Fornecedor::findOrFail($id);
+
+        if(sizeof($item->compras) > 0){
+            session()->flash("flash_warning", "Não é possível remover um fornecedor com compras!");
+            return redirect()->back();
+        }
+        __validaObjetoEmpresa($item);
+
         try {
+            $descricaoLog = $item->razao_social;
+            $item->produtoFornecedor()->delete();
             $item->delete();
+            __createLog(request()->empresa_id, 'Fornecedor', 'excluir', $descricaoLog);
             session()->flash("flash_success", "Fornecedor removido!");
         } catch (\Exception $e) {
+            __createLog(request()->empresa_id, 'Fornecedor', 'erro', $e->getMessage());
             session()->flash("flash_error", "Algo deu Errado: " . $e->getMessage());
         }
         return redirect()->back();
@@ -110,10 +139,18 @@ class FornecedorController extends Controller
         $removidos = 0;
         for($i=0; $i<sizeof($request->item_delete); $i++){
             $item = Fornecedor::findOrFail($request->item_delete[$i]);
+            $item = Fornecedor::findOrFail($id);
+            if(sizeof($item->compras) > 0){
+                session()->flash("flash_warning", "Não é possível remover um fornecedor com compras!");
+                return redirect()->back();
+            }
             try {
+                $descricaoLog = $item->razao_social;
                 $item->delete();
                 $removidos++;
+                __createLog(request()->empresa_id, 'Fornecedor', 'excluir', $descricaoLog);
             } catch (\Exception $e) {
+                __createLog(request()->empresa_id, 'Fornecedor', 'erro', $e->getMessage());
                 session()->flash("flash_error", 'Algo deu errado: '. $e->getMessage());
                 return redirect()->route('fornecedores.index');
             }
@@ -137,6 +174,7 @@ class FornecedorController extends Controller
             ini_set('memory_limit', -1);
 
             $rows = Excel::toArray(new ProdutoImport, $request->file);
+
             $retornoErro = $this->validaArquivo($rows);
             $cont = 0;
 
@@ -145,7 +183,7 @@ class FornecedorController extends Controller
                 foreach($rows as $row){
                     foreach($row as $key => $r){
 
-                        if($r[0] != 'RAZÃO SOCIAL'){
+                        if($r[0] != 'RAZÃO SOCIAL' && isset($r[0])){
 
                             try{
                                 $data = $this->preparaObjeto($r, $request->empresa_id);
@@ -205,54 +243,103 @@ class FornecedorController extends Controller
     }
 
     private function validaArquivo($rows){
-        $cont = 0;
+        $cont = 1;
         $msgErro = "";
+
         foreach($rows as $row){
+
             foreach($row as $key => $r){
+                if(isset($r[0])){
+                    $razaoSocial = $r[0];
+                    $cpfCnpj = $r[2];
+                    $rua = $r[4];
+                    $numero = $r[5];
+                    $bairro = $r[6];
+                    $cidade = $r[7];
+                    $uf = $r[8];
+                    $cep = $r[11];
 
-                $razaoSocial = $r[0];
-                $cpfCnpj = $r[2];
-                $rua = $r[4];
-                $numero = $r[5];
-                $bairro = $r[6];
-                $cidade = $r[7];
-                $uf = $r[8];
-                $cep = $r[11];
-                
-                if(strlen($razaoSocial) == 0){
-                    $msgErro .= "Coluna razão social em branco na linha: $cont | "; 
-                }
+                    if(strlen($razaoSocial) == 0){
+                        $msgErro .= "Coluna razão social em branco na linha: $cont | "; 
+                    }
 
-                if(strlen($cpfCnpj) == 0){
-                    $msgErro .= "Coluna CPF/CNPJ em branco na linha: $cont | "; 
-                }
+                    if(strlen($cpfCnpj) == 0){
+                        $msgErro .= "Coluna CPF/CNPJ em branco na linha: $cont | "; 
+                    }
 
-                if(strlen($rua) == 0){
-                    $msgErro .= "Coluna rua em branco na linha: $cont | "; 
-                }
+                    if(strlen($rua) == 0){
+                        $msgErro .= "Coluna rua em branco na linha: $cont | "; 
+                    }
 
-                if(strlen($numero) == 0){
-                    $msgErro .= "Coluna numero em branco na linha: $cont | "; 
+                    if(strlen($numero) == 0){
+                        $msgErro .= "Coluna numero em branco na linha: $cont | "; 
+                    }
+                    if(strlen($bairro) == 0){
+                        $msgErro .= "Coluna bairro em branco na linha: $cont | "; 
+                    }
+                    if(strlen($cidade) == 0){
+                        $msgErro .= "Coluna cidade em branco na linha: $cont | "; 
+                    }
+                    if(strlen($cep) == 0){
+                        $msgErro .= "Coluna CEP em branco na linha: $cont | "; 
+                    }
+
+                    if($msgErro != ""){
+                        return $msgErro;
+                    }
+                    $cont++;
                 }
-                if(strlen($bairro) == 0){
-                    $msgErro .= "Coluna bairro em branco na linha: $cont | "; 
-                }
-                if(strlen($cidade) == 0){
-                    $msgErro .= "Coluna cidade em branco na linha: $cont | "; 
-                }
-                if(strlen($cep) == 0){
-                    $msgErro .= "Coluna CEP em branco na linha: $cont | "; 
-                }
-                
-                if($msgErro != ""){
-                    return $msgErro;
-                }
-                $cont++;
             }
         }
 
         return $msgErro;
     }
 
+    public function historico($id)
+    {
+        $item = Fornecedor::findOrFail($id);
+        __validaObjetoEmpresa($item);
+
+        $data = Nfe::where('fornecedor_id', $id)
+        ->orderBy('id', 'desc')
+        ->get();
+
+        $produtos = $this->getProdutos($id);
+        $faturas = $this->getFaturas($id);
+
+        return view('fornecedores.historico', compact('item', 'data', 'produtos', 'faturas'));
+    }
+
+    private function getProdutos($id){
+
+        $data = [];
+        $dataIds = [];
+
+        $itens = ItemNfe::select('item_nves.*')
+        ->join('nves', 'nves.id', '=', 'item_nves.nfe_id')
+        ->where('nves.fornecedor_id', $id)
+        ->get();
+
+        foreach($itens as $i){
+            if(!in_array($i->produto_id, $dataIds)){
+                $data[] = $i;
+                $dataIds[] = $i->produto_id;
+            }else{
+                for($j=0; $j<sizeof($data); $j++){
+                    if($data[$j]['produto_id'] == $i->produto_id){
+                        $data[$j]['quantidade'] += $i->quantidade;
+                    }
+                }
+            }
+        }
+
+        return $data;
+    }
+
+    private function getFaturas($id){
+        return ContaPagar::where('fornecedor_id', $id)
+        ->orderBy('id', 'desc')
+        ->get();
+    }
 
 }

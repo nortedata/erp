@@ -10,7 +10,7 @@ class CategoriaServico extends Model
     use HasFactory;
 
     protected $fillable = [
-        'nome', 'empresa_id', 'imagem'
+        'nome', 'empresa_id', 'imagem', 'marketplace', 'hash_delivery'
     ];
 
 

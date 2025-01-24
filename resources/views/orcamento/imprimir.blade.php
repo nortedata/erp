@@ -920,7 +920,7 @@
         @foreach($item->fatura as $key => $d)
         <tr>
             <td class="b-bottom">
-                <strong>{{ \Carbon\Carbon::parse($d->vencimento)->format('d/m/Y')}}</strong>
+                <strong>{{ __data_pt($d->data_vencimento, 0) }}</strong>
             </td>
             <td class="b-bottom">
                 <strong>{{number_format($d->valor, 2, ',', '.')}}</strong>

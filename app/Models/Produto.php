@@ -23,14 +23,19 @@ class Produto extends Model
 		'largura', 'comprimento', 'altura', 'peso', 'ecommerce', 'destaque_ecommerce', 'hash_ecommerce', 'texto_ecommerce',
 		'destaque_delivery', 'hash_delivery', 'texto_delivery', 'mercado_livre_id', 'mercado_livre_valor', 'mercado_livre_link',
 		'mercado_livre_youtube', 'mercado_livre_descricao', 'mercado_livre_status', 'mercado_livre_categoria', 
-		'mercado_livre_tipo_publicacao'
+		'mercado_livre_tipo_publicacao', 'combo', 'margem_combo', 'nuvem_shop_id', 'nuvem_shop_valor',
+		'texto_nuvem_shop', 'modBCST', 'pMVAST', 'pICMSST', 'redBCST', 'reserva', 'percentual_lucro', 'codigo_barras2', 
+		'codigo_barras3', 'sub_categoria_id', 'valor_atacado', 'quantidade_atacado', 'oferta_delivery',
+		'woocommerce_id', 'woocommerce_slug', 'woocommerce_link', 'woocommerce_valor', 'woocommerce_type',
+		'woocommerce_status', 'woocommerce_descricao', 'woocommerce_stock_status', 'categorias_woocommerce', 'tipo_unico', 
+		'balanca_pdv', 'mercado_livre_modelo', 'valor_minimo_venda', 'exportar_balanca', 'referencia_xml'
 	];
 
 	protected $appends = [ 'imgApp' ];
 
 	public function _ncm(){
-        return $this->belongsTo(Ncm::class, 'ncm', 'codigo');
-    }
+		return $this->belongsTo(Ncm::class, 'ncm', 'codigo');
+	}
 
 	public function getImgAppAttribute()
 	{
@@ -61,8 +66,51 @@ class Produto extends Model
 		return $this->hasOne(Estoque::class, 'produto_id');
 	}
 
+	public function estoqueTotal($local_id){
+		$estoques = Estoque::where('produto_id', $this->id)->get();
+
+		$soma = 0;
+		foreach($estoques as $e){
+			if($local_id && $local_id == $e->local_id){
+				$soma += $e->quantidade;
+			}else{
+				$soma += $e->quantidade;
+			}
+		}
+
+		if($this->unidade == 'UN' || $this->unidade == 'UNID'){
+			return number_format($soma, 0);
+		}
+		return number_format($soma, 3);
+	}
+
+	public function validaEstoqueDelivery(){
+		if(!$this->gerenciar_estoque) return 1;
+		if($this->estoque && $this->estoque->quantidade > 0) return 1;
+		return 0;
+	}
+
+	public function locais()
+	{
+		return $this->hasMany(ProdutoLocalizacao::class, 'produto_id');
+	}
+
+	public function fornecedores()
+	{
+		return $this->hasMany(ProdutoFornecedor::class, 'produto_id')->orderBy('id', 'desc');
+	}
+
+	public function estoqueLocais()
+	{
+		return $this->hasMany(Estoque::class, 'produto_id');
+	}
+
 	public function categoria(){
 		return $this->belongsTo(CategoriaProduto::class, 'categoria_id');
+	}
+
+	public function subcategoria(){
+		return $this->belongsTo(CategoriaProduto::class, 'sub_categoria_id');
 	}
 
 	public function categoriaMercadoLivre(){
@@ -77,8 +125,20 @@ class Produto extends Model
 		return $this->hasMany(ProdutoVariacao::class, 'produto_id');
 	}
 
+	public function itensDoCombo(){
+		return $this->hasMany(ProdutoCombo::class, 'produto_id');
+	}
+
+	public function variacoesMercadoLivre(){
+		return $this->hasMany(VariacaoMercadoLivre::class, 'produto_id');
+	}
+
 	public function itemLista(){
 		return $this->hasMany(ItemListaPreco::class, 'produto_id');
+	}
+
+	public function itemListaView($listaId){
+		return ItemListaPreco::where('produto_id', $this->id)->where('lista_id', $listaId)->first();
 	}
 
 	public function itemNfe(){
@@ -142,6 +202,17 @@ class Produto extends Model
 		return $str;
 	}
 
+	public function valorPizzaApresentacao(){
+		$str = '';
+		foreach($this->pizzaValores as $key => $pizza){
+			if($key == 0){
+				$str .= "À partir de - R$ " . __moeda($pizza->valor); 
+			}
+		}
+		return $str;
+	}
+
+
 	public function valorPizza($tamanho_id){
 		$pizza = ProdutoPizzaValor::where('tamanho_id', $tamanho_id)
 		->where('produto_id', $this->id)
@@ -190,73 +261,6 @@ class Produto extends Model
 		}
 		
 		return $prod;
-	}
-
-	public static function unidadesMedida()
-	{
-		return [
-			"AMPOLA" => "AMPOLA",
-			"BALDE" => "BALDE",
-			"BANDEJ" => "BANDEJ",
-			"BARRA" => "BARRA",
-			"BISNAG" => "BISNAG",
-			"BLOCO" => "BLOCO",
-			"BOBINA" => "BOBINA",
-			"BOMB" => "BOMB",
-			"CAPS" => "CAPS",
-			"CART" => "CART",
-			"CENTO" => "CENTO",
-			"CJ" => "CJ",
-			"CM" => "CM",
-			"CM2" => "CM2",
-			"CX" => "CX",
-			"CX2" => "CX2",
-			"CX3" => "CX3",
-			"CX5" => "CX5",
-			"CX10" => "CX10",
-			"CX15" => "CX15",
-			"CX20" => "CX20",
-			"CX25" => "CX25",
-			"CX50" => "CX50",
-			"CX100" => "CX100",
-			"DISP" => "DISP",
-			"DUZIA" => "DUZIA",
-			"EMBAL" => "EMBAL",
-			"FARDO" => "FARDO",
-			"FOLHA" => "FOLHA",
-			"FRASCO" => "FRASCO",
-			"GALAO" => "GALAO",
-			"GF" => "GF",
-			"GRAMAS" => "GRAMAS",
-			"JOGO" => "JOGO",
-			"KG" => "KG",
-			"KIT" => "KIT",
-			"LATA" => "LATA",
-			"LITRO" => "LITRO",
-			"M" => "M",
-			"M2" => "M2",
-			"M3" => "M3",
-			"MILHEI" => "MILHEI",
-			"ML" => "ML",
-			"MWH" => "MWH",
-			"PACOTE" => "PACOTE",
-			"PALETE" => "PALETE",
-			"PARES" => "PARES",
-			"PC" => "PC",
-			"POTE" => "POTE",
-			"K" => "K",
-			"RESMA" => "RESMA",
-			"ROLO" => "ROLO",
-			"SACO" => "SACO",
-			"SACOLA" => "SACOLA",
-			"TAMBOR" => "TAMBOR",
-			"TANQUE" => "TANQUE",
-			"TON" => "TON",
-			"TUBO" => "TUBO",
-			"UN" => "UN",
-			"VASIL" => "VASIL",
-			"VIDRO" => "VIDRO"
-		];
 	}
 
 	public static function listaCST()
@@ -334,7 +338,31 @@ class Produto extends Model
 			'07' => '07 - Operação Isenta da Contribuição',
 			'08' => '08 - Operação sem Incidência da Contribuição',
 			'09' => '09 - Operação com Suspensão da Contribuição',
-			'49' => '49 - Outras Operações de Saída'
+			'49' => '49 - Outras Operações de Saída',
+
+			'50' => '50 - Operação com Direito a Crédito – Vinculada Exclusivamente a Receita Tributada no Mercado Interno',
+			'51' => '51 - Operação com Direito a Crédito – Vinculada Exclusivamente a Receita Não-Tributada no Mercado Interno',
+			'52' => '52 - Operação com Direito a Crédito – Vinculada Exclusivamente a Receita de Exportação',
+			'53' => '53 - Operação com Direito a Crédito – Vinculada a Receitas Tributadas e Não-Tributadas no Mercado Interno',
+			'54' => '54 - Operação com Direito a Crédito – Vinculada a Receitas Tributadas no Mercado Interno e de Exportação',
+			'55' => '55 - Operação com Direito a Crédito – Vinculada a Receitas Não Tributadas no Mercado Interno e de Exportação',
+			'56' => '56 - Operação com Direito a Crédito – Vinculada a Receitas Tributadas e Não-Tributadas no Mercado Interno e de Exportação',
+			'60' => '60 - Crédito Presumido – Operação de Aquisição Vinculada Exclusivamente a Receita Tributada no Mercado Interno',
+			'61' => '61 - Crédito Presumido – Operação de Aquisição Vinculada Exclusivamente a Receita Não-Tributada no Mercado Interno',
+			'62' => '62 - Crédito Presumido – Operação de Aquisição Vinculada Exclusivamente a Receita de Exportação',
+			'63' => '63 - Crédito Presumido – Operação de Aquisição Vinculada a Receitas Tributadas e Não-Tributadas no Mercado Interno',
+			'64' => '64 - Crédito Presumido – Operação de Aquisição Vinculada a Receitas Tributadas no Mercado Interno e de Exportação',
+			'65' => '65 - Crédito Presumido – Operação de Aquisição Vinculada a Receitas Não-Tributadas no Mercado Interno e de Exportação',
+			'66' => '66 - Crédito Presumido – Operação de Aquisição Vinculada a Receitas Tributadas e Não-Tributadas no Mercado Interno e de Exportação',
+			'67' => '67 - Crédito Presumido – Outras Operações',
+			'70' => '70 - Operação de Aquisição sem Direito a Crédito',
+			'71' => '71 - Operação de Aquisição com Isenção',
+			'72' => '72 - Operação de Aquisição com Suspensão',
+			'73' => '73 - Operação de Aquisição a Alíquota Zero',
+			'74' => '74 - Operação de Aquisição sem Incidência da Contribuição',
+			'75' => '75 - Operação de Aquisição por Substituição Tributária',
+			'98' => '98 - Outras Operações de Entrada',
+			'99' => '99 - Outras Operações',
 		];
 	}
 
@@ -693,6 +721,129 @@ class Produto extends Model
 			return 'active';
 		}
 		return 'disabled';
+	}
+
+	public function statusWoocommerce(){
+		if($this->woocommerce_status == 'active'){
+			return 'active';
+		}
+		return 'disabled';
+	}
+
+	public static function modalidadesBCST(){
+		return [
+			'0' => '0 - Preço tabelado ou máximo sugerido',
+			'1' => '1 - Lista Negativa (valor)',
+			'2' => '2 - Lista Positiva (valor)',
+			'3' => '3 - Lista Neutra (valor)',
+			'4' => '4 - Margem Valor Agregado (%)',
+			'5' => '5 - Pauta (valor)',
+			'6' => '6 - Valor da Operação'
+		];
+	}
+
+	public static function getTrib($objeto){
+
+		$arr = (array_values((array)$objeto->ICMS));
+		$cst = $arr[0]->CST ? $arr[0]->CST : $arr[0]->CSOSN;
+
+		$pICMS = $arr[0]->pICMS ?? 0;
+		$vICMS = $arr[0]->vICMS ?? 0;
+		$pRedBC = $arr[0]->pRedBC ?? 0;
+		$vBCSTRet = $arr[0]->vBCSTRet ?? 0;
+		$modBCST = $arr[0]->modBCST ?? 0;
+		$vBCST = $arr[0]->vBCST ?? 0;
+		$pICMSST = $arr[0]->pICMSST ?? 0;
+		$vICMSST = $arr[0]->vICMSST ?? 0;
+		$pMVAST = $arr[0]->pMVAST ?? 0;
+		$pST = $arr[0]->pST ?? 0;
+		$vICMSSubstituto = $arr[0]->vICMSSubstituto ?? 0;
+		$vICMSSTRet = $arr[0]->vICMSSTRet ?? 0;
+		$qBCMonoRet = $arr[0]->qBCMonoRet ?? 0;
+		$adRemICMSRet = $arr[0]->adRemICMSRet ?? 0;
+		$vICMSMonoRet = $arr[0]->vICMSMonoRet ?? 0;
+		$orig = $arr[0]->orig ?? 0;
+
+		$vBC = $arr[0]->vBC ?? 0;
+
+		$pis = '49';
+		$pPIS = 0;
+
+		if(isset($objeto->PIS)){
+			$arr = (array_values((array)$objeto->PIS));
+			if(isset($arr[0])){
+				$pis = $arr[0]->CST;
+				$pPIS = $arr[0]->pPIS ?? 0;
+			}
+		}
+
+		$cofins = 0;
+		$pCOFINS = 0;
+		if(isset($objeto->COFINS)){
+			$arr = (array_values((array)$objeto->COFINS));
+			if(isset($arr[0])){
+				$cofins = $arr[0]->CST;
+				$pCOFINS = $arr[0]->COFINS ?? 0;
+				if($pCOFINS == 0){
+					$pCOFINS = $arr[0]->pCOFINS ?? 0;
+				}
+			}
+		}
+
+		$arr = (array_values((array)$objeto->IPI));
+		if(isset($arr[1])){
+
+			$ipi = $arr[1]->CST ?? '99';
+			$pIPI = $arr[0]->IPI ?? 0;
+			if($pIPI == 0){
+				$pIPI = $arr[0]->pIPI ?? 0;
+			}
+
+			if(isset($arr[1]->pIPI)){
+				$pIPI = $arr[1]->pIPI ?? 0;
+			}else{
+				if(isset($arr[4]->pIPI)){
+					$ipi = $arr[4]->CST;
+					$pIPI = $arr[4]->pIPI;
+				}else{
+					$pIPI = 0;
+				}
+			}
+
+		}else{
+			$ipi = '99';
+			$pIPI = 0;
+		}
+
+		$data = [
+			'cst_csosn' => (string)$cst,
+			'pICMS' => (float)$pICMS,
+			'cst_pis' => (string)$pis,
+			'pPIS' => (float)$pPIS,
+			'cst_cofins' => (string)$cofins,
+			'pCOFINS' => (float)$pCOFINS,
+			'cst_ipi' => (string)$ipi,
+			'pIPI' => (float)$pIPI,
+			'pRedBC' => (float)$pRedBC,
+			'vBCSTRet' => (float)$vBCSTRet,
+			'vBC' => (float)$vBC,
+			'vICMS' => (float)$vICMS,
+			'modBCST' => (float)$modBCST,
+			'vBCST' => (float)$vBCST,
+			'pICMSST' => (float)$pICMSST,
+			'vICMSST' => (float)$vICMSST,
+			'pMVAST' => (float)$pMVAST,
+			'pST' => (float)$pST,
+			'vICMSSubstituto' => (float)$vICMSSubstituto,
+			'vICMSSTRet' => (float)$vICMSSTRet,
+			'qBCMonoRet' => (float)$qBCMonoRet,
+			'adRemICMSRet' => (float)$adRemICMSRet,
+			'vICMSMonoRet' => (float)$vICMSMonoRet,
+			'orig' => (int)$orig
+		];
+
+		return $data;
+
 	}
 
 }

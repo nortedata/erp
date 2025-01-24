@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\PlanoPendente;
 use App\Models\PlanoEmpresa;
+use App\Models\FinanceiroPlano;
 
 class PlanoPendenteController extends Controller
 {
@@ -27,12 +28,21 @@ class PlanoPendenteController extends Controller
         $exp = date('Y-m-d', strtotime("+$intervalo days",strtotime( 
           date('Y-m-d'))));
         try{
-            PlanoEmpresa::create([
+            $planoEmpresa = PlanoEmpresa::create([
                 'empresa_id' => $item->empresa_id,
                 'plano_id' => $item->plano_id,
                 'data_expiracao' => $exp,
                 'valor' => $item->valor,
                 'forma_pagamento' => $request->forma_pagamento
+            ]);
+
+            FinanceiroPlano::create([
+                'empresa_id' => $item->empresa_id,
+                'plano_id' => $item->plano_id,
+                'valor' => $item->valor,
+                'tipo_pagamento' => $request->forma_pagamento,
+                'status_pagamento' => $request->status_pagamento,
+                'plano_empresa_id' => $planoEmpresa->id
             ]);
 
             $item->status = 1;

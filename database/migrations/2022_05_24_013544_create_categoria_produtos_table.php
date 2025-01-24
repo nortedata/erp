@@ -21,15 +21,23 @@ return new class extends Migration
             $table->boolean('cardapio')->default(0);
             $table->boolean('delivery')->default(0);
             $table->boolean('ecommerce')->default(0);
+            $table->boolean('reserva')->default(0);
             $table->boolean('tipo_pizza')->default(0);
             $table->string('hash_ecommerce', 50)->nullable();
             $table->string('hash_delivery', 50)->nullable();
 
+            $table->foreignId('categoria_id')->nullable()->constrained('categoria_produtos');
+
+
             // alter table categoria_produtos add column tipo_pizza boolean default 0;
             // alter table categoria_produtos add column delivery boolean default 0;
             // alter table categoria_produtos add column ecommerce boolean default 0;
+            // alter table categoria_produtos add column reserva boolean default 0;
             // alter table categoria_produtos add column hash_ecommerce varchar(50) default null;
             // alter table categoria_produtos add column hash_delivery varchar(50) default null;
+
+            // alter table categoria_produtos add column categoria_id integer default null;
+
             
             $table->timestamps();
         });

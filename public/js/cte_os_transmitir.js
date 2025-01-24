@@ -1,4 +1,5 @@
 function transmitir(id){
+
 	console.clear()
 	$.post(path_url + "api/cte_os_painel/emitir", {
 		id: id,

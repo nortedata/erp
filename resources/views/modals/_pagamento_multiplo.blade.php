@@ -2,19 +2,19 @@
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
-                <h4 class="modal-title" id="standard-modalLabel">Pagamento Múltiplo <strong class="total-venda-modal">@isset($item) {{__moeda($item->valor_total)}}@endif</strong></h4>
+                <h4 class="modal-title" id="standard-modalLabel">Pagamento Múltiplo <strong class="total-venda-modal text-danger">@isset($item) {{__moeda($item->valor_total)}}@endif</strong></h4>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <div class="row">
                     <div class="col-md-4">
-                        {!! Form::select('tipo_pagamento_row', 'Tipo de Pagamento',['' => 'Selecione'] + App\Models\Nfce::tiposPagamento())->attrs(['class' => 'form-select']) !!}
+                        {!! Form::select('tipo_pagamento_row', 'Tipo de Pagamento',['' => 'Selecione'] + $tiposPagamento)->attrs(['class' => 'form-select']) !!}
                     </div>
                     <div class="col-md-2">
                         {!! Form::tel('valor_row', 'Valor')->attrs(['class' => 'moeda']) !!}
                     </div>
                     <div class="col-md-2">
-                        {!! Form::date('data_vencimento_row', 'Vencimento')->attrs(['class' => '']) !!}
+                        {!! Form::date('data_vencimento_row', 'Vencimento')->attrs(['class' => ''])->value(date('Y-m-d')) !!}
                     </div>
                     <div class="col-md-3">
                         {!! Form::text('observacao_row', 'Observação')->attrs(['class' => '']) !!}
@@ -36,14 +36,18 @@
                         </thead>
                         <tbody>
                             @isset($item)
-                            @if($item != null)
+                            @if($item != null && $item->fatura && sizeof($item->fatura) > 1)
                             @foreach ($item->fatura as $fatura)
                             <tr>
                                 <td>
-                                    <input readonly type="sel" name="tipo_pagamento_row[]" class="form-control" value="{{ $fatura->forma_pagamento }}">
+                                    <input readonly type="text" name="nome_pagamento[]" class="form-control"
+                                    value="{{ App\Models\Nfce::getTipoPagamento($fatura->tipo_pagamento) }}">
+
+                                    <input readonly type="hidden" name="tipo_pagamento_row[]" class="form-control"
+                                    value="{{ $fatura->tipo_pagamento }}">
                                 </td>
                                 <td>
-                                    <input readonly type="date" name="vencimento_parcela_row[]" class="form-control" value="{{ $fatura->vencimento }}">
+                                    <input readonly type="date" name="data_vencimento_row[]" class="form-control data_multiplo" value="{{ $fatura->data_vencimento }}">
                                 </td>
                                 <td>
                                     <input readonly type="text" name="valor_integral_row[]" class="form-control valor_integral" value="{{ __moeda($fatura->valor) }}">
@@ -53,7 +57,7 @@
                                 </td>
                                 <td>
                                     <button class="btn btn-sm btn-danger btn-delete-row">
-                                        <i class="bx bx-trash"></i>
+                                        <i class="ri-delete-back-2-line"></i>
                                     </button>
                                 </td>
                             </tr>
@@ -73,13 +77,14 @@
                         </tfoot>
                     </table>
                     <div class="mt-3">
-                        <h6 style="color: rgb(218, 19, 19); size:25px" class="mt-2">Diferença: <strong class="sum-restante"></strong></h6>
+                        <h6 style="color: rgb(218, 19, 19); size:25px" class="mt-2">Diferença: 
+                            <strong class="sum-restante"></strong>
+                        </h6>
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
-                {{-- <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button> --}}
-                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Salvar</button>
+                <button type="button" class="btn btn-primary btn-modal-multiplo" data-bs-dismiss="modal">Salvar</button>
             </div>
         </div><!-- /.modal-content -->
     </div><!-- /.modal-dialog -->

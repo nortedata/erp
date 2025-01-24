@@ -1,35 +1,67 @@
 @extends('food.default', ['title' => 'Home'])
 @section('content')
 
-<section class="featured spad" style="margin-top: -100px">
+
+<div class="middle">
 	<div class="container">
+		<div class="row rowtitle hidden-xs hidden-sm">
+			<div class="col-md-12">
+				<div class="title-icon">
+					<span>PESQUISA DE PRODUTOS</span>
+				</div>
+				
+			</div>
+			<div class="col-md-12 hidden-xs hidden-sm">
+				<div class="clearline"></div>
+			</div>
+		</div>
 		<div class="row">
-			<div class="col-lg-12">
-				<div class="section-title">
-					<h2>Produtos</h2>
+			<div class="col-md-12">
+				<div class="search-bar-mobile visible-xs visible-sm">
+					<form class="align-middle" method="GET" action="">
+						<input type="text" name="busca" placeholder="Digite sua busca..." value="">
+						<button>
+							<i class="lni lni-search-alt"></i>
+						</button>
+						<div class="clear"></div>
+					</form>
 				</div>
 			</div>
 		</div>
-		<div class="row featured__filter">
-
-			@foreach($produtos as $p)
-			<div class="col-lg-3 col-md-4 col-sm-6 mix {{$p->categoria->nome}} fresh-meat">
-				<div class="featured__item">
-					<div class="featured__item__pic set-bg" data-setbg="{{ $p->img }}">
-						<ul class="featured__item__pic__hover">
-							<li><a href="{{ route('food.produto-detalhe', [$p->hash_delivery, 'link='.$config->loja_id])}}"><i class="fa fa-shopping-cart"></i></a></li>
-						</ul>
+		
+		<div class="categorias no-bottom-mobile">
+			<div class="categoria no-bottom-mobile">
+				<div class="row">
+					<div class="col-md-6 col-sm-6 col-xs-6">
+						<strong class="counter">{{ sizeof($produtos) }}</strong>
+						<span class="title">Itens:</span>
 					</div>
-					<div class="featured__item__text">
-						<h6><a href="{{ route('food.produto-detalhe', [$p->hash_delivery, 'link='.$config->loja_id])}}">{{ $p->nome }}</a></h6>
-						<h5 class="text-main">R$ {{ __moeda($p->valor_delivery) }}</h5>
+					
+				</div>
+				<div class="produtos">
+					<div class="row tv-grid">
+						@foreach($produtos as $p)
+						<div class="col-md-3 col-sm-6 col-xs-6">
+							<div class="produto">
+								<a href="#!" onclick="carregaPagina('{{ route('produto-delivery.modal', [$p->hash_delivery]) }}')" title="lasanha media">
+									<div class="capa" style="background: url('{{ $p->img  }}') no-repeat center center;">
+										<span class="nome">{{ $p->nome }}</span>
+									</div>
+									<span class="apenas apenas-single">
+										Por <br> apenas 
+									</span>
+									<span class="valor">R$ {{ __moeda($p->valor_delivery) }}</span>
+									<div class="detalhes"><i class="icone icone-sacola"></i> <span>Comprar</span></div>
+								</a>
+							</div>
+						</div>
+						@endforeach
 					</div>
 				</div>
 			</div>
-			@endforeach
-
 		</div>
 	</div>
-</section>
+</div>
+
 
 @endsection

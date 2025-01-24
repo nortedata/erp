@@ -31,10 +31,12 @@ class MarketPlaceConfigController extends Controller
 
     public function store(Request $request)
     {
-        $this->__validate($request);
 
         $item = MarketPlaceConfig::where('empresa_id', $request->empresa_id)
         ->first();
+
+        $this->__validate($request, $item ? $item->id : null);
+
 
         if(!isset($request->tipos_pagamento)){
             $request->tipos_pagamento = [];
@@ -101,10 +103,10 @@ class MarketPlaceConfigController extends Controller
         return redirect()->back();
     }
 
-    private function __validate(Request $request)
+    private function __validate(Request $request, $id)
     {
         $rules = [
-            'loja_id' => [\Illuminate\Validation\Rule::unique('market_place_configs')->ignore($request->empresa_id)],  
+            'loja_id' => [\Illuminate\Validation\Rule::unique('market_place_configs')->ignore($id)],  
         ];
         $messages = [
             'loja_id.unique' => 'Já existe uma configuração de delivery com este ID.'

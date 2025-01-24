@@ -32,7 +32,8 @@ class CTeOsService
 	{
 
 		$emitente = $cteEmit->empresa;
-
+        $emitente = __objetoParaEmissao($cteEmit->empresa, $cteEmit->local_id);
+        // dd($emitente);
 		$cte = new MakeCTeOS();
 		$dhEmi = date("Y-m-d\TH:i:sP");
 
@@ -102,7 +103,7 @@ class CTeOsService
 			} else {
 				$ide->indIEToma = '9';
 			}
-		} else if ($cteEmit->tomador_cli == 3) {
+		} else if ($cteEmit->tomador == 3) {
 			if ($cteEmit->destinatario->ie != '') {
 				$ide->indIEToma = '2';
 			} else {
@@ -114,6 +115,13 @@ class CTeOsService
 		$ide->xJust = '';
 
 		$cte->tagide($ide);
+
+		foreach($cteEmit->percurso as $p){
+
+			$infPercurso = new \stdClass();
+			$infPercurso->UFPer = $p->uf;
+			$cte->taginfPercurso($infPercurso);
+		}
 
 		$taginfServico = new \stdClass();
 		$taginfServico->xDescServ = $cteEmit->descricao_servico;
@@ -138,11 +146,9 @@ class CTeOsService
 		$toma->IE = $ie;
 		$toma->xNome = $cteEmit->tomador_cli->razao_social;
 		$toma->xFant = $cteEmit->tomador_cli->razao_social;
+		
+		$fone = preg_replace('/[^0-9]/', '', $cteEmit->tomador_cli->telefone);
 
-		$fone = str_replace(" ", "", $cteEmit->emitente->tomador_cli);
-		$fone = str_replace("-", "", $fone);
-		$fone = str_replace("(", "", $fone);
-		$fone = str_replace(")", "", $fone);
 		$toma->fone = $fone;
 		$toma->email = $cteEmit->tomador_cli->email;
 		$toma->xLgr = $cteEmit->tomador_cli->rua;
@@ -184,10 +190,8 @@ class CTeOsService
 		$enderEmit->CEP = $cep;
 		$enderEmit->UF = $cteEmit->emitente->cidade->uf;
 
-		$fone = str_replace(" ", "", $cteEmit->emitente->telefone);
-		$fone = str_replace("-", "", $fone);
-		$fone = str_replace("(", "", $fone);
-		$fone = str_replace(")", "", $fone);
+		$fone = preg_replace('/[^0-9]/', '', $cteEmit->emitente->telefone);
+
 		$enderEmit->fone = $fone;
 		$cte->tagenderEmit($enderEmit);
 
@@ -275,18 +279,13 @@ class CTeOsService
 		$fr->dhViagem = \Carbon\Carbon::parse(str_replace("/", "-", $cteEmit->data_viagem))->format('Y-m-d') . 'T' . $cteEmit->horario_viagem . ':00-03:00';
 		$cte->infFretamento($fr);
 
-		// $std = new \stdClass();
-		// $std->CNPJ = env('RESP_CNPJ'); //CNPJ da pessoa jurídica responsável pelo sistema utilizado na emissão do documento fiscal eletrônico
-		// $std->xContato= env('RESP_NOME'); //Nome da pessoa a ser contatada
-		// $std->email = env('RESP_EMAIL'); //E-mail da pessoa jurídica a ser contatada
-		// $std->fone = env('RESP_FONE'); //Telefone da pessoa jurídica/física a ser contatada
-		// $cte->taginfRespTec($std);
 
 		try {
-			$cte->montaCTe();
+			$teste = $cte->montaCTe();
 			$chave = $cte->chCTe;
 
 			$xml = $cte->getXML();
+
 			$arr = [
 				'chave' => $chave,
 				'xml' => $xml,

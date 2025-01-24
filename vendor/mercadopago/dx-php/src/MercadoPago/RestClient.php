@@ -2,6 +2,7 @@
 namespace MercadoPago;
 
 use Exception;
+use Illuminate\Support\Str;
  
 /**
  * MercadoPago cURL RestClient
@@ -47,6 +48,7 @@ class RestClient
             'Content-Type' => 'application/json',
             'User-Agent' => 'MercadoPago DX-PHP SDK/ v' . Version::$_VERSION,
             'x-product-id' => 'BC32A7RU643001OI3940',
+            'X-Idempotency-Key' => Str::random(50),
             'x-tracking-id' => 'platform:' . PHP_MAJOR_VERSION .'|' . PHP_VERSION . ',type:SDK' . Version::$_VERSION . ',so;'
         );
 

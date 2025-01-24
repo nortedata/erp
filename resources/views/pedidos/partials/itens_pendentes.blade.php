@@ -1,7 +1,7 @@
 @forelse($data as $item)
 <div class="col-lg-4 col-12">
     <div class="card">
-        <form method="get" @isset($item->is_comanda) action="{{ route('pedido-cozinha.update-item', [$item->id])}}" @else action="{{ route('pedidos-delivery.update-item', [$item->id])}}" @endif id="form-{{$item->id}}">
+        <form method="get" @isset($item->is_cardapio) action="{{ route('pedido-cozinha.update-item', [$item->id])}}" @else action="{{ route('pedidos-delivery.update-item', [$item->id])}}" @endif id="form-{{$item->id}}">
             <div class="card-body" style="height: 320px">
 
                 @isset($item->is_comanda)
@@ -83,6 +83,13 @@
         </div>
     </div>
 </div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <a href="{{ route('pedido-cozinha.update-all') }}" class="btn btn-danger">Finalizar todos os itens</a>
+    </div>
+</div>
+
 @empty
 <div class="col-12">
     <div class="card">

@@ -1,11 +1,17 @@
+var EDIT = 0
 $(function() {
     changeDericadoPetroleo()
     changeCardapio()
     changeDelivery()
     changeVariavel()
     changeEcommerce()
+    changeCombo()
     changeMeradoLivre()
-
+    changeNuvemShop()
+    changeWoocommerce()
+    if($('#edit').val() == 1){
+        EDIT = 1
+    }
     if($('.table-variacao tbody tr').length == 0){
         $('#inp-variacao_modelo_id').val('').change()
     }
@@ -14,18 +20,140 @@ $(function() {
         if($('#inp-padrao_id').val()){
             $('#inp-padrao_id').change()
         }
-    }, 100)
+
+        $('.select2-group').css('width', '80%')
+    }, 1100)
 })
 
-function gerarCode() {
+$('#btn-store').click(() => {
+
+})
+
+$('.btn-store-marca').click(() => {
+    let item = {
+        nome: $('#inp-nome_marca').val(),
+        empresa_id: $('#empresa_id').val()
+    }
+
+    $.post(path_url + "api/produtos/marca-store", item)
+    .done((result) => {
+        var newOption = new Option(result.nome, result.id, 1, false);
+        $('#marca_id').append(newOption);
+        $('#marca_id').val(result.id).change();
+        $('#inp-nome_marca').val('')
+        $('#modal_marca').modal('hide')
+        swal("Sucesso", "Marca cadastrada!", "success")
+    })
+    .fail((err) => {
+        console.log(err)
+        swal("Erro", "Erro ao salvar marca", "error")
+    })
+})
+
+$('.btn-store-categoria').click(() => {
+    let item = {
+        nome: $('#inp-nome_categoria').val(),
+        empresa_id: $('#empresa_id').val()
+    }
+
+    $.post(path_url + "api/produtos/categoria-store", item)
+    .done((result) => {
+        var newOption = new Option(result.nome, result.id, 1, false);
+        $('#categoria_id').append(newOption);
+        $('#categoria_id').val(result.id).change();
+        $('#inp-nome_categoria').val('')
+        $('#modal_categoria_produto').modal('hide')
+        swal("Sucesso", "Categoria cadastrada!", "success")
+    })
+    .fail((err) => {
+        console.log(err)
+        swal("Erro", "Erro ao salvar categoria", "error")
+    })
+})
+
+function gerarCode(inp) {
     $.get(path_url + "produtos-gerar-codigo-ean")
     .done((res) => {
-        $('#codigo_barras').val(res)
+        if(inp == 1){
+            $('#codigo_barras').val(res)
+        }else{
+            $('#codigo_barras'+inp).val(res)
+        }
     })
     .fail((err) => {
         swal("Erro", "Erro ao buscar código", "error")
     })
 }
+
+$('.btn-action').click(() => {
+    addClassRequired()
+})
+
+function addClassRequired() {
+    let isInalid = false
+    $('.tab-fiscal').trigger('click')
+    let campos = ""
+    $("body #form-produto").find('input, select').each(function () {
+        if ($(this).prop('required')) {
+
+            if ($(this).val() == "" || $(this).val() == null) {
+                $(this).addClass('is-invalid')
+                isInalid = true
+                if($(this).prev()[0].textContent){
+                    campos += $(this).prev()[0].textContent + ", "
+                }
+            } else {
+                $(this).removeClass('is-invalid')
+            }
+        } else {
+            $(this).removeClass('is-invalid')
+        }
+    })
+
+    setTimeout(() => {
+        if(isInalid){
+            audioError()
+            campos = campos.substring(0, campos.length-2)
+            toastr.error('Campos obrigatórios não preenchidos: ' + campos);
+        }else{
+            $body.addClass("loading");
+        }
+    }, 50)
+}
+
+$("#inp-sub_categoria_id").select2({
+    minimumInputLength: 2,
+    language: "pt-BR",
+    placeholder: "Digite para buscar a subcategoria",
+    width: "100%",
+    ajax: {
+        cache: true,
+        url: path_url + "api/subcategorias",
+        dataType: "json",
+        data: function (params) {
+            console.clear();
+            var query = {
+                pesquisa: params.term,
+                categoria_id: $('#categoria_id').val()
+            };
+            return query;
+        },
+        processResults: function (response) {
+            var results = [];
+
+            $.each(response, function (i, v) {
+
+                var o = {};
+                o.id = v.id;
+                o.text = v.nome
+                results.push(o);
+            });
+            return {
+                results: results,
+            };
+        },
+    },
+});
 
 $(document).on("change", "#inp-padrao_id", function() {
     let padrao = $(this).val()
@@ -35,26 +163,36 @@ $(document).on("change", "#inp-padrao_id", function() {
         })
         .done((result) => {
 
-            var newOption = new Option(result._ncm.descricao, result._ncm.codigo, 1, false);
-            $('#inp-ncm').append(newOption);
+            if(EDIT == 0){
+                if(result._ncm){
+                    var newOption = new Option(result._ncm.descricao, result._ncm.codigo, 1, false);
+                    $('#inp-ncm').append(newOption);
+                }
 
-            // $('#inp-ncm').val(result.ncm)
-            $('#inp-cest').val(result.cest)
-            $('#inp-perc_icms').val(result.perc_icms)
-            $('#inp-perc_pis').val(result.perc_pis)
-            $('#inp-perc_cofins').val(result.perc_cofins)
-            $('#inp-perc_ipi').val(result.perc_ipi)
-            $('#inp-cst_csosn').val(result.cst_csosn).change()
-            $('#inp-cst_pis').val(result.cst_pis).change()
-            $('#inp-cst_cofins').val(result.cst_cofins).change()
-            $('#inp-cst_ipi').val(result.cst_ipi).change()
-            $('#inp-cEnq').val(result.cEnq).change()
-            $('#inp-cfop_estadual').val(result.cfop_estadual)
-            $('#inp-cfop_outro_estado').val(result.cfop_outro_estado)
-            $('#inp-codigo_beneficio_fiscal').val(result.codigo_beneficio_fiscal)
+                // $('#inp-ncm').val(result.ncm)
+                $('#inp-cest').val(result.cest)
+                $('#inp-perc_icms').val(result.perc_icms)
+                $('#inp-perc_pis').val(result.perc_pis)
+                $('#inp-perc_cofins').val(result.perc_cofins)
+                $('#inp-perc_ipi').val(result.perc_ipi)
+                $('#inp-cst_csosn').val(result.cst_csosn).change()
+                $('#inp-cst_pis').val(result.cst_pis).change()
+                $('#inp-cst_cofins').val(result.cst_cofins).change()
+                $('#inp-cst_ipi').val(result.cst_ipi).change()
+                $('#inp-cEnq').val(result.cEnq).change()
+                $('#inp-cfop_estadual').val(result.cfop_estadual)
+                $('#inp-cfop_outro_estado').val(result.cfop_outro_estado)
+                $('#inp-codigo_beneficio_fiscal').val(result.codigo_beneficio_fiscal)
 
-            $('#inp-cfop_entrada_estadual').val(result.cfop_entrada_estadual)
-            $('#inp-cfop_entrada_outro_estado').val(result.cfop_entrada_outro_estado)
+                $('#inp-cfop_entrada_estadual').val(result.cfop_entrada_estadual)
+                $('#inp-cfop_entrada_outro_estado').val(result.cfop_entrada_outro_estado)
+                $('#inp-modBCST').val(result.modBCST).change()
+                $('#inp-pICMSST').val(result.pICMSST)
+                $('#inp-pMVAST').val(result.pMVAST)
+                $('#inp-redBCST').val(result.redBCST)
+            }else{
+                EDIT = 0
+            }
         })
         .fail((err) => {
             console.log(err)
@@ -88,6 +226,21 @@ $('#inp-cardapio').change(() => {
     changeCardapio()
 })
 
+function changeNuvemShop() {
+    let check = $('#inp-nuvemshop').is(':checked')
+    if (check) {
+        $('.div-nuvemshop').removeClass('d-none')
+        $('.inp-nuvemshop').attr('required', 1)
+    } else {
+        $('.div-nuvemshop').addClass('d-none')
+        $('.inp-nuvemshop').removeAttr('required')
+    }
+}
+
+$('#inp-nuvemshop').change(() => {
+    changeNuvemShop()
+})
+
 function changeDelivery() {
     let check = $('#inp-delivery').is(':checked')
     if (check) {
@@ -114,6 +267,21 @@ $('#inp-ecommerce').change(() => {
     changeEcommerce()
 })
 
+function changeWoocommerce() {
+    let check = $('#inp-woocommerce').is(':checked')
+    if (check) {
+        $('.div-woocommerce').removeClass('d-none')
+        $('.inp-woocommerce').attr('required', 1)
+    } else {
+        $('.div-woocommerce').addClass('d-none')
+        $('.inp-woocommerce').removeAttr('required')
+    }
+}
+
+$('#inp-woocommerce').change(() => {
+    changeWoocommerce()
+})
+
 function changeMeradoLivre() {
     let check = $('#inp-mercadolivre').is(':checked')
     if (check) {
@@ -132,7 +300,9 @@ function getTiposPublicacao(){
         empresa_id: $('#empresa_id').val()
     })
     .done((res) => {
-
+        if(res.code == 'unauthorized'){
+            return;
+        }
         $('#inp-mercado_livre_tipo_publicacao').html('')
         var newOption = new Option('Selecione', '', false, false);
         $('#inp-mercado_livre_tipo_publicacao').append(newOption);
@@ -177,6 +347,19 @@ $('#inp-variavel').change(() => {
     changeVariavel()
 })
 
+function changeCombo() {
+    let variavel = $('#inp-combo').val()
+    if (variavel == 1) {
+        $('.div-combo').removeClass('d-none')
+    } else {
+        $('.div-combo').addClass('d-none')
+    }
+}
+
+$('#inp-combo').change(() => {
+    changeCombo()
+})
+
 // variacoes
 
 $(document).on("change", "#inp-variacao_modelo_id", function () {
@@ -188,6 +371,126 @@ $(document).on("change", "#inp-variacao_modelo_id", function () {
         })
         .done((res) => {
             $('.table-variacao tbody').html(res)
+            $('#inp-sub_variacao_modelo_id').val('').change()
+        })
+        .fail((err) => {
+            console.log(err)
+            swal("Erro", "Algo deu errado", "error")
+        })
+    }
+})
+$(document).on("change", "#inp-sub_variacao_modelo_id", function () {
+
+    let sub_variacao_modelo_id = $(this).val()
+    let variacao_modelo_id = $('#inp-variacao_modelo_id').val()
+    if(!sub_variacao_modelo_id) return;
+    if(variacao_modelo_id){
+        $.get(path_url + "api/variacoes/modelo-subvariacoes", {
+            variacao_modelo_id: variacao_modelo_id,
+            sub_variacao_modelo_id: sub_variacao_modelo_id
+        })
+        .done((res) => {
+            $('.table-variacao tbody').html(res)
+        })
+        .fail((err) => {
+            console.log(err)
+            swal("Erro", "Algo deu errado", "error")
+        })
+    }else{
+        swal("Erro", "Selecione a variação principal primeiro!", "error")
+    }
+})
+
+$(document).on("blur", "#inp-valor_compra", function () {
+    let valorCompra = convertMoedaToFloat($(this).val())
+    $percLucro = $(this).closest('.col-produto').next().find('input');
+    $valorUnitario = $(this).closest('.col-produto').next().next().find('input');
+    
+    if($percLucro.val()){
+        let valor = valorCompra + ((valorCompra*$percLucro.val())/100)
+        $valorUnitario.val(convertFloatToMoeda(valor))
+    }
+})
+
+$(document).on("blur", "#inp-percentual_lucro", function () {
+    let percLucro = $(this).val()
+    $valorCompra = $(this).closest('.col-produto').prev().find('input');
+    $valorUnitario = $(this).closest('.col-produto').next().find('input');
+    if($valorCompra.val()){
+        let vlCompra = convertMoedaToFloat($valorCompra.val())
+
+        let valor = vlCompra + ((vlCompra*percLucro)/100)
+        $valorUnitario.val(convertFloatToMoeda(valor))
+    }
+})
+
+$(document).on("blur", "#inp-valor_unitario", function () {
+    let valorUnitario = convertMoedaToFloat($(this).val())
+    $percLucro = $(this).closest('.col-produto').prev().find('input');
+
+    $valorCompra = $(this).closest('.col-produto').prev().prev().find('input');
+    if($valorCompra.val() && valorUnitario){
+        let vlCompra = convertMoedaToFloat($valorCompra.val())
+        let dif = (valorUnitario - vlCompra)/vlCompra*100;
+        $percLucro.val(dif.toFixed(2))
+    }else{
+        $percLucro.val('0')
+    }
+})
+
+$(document).on("blur", ".valor-compra-combo", function () {
+    let valorCompra = convertMoedaToFloat($(this).val())
+    $subtotal = $(this).closest('td').next().find('input');
+    $qtd = $(this).closest('td').prev().find('input');
+    let qtd = $qtd.val()
+
+    $subtotal.val(convertFloatToMoeda(valorCompra * qtd))
+    calcValorCombo()
+})
+
+$(document).on("blur", ".qtd-combo", function () {
+    let qtd = $(this).val()
+    $subtotal = $(this).closest('td').next().next().find('input');
+    $valorCompra = $(this).closest('td').next().find('input');
+    let valorCompra = convertMoedaToFloat($valorCompra.val())
+
+    $subtotal.val(convertFloatToMoeda(valorCompra * qtd))
+    calcValorCombo()
+})
+
+$(document).on("blur", "#inp-margem_combo", function () {
+    calcValorCombo()
+})
+
+function calcValorCombo(){
+    let totalCombo = 0
+    let margem = $('#inp-margem_combo').val()
+    $(".subtotal-combo").each(function () {
+        totalCombo += convertMoedaToFloat($(this).val())
+    })
+    $('#inp-valor_compra').val(convertFloatToMoeda(totalCombo))
+    totalCombo += (totalCombo*(parseFloat(margem)/100))
+    setTimeout(() => {
+        $('#inp-valor_combo').val(convertFloatToMoeda(totalCombo))
+        $('#inp-valor_unitario').val(convertFloatToMoeda(totalCombo))
+    }, 100)
+
+}
+$(document).on("blur", "#inp-valor_unitario", function () {
+    $('#inp-nuvem_shop_valor').val($(this).val())
+})
+$(document).on("change", "#inp-produto_combo_id", function () {
+    let produto_id = $(this).val()
+    if(produto_id){
+        $.get(path_url + "api/combos/modelo", {
+            produto_id: produto_id
+        })
+        .done((res) => {
+            $("#inp-produto_combo_id").val('').change()
+            $('.table-combo tbody').append(res)
+            setTimeout(() => {
+                calcValorCombo()
+            }, 10)
         })
         .fail((err) => {
             console.log(err)
@@ -217,6 +520,22 @@ $(document).delegate(".btn-remove-tr-variacao", "click", function (e) {
             } else {
                 swal("Atenção", "Você deve ter ao menos um item na lista", "warning");
             }
+        }
+    });
+});
+
+$(document).delegate(".btn-remove-tr-combo", "click", function (e) {
+    e.preventDefault();
+    swal({
+        title: "Você esta certo?",
+        text: "Deseja remover esse item mesmo?",
+        icon: "warning",
+        buttons: true
+    }).then(willDelete => {
+        if (willDelete) {
+
+            $(this).closest("tr").remove();
+            calcValorCombo()
         }
     });
 });

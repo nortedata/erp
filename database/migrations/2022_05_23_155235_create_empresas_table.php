@@ -60,7 +60,7 @@ return new class extends Migration
 
             $table->integer('ambiente');
 
-            $table->enum('tributacao', ['MEI', 'Simples Nacional', 'Regime Normal']);
+            $table->enum('tributacao', ['MEI', 'Simples Nacional', 'Regime Normal', 'Simples Nacional, excesso sublimite de receita bruta']);
             $table->string('token', 50)->nullable();
             $table->string('token_nfse', 200)->nullable();
             $table->string('logo', 100)->default('');
@@ -68,9 +68,14 @@ return new class extends Migration
             $table->boolean('tipo_contador')->default(0);
             $table->integer('limite_cadastro_empresas')->default(0);
             $table->decimal('percentual_comissao', 10, 2)->default(0);
+            $table->decimal('perc_ap_cred', 10, 2)->default(0);
             $table->integer('empresa_selecionada')->nullable();
             $table->boolean('exclusao_icms_pis_cofins')->default(0);
             
+            $table->text('observacao_padrao_nfe');
+            $table->text('observacao_padrao_nfce');
+            $table->text('mensagem_aproveitamento_credito');
+
             // alter table empresas add column natureza_id_pdv integer default null;
             // alter table empresas add column numero_ultima_mdfe_producao integer default null;
             // alter table empresas add column numero_ultima_mdfe_homologacao integer default null;
@@ -86,6 +91,14 @@ return new class extends Migration
             // alter table empresas add column numero_ultima_nfse integer default null;
             // alter table empresas add column numero_serie_nfse integer default null;
             // alter table empresas add column aut_xml varchar(18) default null;
+            // alter table empresas modify column tributacao enum('MEI', 'Simples Nacional', 'Regime Normal', 'Simples Nacional, excesso sublimite de receita bruta');
+
+            // alter table empresas add column observacao_padrao_nfe text;
+            // alter table empresas add column observacao_padrao_nfce text;
+            // alter table empresas add column mensagem_aproveitamento_credito text;
+            
+            // alter table empresas add column perc_ap_cred decimal(10,2) default 0;
+
 
             $table->timestamps();
         });

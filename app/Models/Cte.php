@@ -18,7 +18,7 @@ class Cte extends Model
         'sequencia_cce', 'numero', 'chave', 'estado', 'retira', 'detalhes_retira',
         'modal', 'veiculo_id', 'tpDoc', 'descOutros', 'nDoc', 'vDocFisc', 'empresa_id',
         'globalizado', 'cst', 'perc_icms', 'recebedor_id', 'expedidor_id', 'perc_red_bc', 'numero_serie', 'numero', 
-        'status_pagamento', 'ambiente', 'cfop', 'api'
+        'status_pagamento', 'ambiente', 'cfop', 'api', 'local_id'
     ];
 
     public function getTomador()
@@ -67,6 +67,11 @@ class Cte extends Model
     public function empresa()
     {
         return $this->belongsTo(Empresa::class, 'empresa_id');
+    }
+
+    public function localizacao()
+    {
+        return $this->belongsTo(Localizacao::class, 'local_id');
     }
     
     public function componentes()

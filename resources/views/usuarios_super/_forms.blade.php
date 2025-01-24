@@ -32,6 +32,16 @@
             <a class="input-group-text"><i class='ri-eye-line'></i></a>
         </div>
     </div>
+
+    @if(sizeof($roles) > 0)
+    <div class="col-md-3">
+        {!!Form::select('role_id', 'Controle de acesso', ['' => 'Selecione'] + $roles->pluck('description', 'id')->all())
+        ->attrs(['class' => 'select2'])
+        ->value(isset($item) && $item->roles ? $item->roles->first()->id : null)
+        ->required()
+        !!}
+    </div>
+    @endif
     <hr>
   
     <hr class="mt-4">

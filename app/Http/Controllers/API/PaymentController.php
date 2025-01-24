@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Pagamento;
 use App\Models\PlanoEmpresa;
+use App\Models\FinanceiroPlano;
 use App\Models\ConfiguracaoSuper;
 
 class PaymentController extends Controller
@@ -21,7 +22,7 @@ class PaymentController extends Controller
         // $payStatus->status = "approved";
         if($payStatus->status != $item->status){
             $this->setarLicenca($item);
-        
+
             $item->status = $payStatus->status;
             $item->save();
         }
@@ -34,12 +35,21 @@ class PaymentController extends Controller
         $exp = date('Y-m-d', strtotime("+$plano->intervalo_dias days",strtotime( 
           date('Y-m-d'))));
 
-        PlanoEmpresa::create([
+        $planoEmpresa = PlanoEmpresa::create([
             'empresa_id' => $empresa->id,
             'plano_id' => $plano->id,
             'data_expiracao' => $exp,
             'valor' => $plano->valor,
             'forma_pagamento' => 'pix'
+        ]);
+
+        FinanceiroPlano::create([
+            'empresa_id' => $empresa->id,
+            'plano_id' => $plano->id,
+            'valor' => $plano->valor,
+            'tipo_pagamento' => 'PIX',
+            'status_pagamento' => 'recebido',
+            'plano_empresa_id' => $planoEmpresa->id
         ]);
     }
 }

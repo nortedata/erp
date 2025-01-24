@@ -147,11 +147,13 @@ class ClienteController extends Controller
 
         \MercadoPago\SDK::setAccessToken($config->mercadopago_access_token);
         foreach($cliente->pedidosEcommerce as $p){
-            $payStatus = \MercadoPago\Payment::find_by_id($p->transacao_id);
-            if($payStatus){
-                $p->status_pagamento = $payStatus->status;
-                $p->save();
-            }   
+            if($p->transacao_id && $p->status_pagamento != 'approved'){
+                $payStatus = \MercadoPago\Payment::find_by_id($p->transacao_id);
+                if($payStatus){
+                    $p->status_pagamento = $payStatus->status;
+                    $p->save();
+                }
+            }
         }
 
         return view('loja.minha_conta', compact('cliente', 'config', 'categorias', 'carrinho'));

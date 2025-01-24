@@ -99,6 +99,16 @@
 			<div class="card">
 				<div class="card-body">
 					<div class="col-12">
+
+						<a href="{{ route('pedidos-delivery.enviar-wpp', [$item->id]) }}" class="btn btn-sm btn-success">
+							<i class="ri-whatsapp-line"></i> Enviar mensagem
+						</a>
+
+						@if($item->agendamento)
+						<a href="{{ route('agendamentos.show', [$item->agendamento->id]) }}" class="btn btn-sm btn-dark">
+							<i class="ri-calendar-line"></i> Ver agendamento
+						</a>
+						@endif
 						<div style="text-align: right; ">
 							<a href="{{ route('pedidos-delivery.index') }}" class="btn btn-danger btn-sm px-3">
 								<i class="ri-arrow-left-double-fill"></i>Voltar
@@ -106,7 +116,7 @@
 						</div>
 						<div class="row">
 							<div class="col-12">
-								{!! $item->_estado() !!}</h5>
+								{!! $item->_estado() !!}
 							</div>
 							@if($item->finalizado == 0)
 							<form method="post" action="{{ route('pedidos-delivery.update', [$item->id]) }}" class="row">
@@ -147,11 +157,12 @@
 						Imprimir
 					</a>
 					
+
 					<div class="table-responsive col-12" style="min-height: 300px;">
 						<table class="table">
 							<thead class="table-light">
 								<tr>
-									<th>Produto</th>
+									<th>Produto/Serviço</th>
 									<th>Quantidade</th>
 									<th>Valor unitário</th>
 									<th>Subtotal</th>
@@ -161,8 +172,9 @@
 							</thead>
 							<tbody>
 								@foreach($item->itens as $i)
+
 								<tr class="bg-{{ $i->estado }}">
-									<td>{{ $i->produto->nome }}</td>
+									<td>{{ $i->produto ? $i->produto->nome : $i->servico->nome }}</td>
 									<td>{{ __moeda($i->quantidade) }}</td>
 									<td>{{ __moeda($i->valor_unitario) }}</td>
 									<td>{{ __moeda($i->sub_total) }}</td>
@@ -218,6 +230,7 @@
 									</td>
 								</tr>
 								@endif
+
 								@endforeach
 							</tbody>
 							<tfoot>
@@ -230,10 +243,11 @@
 							</tfoot>
 						</table>
 						
-					</div>	
+					</div>
+
 
 					<div class="row">
-						<h5>estados dos itens</h5>
+						<h5>estado dos itens</h5>
 						<div class="col-lg-3 col-6">
 							<h6 class="text-novo">
 								<i class="ri-flag-2-fill"></i> novo
@@ -269,6 +283,9 @@
 					</h5>
 					<h5>Valor de entrega: <strong class="text-danger">R$ {{ __moeda($item->valor_entrega) }}</strong></h5>
 					<h5>Tipo de pagamento: <strong class="text-danger">{{ $item->tipo_pagamento }}</strong></h5>
+					@if($item->observacao)
+					<h5>Observação: <strong class="text-danger">{{ $item->observacao }}</strong></h5>
+					@endif
 					@else
 					<h5 class="text-danger"><strong>Retirada no balcão</strong>
 						<button data-bs-toggle="modal" data-bs-target="#modal-enderecos" class="btn btn-sm">
@@ -285,6 +302,8 @@
 					<h5 class="text-primary">Motoboy: <strong>{{ $item->motoboy->nome }} - R$ {{ __moeda($item->comissao_motoboy) }}</strong></h5>
 					@endif
 					@endif
+
+					@if(!$item->agendamento)
 					@if($item->estado == 'novo' || $item->estado == 'aprovado')
 					<div class="col-12">
 						<button data-bs-toggle="modal" data-bs-target="#modal-finalizar" class="btn btn-lg btn-primary pull-right @if($item->finalizado) disabled @endif">
@@ -292,6 +311,8 @@
 							Finalizar <strong style="font-size: 25px; margin-left: 15px">R$ {{ __moeda($item->valor_total) }}</strong>
 						</button>
 					</div>
+					@endif
+
 					@endif
 				</div>
 			</div>
@@ -371,7 +392,7 @@
 				</div>
 			</div>
 			<div class="modal-footer">
-				<button id="btn-save-modal" type="button" class="btn btn-danger" data-bs-dismiss="modal">Fechar</button>
+				<button id="" type="button" class="btn btn-danger" data-bs-dismiss="modal">Fechar</button>
 			</div>
 		</div>
 	</div>
@@ -418,7 +439,7 @@
 					</div>
 				</div>
 				<div class="modal-footer">
-					<button id="btn-save-modal" type="submit" class="btn btn-success" data-bs-dismiss="modal">Salvar</button>
+					<button type="submit" class="btn btn-success" data-bs-dismiss="modal">Salvar</button>
 				</div>
 			</form>
 		</div>

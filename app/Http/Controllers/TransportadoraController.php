@@ -8,18 +8,23 @@ use Illuminate\Http\Request;
 
 class TransportadoraController extends Controller
 {
+
+    public function __construct()
+    {
+        $this->middleware('permission:transportadoras_create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:transportadoras_edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:transportadoras_view', ['only' => ['show', 'index']]);
+        $this->middleware('permission:transportadoras_delete', ['only' => ['destroy']]);
+    }
+
     public function index(Request $request)
     {
         $data = Transportadora::where('empresa_id', request()->empresa_id)
         ->when(!empty($request->razao_social), function ($q) use ($request) {
-            return  $q->where(function ($quer) use ($request) {
-                return $quer->where('razao_social', 'LIKE', "%$request->razao_social%");
-            });
+            return $q->where('razao_social', 'LIKE', "%$request->razao_social%");
         })
         ->when(!empty($request->cpf_cnpj), function ($q) use ($request) {
-            return  $q->where(function ($quer) use ($request) {
-                return $quer->where('cpf_cnpj', 'LIKE', "%$request->cpf_cnpj%");
-            });
+            return $q->where('cpf_cnpj', 'LIKE', "%$request->cpf_cnpj%");
         })
         ->paginate(env("PAGINACAO"));
         return view('transportadoras.index', compact('data'));
@@ -41,8 +46,10 @@ class TransportadoraController extends Controller
         $this->__validate($request);
         try {
             Transportadora::create($request->all());
+            __createLog($request->empresa_id, 'Transportadora', 'cadastrar', $request->razao_social);
             session()->flash("flash_success", "Transportadora cadastrada!");
         } catch (\Exception $e) {
+            __createLog($request->empresa_id, 'Transportadora', 'erro', $e->getMessage());
             session()->flash("flash_error", "Algo deu errado: " . $e->getMessage());
         }
         return redirect()->route('transportadoras.index');
@@ -53,8 +60,10 @@ class TransportadoraController extends Controller
         $item = Transportadora::findOrFail($id);
         try {
             $item->fill($request->all())->save();
+            __createLog($request->empresa_id, 'Transportadora', 'editar', $request->razao_social);
             session()->flash("flash_success", "Transportadora atualizada!");
         } catch (\Exception $e) {
+            __createLog($request->empresa_id, 'Transportadora', 'erro', $e->getMessage());
             session()->flash("flash_error", "Algo deu errado: " . $e->getMessage());
         }
         return redirect()->route('transportadoras.index');
@@ -98,9 +107,12 @@ class TransportadoraController extends Controller
     {
         $item = Transportadora::findOrFail($id);
         try{
+            $descricaoLog = $item->razao_social;
             $item->delete();
+            __createLog(request()->empresa_id, 'Transportadora', 'excluir', $descricaoLog);
             session()->flash("flash_success", "Transportadora removida!");
         }catch(Exception $e){
+            __createLog(request()->empresa_id, 'Transportadora', 'erro', $e->getMessage());
             session()->flash("flash_error", "Algo deu errado: " . $e->getMessage());
         }
         return redirect()->route('transportadoras.index');
@@ -112,9 +124,12 @@ class TransportadoraController extends Controller
         for($i=0; $i<sizeof($request->item_delete); $i++){
             $item = Transportadora::findOrFail($request->item_delete[$i]);
             try {
+                $descricaoLog = $item->razao_social;
                 $item->delete();
                 $removidos++;
+                __createLog(request()->empresa_id, 'Transportadora', 'excluir', $descricaoLog);
             } catch (\Exception $e) {
+                __createLog(request()->empresa_id, 'Transportadora', 'erro', $e->getMessage());
                 session()->flash("flash_error", 'Algo deu errado: '. $e->getMessage());
                 return redirect()->route('transportadoras.index');
             }

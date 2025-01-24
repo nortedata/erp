@@ -6,6 +6,26 @@
     <div class="row">
         <div class="card">
             <div class="card-body">
+
+                {!!Form::open()->fill(request()->all())
+                ->get()
+                !!}
+                <div class="row mt-3">
+
+                    <div class="col-md-3">
+                        {!!Form::select('funcionario_id', 'Atendente', ['' => 'Todos'] + $funcionarios->pluck('nome', 'id')->all())
+                        ->id('funcionario')
+                        ->attrs(['class' => 'form-select'])
+                        !!}
+                    </div>
+                    <div class="col-md-3 text-left">
+                        <br>
+                        <button class="btn btn-primary" type="submit"> <i class="ri-search-line"></i>Pesquisar</button>
+                        <a id="clear-filter" class="btn btn-danger" href="{{ route('agendamentos.index') }}"><i class="ri-eraser-fill"></i>Limpar</a>
+                    </div>
+                </div>
+                {!!Form::close()!!}
+
                 <div class="row">
                     <div class="col-12">
                         <div class="row">
@@ -35,7 +55,7 @@
     </div>
 </div>
 
-
+<input type="hidden" id="create_permission" value="@can('agendamento_create') 1 @else 0 @endcan">
 
 @include('modals._agendamento')
 

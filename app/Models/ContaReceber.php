@@ -11,12 +11,34 @@ class ContaReceber extends Model
 
     protected $fillable = [
         'empresa_id', 'nfe_id', 'nfce_id', 'cliente_id', 'descricao', 'valor_integral', 'valor_recebido', 'data_vencimento',
-        'data_recebimento', 'status', 'observacao', 'tipo_pagamento', 'caixa_id'
+        'data_recebimento', 'status', 'observacao', 'tipo_pagamento', 'caixa_id', 'local_id', 'arquivo'
     ];
 
+    protected $appends = [ 'info' ];
+
+    public function getInfoAttribute()
+    {
+        return "Cliente: " . $this->cliente->info . " - valor: R$ " . __moeda($this->valor_integral) . ", vencimento: " . __data_pt($this->data_vencimento, 0);
+    }
+
+    public function localizacao()
+    {
+        return $this->belongsTo(Localizacao::class, 'local_id');
+    }
+
+    public function nfce()
+    {
+        return $this->belongsTo(Nfce::class, 'nfce_id');
+    }
+    
     public function cliente()
     {
         return $this->belongsTo(Cliente::class, 'cliente_id');
+    }
+
+    public function boleto()
+    {
+        return $this->hasOne(Boleto::class, 'conta_receber_id');
     }
 
     public static function tiposPagamento()

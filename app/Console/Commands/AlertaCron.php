@@ -11,6 +11,9 @@ use App\Models\ItemNfe;
 use App\Models\Produto;
 use App\Models\Estoque;
 use App\Models\ConfigGeral;
+use App\Models\Agendamento;
+use App\Models\ConfiguracaoAgendamento;
+use App\Utils\WhatsAppUtil;
 
 class AlertaCron extends Command
 {
@@ -31,6 +34,14 @@ class AlertaCron extends Command
     /**
      * Execute the console command.
      */
+
+    protected $whatsAppUtil;
+
+    public function __construct(WhatsAppUtil $whatsAppUtil){
+        parent::__construct();
+        $this->whatsAppUtil = $whatsAppUtil;
+    }
+
     public function handle()
     {
         $empresas = Empresa::where('status', 1)->get();
@@ -96,7 +107,82 @@ class AlertaCron extends Command
                 }
             }
 
+            $configuracaoAgendamento = ConfiguracaoAgendamento::where('empresa_id', $empresa->id)
+            ->first();
+
+            if($configuracaoAgendamento != null && $configuracaoAgendamento->token_whatsapp){
+                $this->criaAlertaAgendamento($configuracaoAgendamento);
+            }
         }
+    }
+
+    private function criaAlertaAgendamento($config){
+        $agendamentos = $this->getAgendamentosHoje($config->empresa_id);
+
+        if($config->msg_wpp_manha && $config->msg_wpp_manha_horario){
+            $dataAtual = date('Y-m-d H:i');
+            $dataEnvio = date('Y-m-d ') . $config->msg_wpp_manha_horario;
+            if(strtotime($dataAtual) >= strtotime($dataEnvio)){
+                foreach($agendamentos as $a){
+
+                    if($a->cliente->telefone && $a->msg_wpp_manha_horario == 0){
+                        $msg = $this->criaMensagemAgendamento($a, $config->mensagem_manha);
+                        if($msg != ""){
+                            $telefone = "55".preg_replace('/[^0-9]/', '', $a->cliente->telefone);
+                            // dd($telefone);
+                            $retorno = $this->whatsAppUtil->sendMessageWithToken($telefone, $msg, $config->empresa_id, $config->token_whatsapp);
+                            $retorno = json_decode($retorno);
+                            if($retorno->success){
+                                $a->msg_wpp_manha_horario = 1;
+                                $a->save();
+                            }else{
+                                dd($retorno);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if($config->msg_wpp_alerta){
+            $dataAtual = date('Y-m-d H:i');
+            foreach($agendamentos as $a){
+                $dataEnvio = date('Y-m-d H:i', strtotime($a->data . " " . $a->inicio . "- $config->msg_wpp_alerta_minutos_antecedencia minutes"));
+
+                if(strtotime($dataAtual) >= strtotime($dataEnvio)){
+                    foreach($agendamentos as $a){
+                        if($a->cliente->telefone && $a->msg_wpp_alerta_horario == 0){
+
+                            $msg = $this->criaMensagemAgendamento($a, $config->mensagem_alerta);
+                            if($msg != ""){
+                                $telefone = "55".preg_replace('/[^0-9]/', '', $a->cliente->telefone);
+                                $retorno = $this->whatsAppUtil->sendMessageWithToken($telefone, $msg, $config->empresa_id, $config->token_whatsapp);
+                                $retorno = json_decode($retorno);
+                                if($retorno->success){
+                                    $a->msg_wpp_alerta_horario = 1;
+                                    $a->save();
+                                }else{
+                                    dd($retorno);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+        }
+    }
+
+    private function criaMensagemAgendamento($agendamento, $msg){
+        if(strlen(trim($msg)) == 0) return "";
+        $msg = str_replace("%nome%", $agendamento->cliente->razao_social, $msg);
+        $msg = str_replace("%data%", __data_pt($agendamento->data, 0), $msg);
+        $msg = str_replace("%hora%", substr($agendamento->inicio, 0, 5), $msg);
+        return $msg;
+    }
+
+    private function getAgendamentosHoje($empresa_id){
+        return Agendamento::where('empresa_id', $empresa_id)
+        ->whereDate('data', date('Y-m-d'))->get();
     }
 
     private function criaNotificacao($tabela, $referencia, $empresa, $titulo, $descricaoCurta, $objeto, $prioridade = 'baixa'){

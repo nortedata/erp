@@ -14,6 +14,9 @@ use App\Models\Nfce;
 use App\Models\Empresa;
 use App\Models\ConfiguracaoSuper;
 use App\Models\Ibpt;
+use App\Models\Contigencia;
+use NFePHP\Common\Soap\SoapCurl;
+use NFePHP\NFe\Factories\Contingency;
 
 class NFCeService
 {
@@ -39,6 +42,26 @@ class NFCeService
 				$this->timeout = $config->timeout_nfce;
 			}
 		}
+
+		$soapCurl = new SoapCurl();
+		$soapCurl->httpVersion('1.1');
+		$this->tools->loadSoapClass($soapCurl);
+
+		$contigencia = $this->getContigencia();
+
+		if($contigencia != null){
+			$contingency = new Contingency($contigencia->status_retorno);
+			$this->tools->contingency = $contingency;
+		}
+	}
+
+	private function getContigencia(){
+		$active = Contigencia::
+		where('empresa_id', $this->empresa_id)
+		->where('status', 1)
+		->where('documento', 'NFCe')
+		->first();
+		return $active;
 	}
 
 	public function gerarXml($item)
@@ -52,6 +75,8 @@ class NFCeService
 
 		$infNFe = $nfe->taginfNFe($stdInNFe);
 		$emitente = $item->empresa;
+		$emitente = __objetoParaEmissao($emitente, $item->local_id);
+
 		$cliente = $item->cliente;
 
 		$stdIde = new \stdClass();
@@ -86,6 +111,9 @@ class NFCeService
 		$stdEmit->xNome = $emitente->nome;
 		$stdEmit->xFant = $emitente->nome_fantasia;
 		$stdEmit->CRT = $emitente->tributacao == 'Regime Normal' ? 3 : 1;
+		if($emitente->tributacao == 'Simples Nacional, excesso sublimite de receita bruta'){
+			$stdEmit->CRT = 2;	
+		}
 		$stdEmit->IE = preg_replace('/[^0-9]/', '', $emitente->ie);
 
 		$cpf_cnpj = preg_replace('/[^0-9]/', '', $emitente->cpf_cnpj);
@@ -172,19 +200,24 @@ class NFCeService
 		$somaIpi = 0;
 		$totalItens = sizeof($item->itens);
 		$somaDesconto = 0;
+		$somaAcrescimo = 0;
 
 		$obsIbpt = "";
 		$somaFederal = 0;
 		$somaEstadual = 0;
 		$somaMunicipal = 0;
+		$somaVICMSST = 0;
 
 		foreach ($item->itens as $itemCont => $i) {
 			$itemCont++;
 
 			$stdProd = new \stdClass(); // tag produto inicio
 			$stdProd->item = $itemCont;
-			$stdProd->cEAN = $i->produto->codigo_barras ? $i->produto->codigo_barras : 'SEM GTIN';
-			$stdProd->cEANTrib = $i->produto->codigo_barras ? $i->produto->codigo_barras : 'SEM GTIN';
+
+			$validaEan = $this->validate_EAN13Barcode($i->produto->codigo_barras);
+			$stdProd->cEAN = $validaEan ? $i->produto->codigo_barras : 'SEM GTIN';
+			$stdProd->cEANTrib = $validaEan ? $i->produto->codigo_barras : 'SEM GTIN';
+
 			$stdProd->cProd = $i->produto->id;
 			$stdProd->xProd = $i->descricao();
 			$stdProd->NCM = preg_replace('/[^0-9]/', '', $i->ncm);
@@ -196,29 +229,91 @@ class NFCeService
 			$stdProd->vUnCom = $this->format($i->valor_unitario);
 			$stdProd->vProd = $this->format(($i->quantidade * $i->valor_unitario));
 			$stdProd->uTrib = $i->produto->unidade;
-			$stdProd->qTrib = $i->quantidade;
+			// $stdProd->qTrib = $i->quantidade;
+			if($i->produto->quantidade_tributavel == 0){
+				$stdProd->qTrib = $i->quantidade;
+			}else{
+				$stdProd->qTrib = $i->produto->quantidade_tributavel * $i->quantidade;
+			}
 			$stdProd->vUnTrib = $this->format($i->valor_unitario);
 			$stdProd->indTot = 1;
 
-			if ($item->desconto > 0) {
-				if ($itemCont < sizeof($item->itens)) {
+			// if ($item->desconto > 0) {
+			// 	if ($itemCont < sizeof($item->itens)) {
+			// 		$totalVenda = $item->total + $item->desconto;
+			// 		$media = (((($stdProd->vProd - $totalVenda) / $totalVenda)) * 100);
+			// 		$media = 100 - ($media * -1);
+			// 		if ($item->desconto > 0.1) {
+			// 			$tempDesc = ($item->desconto * $media) / 100;
+			// 		} else {
+			// 			$tempDesc = $item->desconto;
+			// 		}
+			// 		if ($somaDesconto >= $item->desconto) {
+			// 			$tempDesc = 0;
+			// 		}
+			// 		$somaDesconto += $tempDesc;
+			// 		if ($tempDesc > 0.01)
+			// 			$stdProd->vDesc = $this->format($tempDesc);
+			// 	} else {
+			// 		if ($item->desconto - $somaDesconto >= 0.01)
+			// 			$stdProd->vDesc = $this->format($item->desconto - $somaDesconto);
+			// 	}
+			// }
+
+			if($item->desconto > 0.01 && $somaDesconto < $item->desconto){
+				if($itemCont < sizeof($item->itens)){
 					$totalVenda = $item->total + $item->desconto;
-					$media = (((($stdProd->vProd - $totalVenda) / $totalVenda)) * 100);
+
+					$media = (((($stdProd->vProd - $totalVenda)/$totalVenda))*100);
 					$media = 100 - ($media * -1);
-					if ($item->desconto > 0.1) {
-						$tempDesc = ($item->desconto * $media) / 100;
-					} else {
-						$tempDesc = $item->desconto;
-					}
-					if ($somaDesconto >= $item->desconto) {
-						$tempDesc = 0;
-					}
-					$somaDesconto += $tempDesc;
-					if ($tempDesc > 0.01)
+
+					$tempDesc = ($item->desconto*$media)/100;
+					$tempDesc -= 0.01;
+					if($tempDesc > 0.01){
+						$somaDesconto += $this->format($tempDesc);
 						$stdProd->vDesc = $this->format($tempDesc);
-				} else {
-					if ($item->desconto - $somaDesconto >= 0.01)
+					}else{
+						if(sizeof($item->itens) > 1){
+							$somaDesconto += 0.01;
+							$stdProd->vDesc = $this->format(0.01);
+						}else{
+							$somaDesconto = $item->desconto;
+							$stdProd->vDesc = $this->format($somaDesconto);
+						}
+					}
+				}else{
+					if(($item->desconto - $somaDesconto) > 0.01){
 						$stdProd->vDesc = $this->format($item->desconto - $somaDesconto);
+					}
+				}
+			}
+
+			if($item->acrescimo > 0.01 && $somaAcrescimo < $item->acrescimo){
+				if($itemCont < sizeof($item->itens)){
+					$totalVenda = $item->total;
+
+					$media = (((($stdProd->vProd - $totalVenda)/$totalVenda))*100);
+					$media = 100 - ($media * -1);
+
+					$tempDesc = ($item->acrescimo*$media)/100;
+					$tempDesc -= 0.01;
+					if($tempDesc > 0.01){
+						$somaAcrescimo += $this->format($tempDesc);
+						$stdProd->vOutro = $this->format($tempDesc);
+					}else{
+						if(sizeof($item->itens) > 1){
+							$somaAcrescimo += 0.01;
+							$stdProd->vOutro = $this->format(0.01);
+						}else{
+							$somaAcrescimo = $item->acrescimo;
+							$stdProd->vOutro = $this->format($somaAcrescimo);
+						}
+					}
+
+				}else{
+					if(($item->acrescimo - $somaAcrescimo) > 0.01){
+						$stdProd->vOutro = $this->format($item->acrescimo - $somaAcrescimo, 2);
+					}
 				}
 			}
 
@@ -253,44 +348,66 @@ class NFCeService
 			}
 			$imposto = $nfe->tagimposto($stdImposto); // tag imposto
 
-			if ($stdEmit->CRT == 1) {
+			if ($stdEmit->CRT == 1 || $stdEmit->CRT == 4) {
 				$stdICMS = new \stdClass();
 
 				$stdICMS->item = $itemCont;
 				$stdICMS->orig = 0;
 				$stdICMS->CSOSN = $i->cst_csosn;
 
-				if (isset($i['vBCSTRet'])) $stdICMS->vBCSTRet = $i['vBCSTRet'];
-				if (isset($i['pST'])) $stdICMS->pST = $i['pST'];
-				if (isset($i['vICMSSTRet'])) $stdICMS->vICMSSTRet = $i['vICMSSTRet'];
-				if (isset($i['vICMSSubstituto'])) $stdICMS->vICMSSubstituto = $i['vICMSSubstituto'];
-
-
 				$stdICMS->pCredSN = $this->format($i->perc_icms);
 				$stdICMS->vCredICMSSN = $this->format($i->perc_icms);
-				$ICMS = $nfe->tagICMSSN($stdICMS);
+
+				if($i->cst_csosn == 61){
+					$stdICMS->CST = $i->cst_csosn;
+					$stdICMS->qBCMonoRet = $this->format($stdProd->qTrib);
+					$stdICMS->adRemICMSRet = $this->format($i->produto->adRemICMSRet, 4);
+					$stdICMS->vICMSMonoRet = $this->format($i->produto->adRemICMSRet*$stdProd->qTrib, 4);
+					$ICMS = $nfe->tagICMS($stdICMS);
+				}else{
+					$ICMS = $nfe->tagICMSSN($stdICMS);
+				}
+
 
 				$somaICMS = 0;
-			} else if ($stdEmit->CRT == 3) {
-				$somaProdutos += $stdProd->vProd;
+			} else if ($stdEmit->CRT == 3 || $stdEmit->CRT == 2) {
+
 
 				$stdICMS = new \stdClass();
 				$stdICMS->item = $itemCont;
 				$stdICMS->orig = 0;
 				$stdICMS->CST = $i->cst_csosn;
 				$stdICMS->modBC = 0;
-				$stdICMS->vBC = $this->format($i->valor_unitario * $i->quantidade);
+				$stdICMS->vBC = $stdProd->vProd - $stdProd->vDesc;
 				$stdICMS->pICMS = $this->format($i->perc_icms);
 				$stdICMS->vICMS = $stdICMS->vBC * ($stdICMS->pICMS / 100);
 
-				if (isset($i['vBCSTRet'])) $stdICMS->vBCSTRet = $i['vBCSTRet'];
-				if (isset($i['pST'])) $stdICMS->vBCSTRet = $i['pST'];
-				if (isset($i['vICMSSTRet'])) $stdICMS->vBCSTRet = $i['vICMSSTRet'];
-				if (isset($i['vICMSSubstituto'])) $stdICMS->vBCSTRet = $i['vICMSSubstituto'];
+				if($i->cst_csosn == '60'){
+					$stdICMS->vBCSTRet = 0.00;
+					$stdICMS->vICMSSTRet = 0.00;
+					$stdICMS->vBCSTDest = 0.00;
+					$stdICMS->vICMSSTDest = 0.00;
+					$stdICMS->pST = 0.00;
+				}
 
-				$somaICMS += (($i->valor_unitario * $i->quantidade)
-					* ($stdICMS->pICMS / 100));
-				$ICMS = $nfe->tagICMS($stdICMS);
+				if($i->cst_csosn != '60'){
+					$somaProdutos += $stdICMS->vBC;
+					$somaICMS += $stdICMS->vICMS;
+				}
+				if($i->cst_csosn == 10){
+
+					$stdICMS->modBCST = $i->produto->modBCST;
+					$stdICMS->vBCST = $stdProd->vProd;
+					$stdICMS->pICMSST = $this->format($i->produto->pICMSST);
+					$somaVICMSST += $stdICMS->vICMSST = $stdICMS->vBCST * ($stdICMS->pICMSST/100);
+				}
+
+				// $ICMS = $nfe->tagICMS($stdICMS);
+				if($i->cst_csosn == '60'){
+					$ICMS = $nfe->tagICMSST($stdICMS);
+				}else{
+					$ICMS = $nfe->tagICMS($stdICMS);
+				}
 			} // fim tag icms
 			//PIS
 			$stdPIS = new \stdClass();
@@ -345,6 +462,16 @@ class NFCeService
 				$stdOrigComb->pOrig = $i->produto->pOrig;
 				$nfe->tagorigComb($stdOrigComb);
 			}
+
+			$cest = $i->produto->cest;
+			$cest = str_replace(".", "", $cest);
+			$stdProd->CEST = $cest;
+			if(strlen($cest) > 0){
+				$std = new \stdClass();
+				$std->item = $itemCont; 
+				$std->CEST = $cest;
+				$nfe->tagCEST($std);
+			}
 		}
 
 		$stdICMSTot = new \stdClass();
@@ -362,7 +489,7 @@ class NFCeService
 		$stdICMSTot->vPIS = 0.00;
 		$stdICMSTot->vCOFINS = 0.00;
 		$stdICMSTot->vOutro = 0.00;
-		$stdICMSTot->vNF = $this->format($item->total);
+		$stdICMSTot->vNF = $this->format($item->total  + $somaVICMSST);
 
 		$stdICMSTot->vTotTrib = 0.00;
 		$ICMSTot = $nfe->tagICMSTot($stdICMSTot);
@@ -373,9 +500,12 @@ class NFCeService
 		$transp = $nfe->tagtransp($stdTransp);
 
 		$respTec = ConfiguracaoSuper::first();
-		if ($respTec != null) {
+		if ($respTec != null && $respTec->usar_resp_tecnico == 1) {
 			$stdResp = new \stdClass();
-			$stdResp->CNPJ = preg_replace('/[^0-9]/', '', $respTec->cpf_cnpj);
+			$doc = preg_replace('/[^0-9]/', '', $respTec->cpf_cnpj);
+			if (strlen($doc) == 14) $stdResp->CNPJ = $doc;
+			else $stdResp->CPF = $doc;
+
 			$stdResp->xContato = $respTec->name;
 			$stdResp->email = $respTec->email;
 			$stdResp->fone = preg_replace('/[^0-9]/', '', $respTec->telefone);
@@ -394,7 +524,6 @@ class NFCeService
 
 		$contFatura = 1;
 
-
 		$stdPag = new \stdClass();
 		if ($item->dinheiro_recebido > 0) {
 			$vPag = $item->dinheiro_recebido;
@@ -407,6 +536,9 @@ class NFCeService
 		if ($item->dinheiro_recebido > 0) {
 			$stdDetPag = new \stdClass();
 			$stdDetPag->tPag = $item->tipo_pagamento;
+			if($item->tipo_pagamento == '06'){
+				$stdDetPag->tPag = '05'; 
+			}
 			$stdDetPag->vPag = $this->format($item->dinheiro_recebido);
 			$stdDetPag->indPag = 1;
 			$detPag = $nfe->tagdetPag($stdDetPag);
@@ -416,7 +548,18 @@ class NFCeService
 				foreach ($item->fatura as $ft) {
 
 					$stdDetPag = new \stdClass();
+					if($ft->tipo_pagamento == '30'){
+						$ft->tipo_pagamento = '03';
+					}elseif($ft->tipo_pagamento == '31'){
+						$ft->tipo_pagamento = '04';
+					}elseif($ft->tipo_pagamento == '32'){
+						$ft->tipo_pagamento = '17';
+					}
+
 					$stdDetPag->tPag = $ft->tipo_pagamento;
+					if($ft->tipo_pagamento == '06'){
+						$stdDetPag->tPag = '05'; 
+					}
 					$stdDetPag->vPag = $this->format($ft->valor);
 					$stdDetPag->indPag = 1;
 
@@ -462,6 +605,10 @@ class NFCeService
 
 			$obs .= $obsIbpt;
 		}
+		if(trim($emitente->observacao_padrao_nfce) != ""){
+			$obs .= " " . $emitente->observacao_padrao_nfce;
+		}
+
 		$stdInfoAdic->infCpl = $obs;
 
 		$infoAdic = $nfe->taginfAdic($stdInfoAdic);
@@ -479,6 +626,44 @@ class NFCeService
 				'erros_xml' => $nfe->getErrors()
 			];
 		}
+	}
+
+	private function validate_EAN13Barcode($ean)
+	{
+
+		$sumEvenIndexes = 0;
+		$sumOddIndexes  = 0;
+
+		$eanAsArray = array_map('intval', str_split($ean));
+
+		if(strlen($ean) == 14){
+			return true;
+		}
+
+		if (!$this->has13Numbers($eanAsArray) ) {
+			return false;
+		};
+
+		for ($i = 0; $i < count($eanAsArray)-1; $i++) {
+			if ($i % 2 === 0) {
+				$sumOddIndexes  += $eanAsArray[$i];
+			} else {
+				$sumEvenIndexes += $eanAsArray[$i];
+			}
+		}
+
+		$rest = ($sumOddIndexes + (3 * $sumEvenIndexes)) % 10;
+
+		if ($rest !== 0) {
+			$rest = 10 - $rest;
+		}
+
+		return $rest === $eanAsArray[12];
+	}
+
+	private function has13Numbers(array $ean)
+	{
+		return count($ean) === 13 || count($ean) === 14;
 	}
 
 	public function format($number, $dec = 2)
@@ -499,7 +684,6 @@ class NFCeService
 
 			$st = new Standardize();
 			$std = $st->toStd($resp);
-			// sleep(4);
 			sleep($this->timeout);
 			
 			if ($std->cStat != 103 && $std->cStat != 104) {
@@ -511,7 +695,7 @@ class NFCeService
 				];
 			}
 
-			// sleep(3);
+			sleep(1);
 			try {
 				$xml = Complements::toAuthorize($signXml, $resp);
 				file_put_contents(public_path('xml_nfce/') . $chave . '.xml', $xml);
@@ -523,7 +707,8 @@ class NFCeService
 			} catch (\Exception $e) {
 				return [
 					'erro' => 1,
-					'error' => $st->toArray($resp)
+					'error' => $st->toArray($resp),
+					'recibo' => $resp
 				];
 			}
 		} catch (\Exception $e) {
@@ -545,6 +730,31 @@ class NFCeService
 
 			$stdCl = new Standardize($response);
 			$arr = $stdCl->toArray();
+			if($arr['xMotivo'] == 'Autorizado o uso da NF-e'){
+				if($nfe->estado != 'aprovado'){
+
+					$empresa = Empresa::findOrFail($nfe->empresa_id);
+					$empresa = __objetoParaEmissao($empresa, $nfe->local_id);
+
+					$chave = $arr['protNFe']['infProt']['chNFe'];
+					$nRec = $nfe->recibo;
+					$nfe->estado = 'aprovado';
+					$nfe->save();
+
+					if($empresa->ambiente == 1){
+						$empresa->numero_ultima_nfce_producao = $nfe->numero;
+					}else{
+						$empresa->numero_ultima_nfce_homologacao = $nfe->numero;
+					}
+					try{
+						$xml = Complements::toAuthorize($nfe->signed_xml, $nRec);
+						file_put_contents(public_path('xml_nfce/').$chave.'.xml', $xml);
+					}catch(\Exception $e){
+						
+					}
+
+				}
+			}
 
 			return $arr;
 		} catch (\Exception $e) {

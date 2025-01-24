@@ -3,7 +3,9 @@
 
 <div class="card mt-1">
     <div class="card-header">
-
+        @isset($reserva)
+        <p>Serviços da reserva <strong>#{{ $reserva->numero_sequencial }}</strong></p>
+        @endif
         <h4>Nova NFSe</h4>
 
         <div style="text-align: right; margin-top: -35px;">
@@ -18,6 +20,10 @@
         ->route('nota-servico.store')
 
         !!}
+        @isset($reserva)
+        <input type="hidden" name="reserva_id" value="{{ $reserva->id }}">
+        @endif
+
         <div class="pl-lg-4">
             @include('nota_servico._forms')
         </div>
@@ -28,4 +34,13 @@
 
 @section('js')
 <script src="/js/nfse.js"></script>
+@isset($reserva)
+<script type="text/javascript">
+    $(function(){
+        setTimeout(() => {
+            $('.cliente_id').change()
+        }, 200)
+    })
+</script>
+@endif
 @endsection

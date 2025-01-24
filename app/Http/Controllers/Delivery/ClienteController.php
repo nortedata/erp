@@ -10,11 +10,36 @@ use App\Models\EnderecoDelivery;
 use App\Models\Cliente;
 use App\Models\CategoriaProduto;
 use App\Models\BairroDelivery;
+use App\Models\FuncionamentoDelivery;
 
 class ClienteController extends Controller
 {
     public function __construct(){
         session_start();
+    }
+
+    private function getFuncionamento($config){
+        $dia = date('w');
+        $hora = date('H:i');
+        $dia = FuncionamentoDelivery::getDia($dia);
+
+        $funcionamento = FuncionamentoDelivery::where('dia', $dia)
+        ->where('empresa_id', $config->empresa_id)->first();
+
+        if($funcionamento != null){
+
+            $atual = strtotime(date('Y-m-d H:i'));
+            $dataHoje = date('Y-m-d');
+            $inicio = strtotime($dataHoje . " " . $funcionamento->inicio);
+            $fim = strtotime($dataHoje . " " . $funcionamento->fim);
+            if($atual > $inicio && $atual < $fim){
+                $funcionamento->aberto = true;
+            }else{
+                $funcionamento->aberto = false;
+            }
+            return $funcionamento;
+        }
+        return null;
     }
 
     public function auth(Request $request){
@@ -26,9 +51,14 @@ class ClienteController extends Controller
         }
 
         $categorias = CategoriaProduto::where('delivery', 1)
+        ->orderBy('nome', 'asc')
         ->where('empresa_id', $config->empresa_id)->get();
         $notSearch = true;
-        return view('food.auth', compact('carrinho', 'config', 'categorias', 'notSearch'));
+        $notInfoHeader = 1;
+
+        $funcionamento = $this->getFuncionamento($config);
+
+        return view('food.auth', compact('carrinho', 'config', 'categorias', 'notSearch', 'notInfoHeader', 'funcionamento'));
     }
 
     public function conta(Request $request){
@@ -44,12 +74,15 @@ class ClienteController extends Controller
         $carrinho = $this->_getCarrinho();
 
         $categorias = CategoriaProduto::where('delivery', 1)
+        ->orderBy('nome', 'asc')
         ->where('empresa_id', $config->empresa_id)->get();
 
         $bairros = BairroDelivery::where('empresa_id', $config->empresa_id)
         ->where('status', 1)->get();
+        $funcionamento = $this->getFuncionamento($config);
+        $notInfoHeader = 1;
 
-        return view('food.conta', compact('cliente', 'config', 'notSearch', 'carrinho', 'categorias', 'bairros'));
+        return view('food.conta', compact('cliente', 'config', 'notSearch', 'carrinho', 'categorias', 'bairros', 'funcionamento', 'notInfoHeader'));
     }
 
     private function _getCarrinho(){
@@ -146,7 +179,20 @@ class ClienteController extends Controller
     public function logoff(Request $request){
         $config = MarketPlaceConfig::findOrfail($request->loja_id);
 
-        $_SESSION['cliente_delivery'] = '';
+        $_SESSION['cliente_delivery'] = null;
+        $_SESSION['session_cart_delivery'] = null;
         return redirect()->route('food.index', 'link='.$config->loja_id);
     }
+
+    public function removeEndereco($id){
+        $endereco = EnderecoDelivery::findOrFail($id);
+        try{
+            $endereco->delete();
+            session()->flash("flash_success", "Endereço removido!");
+        }catch(\Exception $e){
+            session()->flash("flash_error", "Erro ao remover endereço, provavelmente já foi utilizado em algum pedido");
+        }
+        return redirect()->back();
+    }
+
 }

@@ -6,10 +6,12 @@
             <div class="card-body">
                 <div class="d-flex flex-wrap gap-2">
                     <div class="">
+                        @can('apuracao_mensal_create')
                         <a href="{{ route('apuracao-mensal.create') }}" class="btn btn-success">
                             <i class="ri-add-circle-fill"></i>
                             Nova Apuração
                         </a>
+                        @endcan
                     </div>
                 </div>
                 <hr class="mt-3">
@@ -74,15 +76,20 @@
                                             @method('delete')
 
                                             @if(!$item->conta_pagar_id)
-                                            <a class="btn btn-warning btn-sm" href="{{ route('apuracao-mensal.conta-pagar', [$item->id]) }}">
+                                            @can('conta_pagar_create')
+                                            <a title="Gerar conta a pagar" class="btn btn-dark btn-sm" href="{{ route('apuracao-mensal.conta-pagar', [$item->id]) }}">
                                                 <i class="ri-money-dollar-box-line"></i>
                                             </a>
+                                            @endcan
+
                                             @endif
 
                                             @csrf
+                                            @can('apuracao_mensal_delete')
                                             <button type="button" class="btn btn-delete btn-sm btn-danger">
                                                 <i class="ri-delete-bin-line"></i>
                                             </button>
+                                            @endcan
 
                                             <a class="btn btn-dark btn-sm" href="{{ route('apuracao-mensal.show', [$item->id]) }}">
                                                 <i class="ri-printer-line"></i>

@@ -18,7 +18,7 @@ return new class extends Migration
             $table->foreignId('produto_id')->nullable()->constrained('produtos');
             $table->foreignId('variacao_id')->nullable()->constrained('produto_variacaos');
 
-            $table->decimal('quantidade', 6,2);
+            $table->decimal('quantidade', 12,3);
             $table->decimal('valor_unitario', 10,2);
             $table->decimal('sub_total', 10,2);
 
@@ -46,7 +46,9 @@ return new class extends Migration
 
             // alter table item_nfces add column codigo_beneficio_fiscal varchar(10) default null;
             // alter table item_nfces add column variacao_id integer default null;
-
+            // alter table item_nfces modify column quantidade decimal(7,3);
+            // alter table item_nfces modify column quantidade decimal(12,2);
+            
             $table->timestamps();
         });
     }

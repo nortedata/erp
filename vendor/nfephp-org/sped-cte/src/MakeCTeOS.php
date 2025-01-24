@@ -217,6 +217,7 @@ class MakeCTeOS
      */
     public function getXML()
     {
+
         if (empty($this->xml)) {
             $this->montaCTe();
         }
@@ -258,9 +259,9 @@ class MakeCTeOS
     public function monta()
     {
         $this->errors = $this->dom->errors;
-        if (count($this->errors) > 0) {
-            return false;
-        }
+        // if (count($this->errors) > 0) {
+        //     return false;
+        // }
         $this->buildCTe();
         if (!empty($this->infPercurso)) {
             foreach ($this->infPercurso as $perc) {

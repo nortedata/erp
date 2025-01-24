@@ -7,6 +7,7 @@ use App\Models\Cliente;
 use App\Models\CteOs;
 use App\Models\NaturezaOperacao;
 use App\Models\Veiculo;
+use App\Models\PercursoCteOs;
 use App\Services\CTeOsService;
 use App\Services\CTeService;
 use Illuminate\Http\Request;
@@ -36,27 +37,42 @@ class CteOsController extends Controller
         if (!is_dir(public_path('dacte_os'))) {
             mkdir(public_path('dacte_os'), 0777, true);
         }
+
+        $this->middleware('permission:cte_os_create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:cte_os_edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:cte_os_view', ['only' => ['show', 'index']]);
+        $this->middleware('permission:cte_os_delete', ['only' => ['destroy']]);
     }
 
 
     public function index(Request $request)
     {
+        $locais = __getLocaisAtivoUsuario();
+        $locais = $locais->pluck(['id']);
+
         $start_date = $request->get('start_date');
         $end_date = $request->get('end_date');
         $estado = $request->get('estado');
+        $local_id = $request->get('local_id');
 
         $data = CteOs::where('empresa_id', request()->empresa_id)
-            ->when(!empty($start_date), function ($query) use ($start_date) {
-                return $query->whereDate('created_at', '>=', $start_date);
-            })
-            ->when(!empty($end_date), function ($query) use ($end_date,) {
-                return $query->whereDate('created_at', '<=', $end_date);
-            })
-            ->when($estado != "", function ($query) use ($estado) {
-                return $query->where('estado', $estado);
-            })
-            ->orderBy('created_at', 'desc')
-            ->paginate(env("PAGINACAO"));
+        ->when(!empty($start_date), function ($query) use ($start_date) {
+            return $query->whereDate('created_at', '>=', $start_date);
+        })
+        ->when(!empty($end_date), function ($query) use ($end_date,) {
+            return $query->whereDate('created_at', '<=', $end_date);
+        })
+        ->when($estado != "", function ($query) use ($estado) {
+            return $query->where('estado', $estado);
+        })
+        ->when($local_id, function ($query) use ($local_id) {
+            return $query->where('local_id', $local_id);
+        })
+        ->when(!$local_id, function ($query) use ($locais) {
+            return $query->whereIn('local_id', $locais);
+        })
+        ->orderBy('created_at', 'desc')
+        ->paginate(env("PAGINACAO"));
         return view('cte_os.index', compact('data'));
     }
 
@@ -92,12 +108,22 @@ class CteOsController extends Controller
                 'tomador_id' => $request->destinatario_id,
                 'sequencia_cce' => 0,
                 'chave' => '',
+                'observacao' => $request->observacao ?? '',
                 'quantidade_carga' => __convert_value_bd($request->quantidade_carga),
                 'valor_transporte' => __convert_value_bd($request->valor_transporte),
                 'valor_receber' => __convert_value_bd($request->valor_receber)
 
             ]);
-            CteOs::create($request->all());
+            $item = CteOs::create($request->all());
+
+            for ($i = 0; $i < sizeof($request->uf); $i++) {
+                if ($request->uf[$i]) {
+                    PercursoCteOs::create([
+                        'uf' => $request->uf[$i],
+                        'cteos_id' => $item->id
+                    ]);
+                }
+            }
             session()->flash('flash_success', 'Cadastrado com sucesso!');
         } catch (\Exception $e) {
             session()->flash('flash_error', 'Algo deu errado: ' . $e->getMessage());
@@ -128,6 +154,17 @@ class CteOsController extends Controller
                 'quantidade_carga' => __convert_value_bd($request->quantidade_carga),
             ]);
             $item->fill($request->all())->save();
+            $item->percurso()->delete();
+
+            for ($i = 0; $i < sizeof($request->uf); $i++) {
+                if ($request->uf[$i]) {
+                    PercursoCteOs::create([
+                        'uf' => $request->uf[$i],
+                        'cteos_id' => $item->id
+                    ]);
+                }
+            }
+
             session()->flash('flash_success', 'Alterado com sucesso!');
         } catch (\Exception $e) {
             session()->flash('flash_error', 'Algo deu errado: ' . $e->getMessage());
@@ -145,7 +182,8 @@ class CteOsController extends Controller
             session()->flash("flash_error", "Certificado não encontrado para este emitente");
             return redirect()->route('config.index');
         }
-
+        $empresa = __objetoParaEmissao($empresa, $item->local_id);
+        
         $cte_service = new CTeOsService([
             "atualizacao" => date('Y-m-d h:i:s'),
             "tpAmb" => (int)$empresa->ambiente,
@@ -157,12 +195,12 @@ class CteOsController extends Controller
         ], $empresa);
 
         $doc = $cte_service->gerarCTe($item);
-
+        // dd($doc);
         if (!isset($doc['erros_xml'])) {
             $xml = $doc['xml'];
 
             return response($xml)
-                ->header('Content-Type', 'application/xml');
+            ->header('Content-Type', 'application/xml');
         } else {
             return response()->json($doc['erros_xml'], 401);
         }
@@ -177,7 +215,7 @@ class CteOsController extends Controller
         $danfe = new DacteOS($xml);
         $pdf = $danfe->render();
         return response($pdf)
-            ->header('Content-Type', 'application/pdf');
+        ->header('Content-Type', 'application/pdf');
     }
 
     public function download($id)
@@ -228,7 +266,7 @@ class CteOsController extends Controller
                 $pdf = $daevento->render();
                 header('Content-Type: application/pdf');
                 return response($pdf)
-                    ->header('Content-Type', 'application/pdf');
+                ->header('Content-Type', 'application/pdf');
             } catch (InvalidArgumentException $e) {
                 echo "Ocorreu um erro durante o processamento :" . $e->getMessage();
             }
@@ -252,5 +290,21 @@ class CteOsController extends Controller
             'telefone' => $empresa->telefone,
             'email' => ''
         ];
+    }
+
+    public function destroy($id)
+    {
+        $item = CteOs::findOrFail($id);
+        try {
+
+            $item->percurso()->delete();
+            $item->delete();
+
+            session()->flash("flash_success", "CTeOs removida!");
+        } catch (\Exception $e) {
+
+            session()->flash("flash_error", 'Algo deu errado: ' . $e->getMessage());
+        }
+        return redirect()->back();
     }
 }

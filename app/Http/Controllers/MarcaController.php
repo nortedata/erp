@@ -9,6 +9,15 @@ use function Ramsey\Uuid\v1;
 
 class MarcaController extends Controller
 {
+
+    public function __construct()
+    {
+        $this->middleware('permission:marcas_create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:marcas_edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:marcas_view', ['only' => ['show', 'index']]);
+        $this->middleware('permission:marcas_delete', ['only' => ['destroy']]);
+    }
+
     public function index(Request $request)
     {
         $data = Marca::where('empresa_id', request()->empresa_id)
@@ -29,8 +38,10 @@ class MarcaController extends Controller
     {
         try {
             Marca::create($request->all());
+            __createLog($request->empresa_id, 'Marca', 'cadastrar', $request->nome);
             session()->flash('flash_success', 'Cadastrado com sucesso');
         } catch (\Exception $e) {
+            __createLog($request->empresa_id, 'Marca', 'erro', $e->getMessage());
             session()->flash('flash_error', 'Algo deu errado' . $e->getMessage());
         }
         return redirect()->route('marcas.index');
@@ -49,8 +60,10 @@ class MarcaController extends Controller
         __validaObjetoEmpresa($item);
         try {
             $item->fill($request->all())->save();
+            __createLog($request->empresa_id, 'Marca', 'editar', $request->nome);
             session()->flash('flash_success', 'Alterado com sucesso');
         } catch (\Exception $e) {
+            __createLog($request->empresa_id, 'Marca', 'erro', $e->getMessage());
             session()->flash('flash_error', 'Algo deu errado: ' . $e->getMessage());
         }
         return redirect()->route('marcas.index');
@@ -61,9 +74,12 @@ class MarcaController extends Controller
         $item = Marca::findOrFail($id);
         __validaObjetoEmpresa($item);
         try {
+            $descricaoLog = $item->nome;
             $item->delete();
+            __createLog(request()->empresa_id, 'Marca', 'excluir', $descricaoLog);
             session()->flash('flash_success', 'Removido com sucesso');
         } catch (\Exception $e) {
+            __createLog(request()->empresa_id, 'Marca', 'erro', $e->getMessage());
             session()->flash('flash_warning', 'Marca esta sendo usada em algum produto');
         }
         return redirect()->route('marcas.index');
@@ -75,9 +91,12 @@ class MarcaController extends Controller
         for($i=0; $i<sizeof($request->item_delete); $i++){
             $item = Marca::findOrFail($request->item_delete[$i]);
             try {
+                $descricaoLog = $item->nome;
                 $item->delete();
                 $removidos++;
+                __createLog(request()->empresa_id, 'Marca', 'excluir', $descricaoLog);
             } catch (\Exception $e) {
+                __createLog(request()->empresa_id, 'Marca', 'erro', $e->getMessage());
                 session()->flash("flash_error", 'Algo deu errado: '. $e->getMessage());
                 return redirect()->route('marcas.index');
             }

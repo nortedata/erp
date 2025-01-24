@@ -45,7 +45,7 @@ class AgendamentoController extends Controller
         ->get();
 
         $horarios = [];
-
+        $minutosEspaco = 5;
         foreach($funcionarios as $f){
             $funcionamento = Funcionamento
             ::where('funcionario_id', $f->id)
@@ -55,12 +55,25 @@ class AgendamentoController extends Controller
             $inicio = $funcionamento->inicio;
             $fim = $funcionamento->fim;
 
+            if($data == date('Y-m-d')){
+                $inicio = strtotime("$data $inicio");
+                $agora = strtotime("$data " . date('H:i'));
+                $horaAgora = date('H:i');
+
+                if($agora > $inicio){
+                    // $inicio = date('H:i', strtotime(date('Y-m-d H:i') . "+ $minutosEspaco minutes"));
+                    $inicio = $this->proximoMinuto($minutosEspaco);
+                    // return $inicio;
+                }
+            }
+
             $dif = strtotime("$data $fim") - strtotime("$data $inicio");
 
             $minutosDif = $dif/(60); //converte milesegundos em minutos
             $contador = $minutosDif/$tempoServico;
 
             $interrupcoes = Interrupcoes::where('funcionario_id', $f->id)
+            ->where('status', 1)
             ->where('dia_id', $diaStr)->get();
 
             $inicio = strtotime("$data $inicio");
@@ -113,4 +126,22 @@ class AgendamentoController extends Controller
 
     }
 
+    private function proximoMinuto($minutosEspaco){
+        $inicio = date('H:i', strtotime(date('Y-m-d H:i') . "+ $minutosEspaco minutes"));
+        $minuto = date('i', strtotime($inicio));
+        $hora = date('H', strtotime($inicio));
+
+        $divisao = (int)($minuto/15);
+        if($divisao == 0){
+            $inicio = date('H').':15';
+        }else if($divisao == 1){
+            $inicio = date('H').':30';
+        }
+        else if($divisao == 2){
+            $inicio = date('H').':45';
+        }else{
+            $inicio = date('H', strtotime(date('Y-m-d H:i') . "+ 1 hour")).':00';
+        }
+        return $inicio;
+    }
 }

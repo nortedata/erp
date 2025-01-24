@@ -20,6 +20,12 @@
         !!}
     </div>
 
+    <div class="col-md-3 div-conta-empresa">
+        {!!Form::select('conta_empresa_id', 'Conta empresa')
+        ->required()
+        !!}
+    </div>
+
     <div class="col-12">
         <button type="submit" class="btn btn-success px-5">Receber</button>
     </div>

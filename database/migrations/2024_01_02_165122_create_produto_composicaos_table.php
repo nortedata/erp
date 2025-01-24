@@ -16,7 +16,7 @@ return new class extends Migration
 
             $table->foreignId('produto_id')->nullable()->constrained('produtos');
             $table->foreignId('ingrediente_id')->nullable()->constrained('produtos');
-            $table->decimal('quantidade' ,8 ,3);
+            $table->decimal('quantidade', 8,3);
 
             $table->timestamps();
         });

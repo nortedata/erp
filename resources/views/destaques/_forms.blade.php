@@ -4,9 +4,10 @@
         !!}
     </div>
     
-    <div class="col-md-2">
+    <div class="col-md-4">
         {!!Form::select('produto_id', 'Produto')
         ->options((isset($item) && $item->produto) ? [$item->produto_id => $item->produto->nome. " R$ " . __moeda($item->produto->valor_unitario)] : [])
+        ->id('inp-produto_delivery_id')
         !!}
     </div>
 

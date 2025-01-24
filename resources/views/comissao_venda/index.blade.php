@@ -58,6 +58,7 @@
                                         <th>Valor da venda</th>
                                         <th>Valor da comissão</th>
                                         <th>Data</th>
+                                        <th width="10%">Ações</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -69,7 +70,7 @@
                                             <input type="checkbox" name="check[]" value="{{ $item->id }}" class="select-check">
                                             @endif
                                         </td>
-                                        <td>{{ $item->funcionario->nome }}</td>
+                                        <td>{{ $item->funcionario ? $item->funcionario->nome : '--' }}</td>
                                         <td>{{ $item->tabela == 'nfce' ? 'PDV' : 'Pedido' }}</td>
                                         <td>
                                             @if($item->status)
@@ -81,7 +82,16 @@
                                         <td>{{ __moeda($item->valor_venda) }}</td>
                                         <td>{{ __moeda($item->valor) }}</td>
                                         <td>{{ __data_pt($item->created_at) }}</td>
+                                        <td class="td-delete">
+                                            <form action="{{ route('comissao.destroy', $item->id) }}" method="post" id="form-{{$item->id}}">
+                                                @method('delete')
+                                                @csrf
+                                                <button type="button" class="btn btn-delete btn-sm btn-danger">
+                                                    <i class="ri-delete-bin-line"></i>
+                                                </button>
 
+                                            </form>
+                                        </td>
                                     </tr>
 
                                     @empty

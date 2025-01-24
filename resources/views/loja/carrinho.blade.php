@@ -32,7 +32,7 @@
 		font-size: 24px;
 	}
 
-	p{
+	.p-cart{
 		margin-top: 10px;
 		font-size: 22px;
 	}
@@ -99,7 +99,7 @@
 						</div>
 						@empty
 						<div class="col-12">
-							<p>Seu carrinho ainda está vazio</p>
+							<p class="p-cart">Seu carrinho ainda está vazio</p>
 						</div>
 						@endforelse
 					</div>
@@ -127,6 +127,25 @@
 							@if($dataFrete != null)
 							<h5 class="col-md-12" style="margin-top: 20px">Seus endereços cadastrados</h5>
 							{!! $dataFrete !!}
+							@else
+
+							@if($config->habilitar_retirada)
+							<div class="container" style="margin-top: 15px">
+								<div class="col-12">
+									<input class="radio-frete" type="radio" name="tipo_frete" id="radio" value="0" data-valor="0">
+									Retirar na loja
+								</div>
+							</div>
+							@endif
+
+							@if($config->frete_gratis_valor > 0 && $config->frete_gratis_valor <= $item->valor_total)
+							<div class="container" style="margin-top: 15px">
+								<div class="col-12">
+									<input class="radio-frete" type="radio" name="tipo_frete" id="radio" value="gratis" data-valor="0">
+									Frete grátis
+								</div>
+							</div>
+							@endif
 							@endif
 						</div>
 

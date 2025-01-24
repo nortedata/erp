@@ -17,6 +17,10 @@ class ListaPreco extends Model
         return $this->hasMany(ItemListaPreco::class, 'lista_id');
     }
 
+    public function usuarios(){
+        return $this->hasMany(ListaPrecoUsuario::class, 'lista_preco_id');
+    }
+
     public function funcionario()
     {
         return $this->belongsTo(Funcionario::class, 'funcionario_id');

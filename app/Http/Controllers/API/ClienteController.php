@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\Cliente;
+use App\Models\ContaReceber;
 use App\Models\CashBackConfig;
 use Illuminate\Http\Request;
 
@@ -11,7 +12,7 @@ class ClienteController extends Controller
 {
     public function find($id)
     {
-        $item = Cliente::with('cidade')->findOrFail($id);
+        $item = Cliente::with(['cidade', 'listaPreco'])->findOrFail($id);
         return response()->json($item, 200);
     }
 
@@ -50,5 +51,30 @@ class ClienteController extends Controller
         })
         ->get();
         return response()->json($data, 200);
+    }
+
+    public function store(Request $request){
+        $cliente = Cliente::where('empresa_id', $request->empresa_id)
+        ->where('cpf_cnpj', $request->cpf_cnpj)
+        ->first();
+        if($cliente != null){
+            return response()->json("Cliente já cadastrado", 401);
+        }
+        $cliente = Cliente::create($request->all());
+        return response()->json($cliente, 200);
+    }
+
+    public function consultaDebitos(Request $request){
+        $totalVenda = $request->total;
+        $somaContas = ContaReceber::where('cliente_id', $request->cliente_id)
+        ->where('status', 0)
+        ->sum('valor_integral');
+
+        $cliente = Cliente::findOrFail($request->cliente_id);
+        if($somaContas+$totalVenda > $cliente->valor_credito){
+            return response()->json("Valor ultrapassa o limite definido no cadastro do cliente", 403);
+        }
+        return response()->json($cliente->valor_credito, 200);
+
     }
 }

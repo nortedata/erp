@@ -20,6 +20,7 @@ class ContadorAdminNFCeController extends Controller
         $empresaSelecionada = $contador->empresa_selecionada;
         $start_date = $request->get('start_date');
         $end_date = $request->get('end_date');
+        $estado = $request->get('estado');
 
         $data = Nfce::where('empresa_id', $empresaSelecionada)
         ->when(!empty($start_date), function ($query) use ($start_date) {
@@ -28,7 +29,9 @@ class ContadorAdminNFCeController extends Controller
         ->when(!empty($end_date), function ($query) use ($end_date,) {
             return $query->whereDate('created_at', '<=', $end_date);
         })
-        ->where('estado', 'aprovado')
+        ->when($estado != "", function ($query) use ($estado) {
+            return $query->where('estado', $estado);
+        })
         ->orderBy('created_at', 'desc')
         ->paginate(env("PAGINACAO"));
 

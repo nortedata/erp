@@ -6,5 +6,7 @@ $vendorDir = dirname(dirname(__FILE__));
 $baseDir = dirname($vendorDir);
 
 return array(
+    'TiendaNube' => array($vendorDir . '/tiendanube/php-sdk/src'),
     'HTMLPurifier' => array($vendorDir . '/ezyang/htmlpurifier/library'),
+    'ForceUTF8\\' => array($vendorDir . '/neitanod/forceutf8/src'),
 );

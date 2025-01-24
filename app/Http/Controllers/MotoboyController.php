@@ -134,6 +134,14 @@ class MotoboyController extends Controller
         }
 
         if($request->gerar_conta){
+
+            $local_id = null;
+            $caixa = __isCaixaAberto();
+            if($caixa != null){
+                $local_id = $caixa->local_id;
+            }else{
+                $local_id = __getLocalAtivo()->id;
+            }
             ContaPagar::create([
                 'empresa_id' => $request->empresa_id,
                 'valor_integral' => __convert_value_bd($request->valor_integral),
@@ -142,6 +150,7 @@ class MotoboyController extends Controller
                 'tipo_pagamento' => $request->tipo_pagamento,
                 'descricao' => $request->descricao,
                 'status' => $request->status,
+                'local_id' => $local_id
             ]);
             session()->flash("flash_success", "Comissões adicionadas no conta a pagar!");
 

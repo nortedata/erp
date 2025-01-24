@@ -29,4 +29,12 @@ class Fornecedor extends Model
     public function cidade(){
         return $this->belongsTo(Cidade::class, 'cidade_id');
     }
+
+    public function compras(){
+        return $this->hasMany(Nfe::class, 'fornecedor_id');
+    }
+
+    public function produtoFornecedor(){
+        return $this->hasMany(ProdutoFornecedor::class, 'fornecedor_id');
+    }
 }

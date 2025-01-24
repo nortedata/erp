@@ -30,7 +30,7 @@
                                 </span>
                             </td>
                             <td>
-                                <select required name="evento[]" class="form-control evento">
+                                <select required name="evento[]" class="form-select evento">
                                     <option value="">Selecione</option>
                                     @foreach($eventos as $e)
                                     <option @if($e->id == $ev->evento_id) selected @endif value="{{$e->id}}" data-condicao="{{ $e->condicao }}"

@@ -6,9 +6,11 @@
     "license": "MIT",
     "require": {
         "php": "^8.1",
+        "automattic/woocommerce": "^3.1",
         "cloud-dfe/sdk-php": "^0.4.0",
         "comtele/comtele_sdk": "^1.1",
         "dompdf/dompdf": "^2.0",
+        "eduardokum/laravel-boleto": "^0.10",
         "guzzlehttp/guzzle": "^7.2",
         "laravel/framework": "^10.10",
         "laravel/sanctum": "^3.2",
@@ -19,8 +21,13 @@
         "netojose/laravel-bootstrap-4-forms": "^3.0",
         "nfephp-org/sped-cte": "dev-master",
         "nfephp-org/sped-da": "dev-master",
+        "nfephp-org/sped-efd": "1.0.x-dev",
         "nfephp-org/sped-mdfe": "dev-master",
-        "nfephp-org/sped-nfe": "^5.1"
+        "nfephp-org/sped-nfe": "^5.1",
+        "phpmailer/phpmailer": "^6.9",
+        "picqer/php-barcode-generator": "^2.4",
+        "spatie/laravel-permission": "^6.7",
+        "tiendanube/php-sdk": "^1.1"
     },
     "require-dev": {
         "fakerphp/faker": "^1.9.1",

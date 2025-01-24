@@ -109,7 +109,7 @@
         !!}
     </div>
     <div class="col-md-2">
-        {!!Form::select('habilitar_retirada', 'Habilitar retirda', [1 => 'Sim', 0 => 'Não'])
+        {!!Form::select('habilitar_retirada', 'Habilitar retirada', [1 => 'Sim', 0 => 'Não'])
         ->attrs(['class' => 'form-select'])
         !!}
     </div>

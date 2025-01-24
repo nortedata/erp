@@ -38,15 +38,25 @@ class MdfeController extends Controller
         if (!is_dir(public_path('xml_mdfe_correcao'))) {
             mkdir(public_path('xml_mdfe_correcao'), 0777, true);
         }
+
+        $this->middleware('permission:mdfe_create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:mdfe_edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:mdfe_view', ['only' => ['show', 'index']]);
+        $this->middleware('permission:mdfe_delete', ['only' => ['destroy']]);
     }
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
     {
+
+        $locais = __getLocaisAtivoUsuario();
+        $locais = $locais->pluck(['id']);
+
         $start_date = $request->get('start_date');
         $end_date = $request->get('end_date');
         $estado = $request->get('estado');
+        $local_id = $request->get('local_id');
 
         $data = Mdfe::where('empresa_id', request()->empresa_id)
         ->when(!empty($start_date), function ($query) use ($start_date) {
@@ -57,6 +67,12 @@ class MdfeController extends Controller
         })
         ->when($estado != "", function ($query) use ($estado) {
             return $query->where('estado_emissao', $estado);
+        })
+        ->when($local_id, function ($query) use ($local_id) {
+            return $query->where('local_id', $local_id);
+        })
+        ->when(!$local_id, function ($query) use ($locais) {
+            return $query->whereIn('local_id', $locais);
         })
         ->orderBy('created_at', 'desc')
         ->paginate(env("PAGINACAO"));
@@ -69,11 +85,13 @@ class MdfeController extends Controller
      */
     public function create()
     {
-        $veiculos = Veiculo::where('empresa_id', request()->empresa_id)->get();
+        $veiculos = Veiculo::where('empresa_id', request()->empresa_id)
+        ->where('status', 1)->get();
         $cidades = Cidade::all();
         $empresa = Empresa::findOrFail(request()->empresa_id);
 
         $numeroMDFe = Mdfe::lastNumero($empresa);
+
         return view('mdfe.create', compact('veiculos', 'cidades', 'numeroMDFe'));
     }
 
@@ -205,11 +223,14 @@ class MdfeController extends Controller
                         ]);
                     }
                 }
+                $descricaoLog = "Número: $mdfe->mdfe_numero - R$ " . __moeda($mdfe->valor_carga);
+                __createLog($request->empresa_id, 'MDFe', 'cadastrar', $descricaoLog);
             });
 session()->flash("flash_success", "MDFe adicionada com sucesso!");
 } catch (\Exception $e) {
-    echo $e->getMessage() . '<br>' . $e->getLine();
-    die;
+    // echo $e->getMessage() . '<br>' . $e->getLine();
+    // die;
+    __createLog(request()->empresa_id, 'MDFe', 'erro', $e->getMessage());
     session()->flash("flash_erro", "Algo deu errado: " . $e->getMessage());
 }
 return redirect()->route('mdfe.index');
@@ -230,7 +251,8 @@ return redirect()->route('mdfe.index');
     {
         $item = Mdfe::findOrFail($id);
 
-        $veiculos = Veiculo::where('empresa_id', request()->empresa_id)->get();
+        $veiculos = Veiculo::where('empresa_id', request()->empresa_id)
+        ->where('status', 1)->get();
         $cidades = Cidade::all();
         return view('mdfe.edit', compact('item', 'veiculos', 'cidades'));
     }
@@ -372,11 +394,13 @@ return redirect()->route('mdfe.index');
                     ]);
                 }
             }
-
+            $descricaoLog = "Número: $item->mdfe_numero - R$ " . __moeda($item->valor_carga);
+            __createLog($request->empresa_id, 'MDFe', 'editar', $descricaoLog);
             session()->flash("flash_success", "Mdfe atualizada com sucesso!");
         } catch (\Exception $e) {
-            echo $e->getMessage() . '<br>' . $e->getLine();
-            die;
+            __createLog(request()->empresa_id, 'MDFe', 'erro', $e->getMessage());
+            // echo $e->getMessage() . '<br>' . $e->getLine();
+            // die;
             session()->flash("flash_error", "Algo deu errado" . $e->getMessage());
         }
         return redirect()->route('mdfe.index');
@@ -389,6 +413,8 @@ return redirect()->route('mdfe.index');
     {
         $item = Mdfe::findOrFail($id);
         try {
+            $descricaoLog = "Número: $item->mdfe_numero - R$ " . __moeda($item->valor_carga);
+
             $item->municipiosCarregamento()->delete();
             $item->ciots()->delete();
             $item->percurso()->delete();
@@ -396,11 +422,13 @@ return redirect()->route('mdfe.index');
             $item->infoDescarga()->delete();
 
             $item->delete();
+            __createLog(request()->empresa_id, 'MDFe', 'excluir', $descricaoLog);
 
             session()->flash("flash_success", "MDFe removida!");
         } catch (\Exception $e) {
             // echo $e->getMessage();
             // die;
+            __createLog(request()->empresa_id, 'MDFe', 'erro', $e->getMessage());
             session()->flash("flash_error", 'Algo deu errado.', $e->getMessage());
         }
         return redirect()->route('mdfe.index');
@@ -413,6 +441,8 @@ return redirect()->route('mdfe.index');
         $config = Empresa::where('id', request()->empresa_id)
         ->first();
 
+        $config = __objetoParaEmissao($config, $item->local_id);
+        // dd($config);
         $cnpj = preg_replace('/[^0-9]/', '', $config->cpf_cnpj);
 
         $mdfe_service = new MDFeService([
@@ -551,7 +581,7 @@ return redirect()->route('mdfe.index');
         $item = Mdfe::findOrFail($id);
         $xml = file_get_contents(public_path('xml_mdfe/') . $item->chave . '.xml');
 
-        $config = Empresa::where('id', request()->empresa_id)->first();
+        $config = Empresa::where('id', $item->empresa_id)->first();
 
         if ($config->logo) {
             $logo = 'data://text/plain;base64,' . base64_encode(file_get_contents(@public_path('uploads/logos/' . $config->logo)));
@@ -579,7 +609,7 @@ return redirect()->route('mdfe.index');
 
         $empresa = Empresa::where('id', request()->empresa_id)->first();
 
-        $veiculos = Veiculo::where('empresa_id', request()->empresa_id)->get();
+        $veiculos = Veiculo::where('empresa_id', request()->empresa_id)->where('status', 1)->get();
         if (sizeof($veiculos) == 0) {
             session()->flash("flash_error", "Cadastre um veiculo para criar uma MDFe!");
             return redirect()->route('veiculos.create');
@@ -669,15 +699,19 @@ return redirect()->route('mdfe.index');
         try {
             $item->estado_emissao = $request->estado_emissao;
             if ($request->hasFile('file')) {
-                $xml = simplexml_load_file($request->file);
-                $chave = substr($xml->infMDFe->attributes()->Id, 4, 44);
                 $file = $request->file;
-                $file->move(public_path('xml_cte/'), $chave . '.xml');
+                $xml = simplexml_load_file($request->file);
+
+                $chave = substr((string)$xml->MDFe->infMDFe->attributes()->Id, 4, 44);
+                $file->move(public_path('xml_mdfe/'), $chave.'.xml');
                 $item->chave = $chave;
+                $item->mdfe_numero = (string)$xml->MDFe->infMDFe->ide->nMDF;
             }
             $item->save();
             session()->flash("flash_success", "Estado alterado");
         } catch (\Exception $e) {
+            echo $e->getMessage();
+            die;
             session()->flash("flash_error", "Algo deu errado: " . $e->getMessage());
         }
         return redirect()->route('mdfe.index');

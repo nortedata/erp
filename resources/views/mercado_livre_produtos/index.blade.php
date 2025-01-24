@@ -63,6 +63,7 @@
                                     <th>Ações</th>
                                     <th></th>
                                     <th>Nome</th>
+                                    <th>Código</th>
                                     <th>Valor de venda</th>
                                     <th>Categoria</th>
                                     <th>Código de barras</th>
@@ -73,6 +74,7 @@
                                     <th>Gerenciar estoque</th>
                                     <th>Estoque</th>
                                     <th>Valor de compra</th>
+                                    <th>Com variação</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -86,7 +88,7 @@
                                     <td>
                                         <form style="width: 250px" action="{{ route('produtos.destroy', $item->id) }}" method="post" id="form-{{$item->id}}">
                                             @method('delete')
-                                            <a class="btn btn-warning btn-sm" href="{{ route('produtos.edit', [$item->id, 'mercadolivre=1']) }}">
+                                            <a class="btn btn-warning btn-sm" href="{{ route('mercado-livre-produtos.edit', [$item->id, 'mercadolivre=1']) }}">
                                                 <i class="ri-edit-line"></i>
                                             </a>
                                             @csrf
@@ -103,7 +105,21 @@
                                     </td>
                                     <td><img class="img-60" src="{{ $item->img }}"></td>
                                     <td width="300">{{ $item->nome }}</td>
-                                    <td>{{ __moeda($item->valor_unitario) }}</td>
+                                    <td width="150">{{ $item->mercado_livre_id }}</td>
+
+                                    @if(sizeof($item->variacoesMercadoLivre) > 0)
+                                    <td width="400">
+                                        @foreach($item->variacoesMercadoLivre as $v)
+                                        {{ $v->valor_nome }} - {{ __moeda($v->valor) }}<br>
+                                        @endforeach
+                                    </td>
+                                    @else
+                                    <td>
+                                        {{ __moeda($item->valor_unitario) }}
+                                    </td>
+                                    @endif
+
+
                                     <td width="150">{{ $item->categoria ? $item->categoria->nome : '--' }}</td>
                                     <td width="200">{{ $item->codigo_barras ?? '--' }}</td>
                                     <td>{{ $item->ncm }}</td>
@@ -119,7 +135,14 @@
                                     </td>
                                     <td>{{ $item->estoqueAtual() }}</td>
 
-                                    <td>{{ __moeda($item->valor_compra) }}</td>
+                                    <td width="100">{{ __moeda($item->valor_compra) }}</td>
+                                    <td width="100">
+                                        @if(sizeof($item->variacoesMercadoLivre) > 0)
+                                        <i class="ri-checkbox-circle-fill text-success"></i>
+                                        @else
+                                        <i class="ri-close-circle-fill text-danger"></i>
+                                        @endif
+                                    </td>
                                     
                                 </tr>
                                 @empty

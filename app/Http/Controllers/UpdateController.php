@@ -55,4 +55,5 @@ class UpdateController extends Controller
         }
         return view('update.finish', compact('logMessage'))->with('title', 'Atualização');
     }
+
 }

@@ -14,15 +14,23 @@
         <div class="card">
             <div class="card-body">
                 <div class="col-md-12">
+                    @can('produtos_create')
                     <a href="{{ route('produtos.create') }}" class="btn btn-success">
                         <i class="ri-add-circle-fill"></i>
                         Novo Produto
                     </a>
+                    @endcan
 
                     <a href="{{ route('produtos.import') }}" class="btn btn-info pull-right">
                         <i class="ri-file-upload-line"></i>
                         Upload
                     </a>
+                    @can('produtos_edit')
+                    <a href="{{ route('produtos.reajuste') }}" class="btn btn-dark pull-right">
+                        <i class="ri-file-edit-fill"></i>
+                        Reajuste em Grupo
+                    </a>
+                    @endif
                 </div>
                 <hr class="mt-3">
                 <div class="col-lg-12">
@@ -30,21 +38,44 @@
                     ->get()
                     !!}
                     <div class="row mt-3">
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             {!!Form::text('nome', 'Pesquisar por nome')
                             !!}
                         </div>
                         
                         <div class="col-md-2">
-                            {!!Form::tel('codigo_barras', 'Pesquisar por Código de barras')
+                            {!!Form::tel('codigo_barras', 'Pesquisar código de barras')
                             !!}
                         </div>
 
                         <div class="col-md-2">
-                            {!!Form::select('tipo', 'Tipo', ['' => 'Todos', 'composto' => 'Composto', 'variavel' => 'Variável'])
+                            {!!Form::select('tipo', 'Tipo', ['' => 'Todos', 'composto' => 'Composto', 'variavel' => 'Variável', 'combo' => 'Combo'])
                             ->attrs(['class' => 'form-select'])
                             !!}
                         </div>
+
+                        <div class="col-md-2">
+                            {!!Form::select('categoria_id', 'Categoria', ['' => 'Todos'] + $categorias->pluck('nome', 'id')->all())
+                            ->attrs(['class' => 'form-select'])
+                            !!}
+                        </div>
+
+                        <div class="col-md-2">
+                            {!!Form::date('start_date', 'Dt. inicial cadastro')
+                            !!}
+                        </div>
+                        <div class="col-md-2">
+                            {!!Form::date('end_date', 'Dt. final cadastro')
+                            !!}
+                        </div>
+
+                        @if(__countLocalAtivo() > 1)
+                        <div class="col-md-2">
+                            {!!Form::select('local_id', 'Local', ['' => 'Selecione'] + __getLocaisAtivoUsuario()->pluck('descricao', 'id')->all())
+                            ->attrs(['class' => 'select2'])
+                            !!}
+                        </div>
+                        @endif
                         <div class="col-md-3 text-left">
                             <br>
                             <button class="btn btn-primary" type="submit"> <i class="ri-search-line"></i>Pesquisar</button>
@@ -54,18 +85,27 @@
                     {!!Form::close()!!}
                 </div>
                 <div class="col-md-12 mt-3 table-responsive">
+                    <h6>Total de produtos: <strong>{{ $data->total() }}</strong></h6>
+                    <h6>Total de produtos cadastrados: <strong>{{ $totalCadastros }}</strong></h6>
                     <div class="table-responsive-sm">
                         <table class="table table-striped table-centered mb-0">
                             <thead class="table-dark">
                                 <tr>
+                                    @can('produtos_delete')
                                     <th>
                                         <div class="form-check form-checkbox-danger mb-2">
                                             <input class="form-check-input" type="checkbox" id="select-all-checkbox">
                                         </div>
                                     </th>
+                                    @endcan
                                     <th>Ações</th>
                                     <th></th>
                                     <th>Nome</th>
+                                    <th>Valor de venda</th>
+                                    <th>Valor de compra</th>
+                                    @if(__countLocalAtivo() > 1)
+                                    <th>Disponibilidade</th>
+                                    @endif
                                     <th>Categoria</th>
                                     <th>Código de barras</th>
                                     <th>NCM</th>
@@ -73,9 +113,12 @@
                                     <th>Data de cadastro</th>
                                     <th>CFOP</th>
                                     <th>Gerenciar estoque</th>
+                                    @can('estoque_view')
                                     <th>Estoque</th>
+                                    @endcan
                                     <th>Status</th>
                                     <th>Variação</th>
+                                    <th>Combo</th>
                                     @if(__isActivePlan(Auth::user()->empresa, 'Cardapio'))
                                     <th>Cardápio</th>
                                     @endif
@@ -85,28 +128,36 @@
                                     @if(__isActivePlan(Auth::user()->empresa, 'Ecommerce'))
                                     <th>Ecommerce</th>
                                     @endif
-                                    <th>Valor de venda</th>
-                                    <th>Valor de compra</th>
+                                    @if(__isActivePlan(Auth::user()->empresa, 'Reservas'))
+                                    <th>Reserva</th>
+                                    @endif
+                                    
                                 </tr>
                             </thead>
                             <tbody>
                                 @forelse($data as $item)
                                 <tr>
+                                    @can('produtos_delete')
                                     <td>
                                         <div class="form-check form-checkbox-danger mb-2">
                                             <input class="form-check-input check-delete" type="checkbox" name="item_delete[]" value="{{ $item->id }}">
                                         </div>
                                     </td>
+                                    @endcan
                                     <td>
                                         <form style="width: 250px" action="{{ route('produtos.destroy', $item->id) }}" method="post" id="form-{{$item->id}}">
                                             @method('delete')
+                                            @can('produtos_edit')
                                             <a class="btn btn-warning btn-sm" href="{{ route('produtos.edit', [$item->id]) }}">
                                                 <i class="ri-edit-line"></i>
                                             </a>
+                                            @endcan
                                             @csrf
+                                            @can('produtos_delete')
                                             <button type="button" class="btn btn-delete btn-sm btn-danger">
                                                 <i class="ri-delete-bin-line"></i>
                                             </button>
+                                            @endcan
 
                                             @if($item->composto == true)
                                             <a class="btn btn-info btn-sm" href="{{ route('produto-composto.show', [$item->id]) }}" title="Ver composição"><i class="ri-search-eye-fill"></i></a>
@@ -121,10 +172,35 @@
                                             <a class="btn btn-primary btn-sm" href="{{ route('produtos.duplicar', [$item->id]) }}" title="Duplicar produto">
                                                 <i class="ri-file-copy-line"></i>
                                             </a>
+                                            <a class="btn btn-light btn-sm" href="{{ route('produtos.etiqueta', [$item->id]) }}" title="Gerar etiqueta">
+                                                <i class="ri-barcode-box-line"></i>
+                                            </a>
                                         </form>
                                     </td>
                                     <td><img class="img-60" src="{{ $item->img }}"></td>
-                                    <td width="300">{{ $item->nome }}</td>
+                                    <td><label style="width: 300px">{{ $item->nome }}</label></td>
+                                    @if($item->variacao_modelo_id)
+                                    <td>
+                                        <div class="div-overflow">
+                                            {{ $item->valoresVariacao() }}
+                                        </div>
+                                    </td>
+                                    @else
+                                    <td><label style="width: 100px">{{ __moeda($item->valor_unitario) }}</label></td>
+                                    @endif
+                                    <td><label style="width: 120px">{{ __moeda($item->valor_compra) }}</label></td>
+                                    @if(__countLocalAtivo() > 1)
+                                    <td>
+                                        <label style="width: 250px">
+                                            @foreach($item->locais as $l)
+                                            @if($l->localizacao)
+                                            <strong>{{ $l->localizacao->descricao }}</strong>
+                                            @if(!$loop->last) | @endif
+                                            @endif
+                                            @endforeach
+                                        </label>
+                                    </td>
+                                    @endif
                                     <td width="150">{{ $item->categoria ? $item->categoria->nome : '--' }}</td>
                                     <td width="200">{{ $item->codigo_barras ?? '--' }}</td>
                                     <td>{{ $item->ncm }}</td>
@@ -138,7 +214,32 @@
                                         <i class="ri-close-circle-fill text-danger"></i>
                                         @endif
                                     </td>
-                                    <td>{{ $item->estoqueAtual() }}</td>
+
+                                    @can('estoque_view')
+                                    <td>
+                                        @if(__countLocalAtivo() == 1)
+                                        {{ $item->estoqueAtual() }}
+                                        @else
+                                        <label style="width: 200px">
+
+                                            @foreach($item->estoqueLocais as $e)
+                                            @if($e->local)
+                                            {{ $e->local->descricao }}:
+                                            <strong class="text-success">
+                                                @if($item->unidade == 'UN' || $item->unidade == 'UNID')
+                                                {{ number_format($e->quantidade, 0) }}
+                                                @else
+                                                {{ number_format($e->quantidade, 3) }}
+                                                @endif
+                                            </strong>
+                                            @endif
+                                            @if(!$loop->last) | @endif
+                                            @endforeach
+                                        </label>
+
+                                        @endif
+                                    </td>
+                                    @endcan
 
                                     <td>
                                         @if($item->status)
@@ -149,6 +250,13 @@
                                     </td>
                                     <td>
                                         @if($item->variacao_modelo_id)
+                                        <i class="ri-checkbox-circle-fill text-success"></i>
+                                        @else
+                                        <i class="ri-close-circle-fill text-danger"></i>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if($item->combo)
                                         <i class="ri-checkbox-circle-fill text-success"></i>
                                         @else
                                         <i class="ri-close-circle-fill text-danger"></i>
@@ -181,22 +289,21 @@
                                         @endif
                                     </td>
                                     @endif
-
-                                    @if($item->variacao_modelo_id)
+                                    @if(__isActivePlan(Auth::user()->empresa, 'Reservas'))
                                     <td>
-                                        <div class="div-overflow">
-                                            {{ $item->valoresVariacao() }}
-                                        </div>
+                                        @if($item->reserva)
+                                        <i class="ri-checkbox-circle-fill text-success"></i>
+                                        @else
+                                        <i class="ri-close-circle-fill text-danger"></i>
+                                        @endif
                                     </td>
-                                    @else
-                                    <td>{{ __moeda($item->valor_unitario) }}</td>
                                     @endif
-                                    <td>{{ __moeda($item->valor_compra) }}</td>
+                                    
                                     
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="18" class="text-center">Nada encontrado</td>
+                                    <td colspan="21" class="text-center">Nada encontrado</td>
                                 </tr>
                                 @endforelse
                             </tbody>
@@ -204,6 +311,7 @@
                     </div>
                 </div>
                 <br>
+                @can('produtos_delete')
                 <form action="{{ route('produtos.destroy-select') }}" method="post" id="form-delete-select">
                     @method('delete')
                     @csrf
@@ -212,6 +320,7 @@
                         <i class="ri-close-circle-line"></i> Remover selecionados
                     </button>
                 </form>
+                @endcan
                 <br>
                 {!! $data->appends(request()->all())->links() !!}
             </div>

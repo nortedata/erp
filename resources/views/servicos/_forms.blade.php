@@ -48,13 +48,55 @@
     </div>
 
     <div class="col-md-3">
-        {!!Form::tel('codigo_tributacao_municipio', 'Código do trtibutação municipal')->attrs(['class' => ''])
+        {!!Form::tel('codigo_tributacao_municipio', 'Código do tributação municipal')->attrs(['class' => ''])
         !!}
     </div>
 
     <div class="col-md-2">
         {!!Form::select('status', 'Ativo', ['1' => 'Sim', '0' => 'Não'])
         ->attrs(['class' => 'form-select'])
+        !!}
+    </div>
+
+    @if(__isActivePlan(Auth::user()->empresa, 'Reservas'))
+    <div class="col-md-2">
+        {!!Form::select('reserva', 'Usar em reserva', ['0' => 'Não', '1' => 'Sim'])
+        ->attrs(['class' => 'form-select'])
+        !!}
+    </div>
+    <div class="col-md-2">
+        {!!Form::select('padrao_reserva_nfse', 'Padrão reserva NFSe', ['0' => 'Não', '1' => 'Sim'])
+        ->attrs(['class' => 'form-select tooltipp'])
+        !!}
+        <div class="text-tooltip d-none">
+            Marcar como sim se for usar este serviço como padrão na emissão da NFSe de reserva
+        </div>
+    </div>
+    @endif
+
+    @if(__isActivePlan(Auth::user()->empresa, 'Delivery'))
+    <div class="col-md-2">
+        {!!Form::select('marketplace', 'Usar em marketplace', ['0' => 'Não', '1' => 'Sim'])
+        ->attrs(['class' => 'form-select'])
+        ->value(isset($item) ? $item->marketplace : (isset($marketplace) && $marketplace == 1 ? 1 : 0))
+        !!}
+    </div>
+
+    <div class="col-md-2">
+        {!!Form::select('destaque_marketplace', 'Destaque no marketplace', ['0' => 'Não', '1' => 'Sim'])
+        ->attrs(['class' => 'form-select'])
+        !!}
+    </div>
+
+    @if(isset($marketplace) && $marketplace == 1)
+    <input type="hidden" name="redirect_marketplace" value="1">
+    @endif
+
+    @endif
+
+    <div class="col-md-12">
+        {!!Form::textarea('descricao', 'Descrição')
+        ->attrs(['rows' => '4'])
         !!}
     </div>
 

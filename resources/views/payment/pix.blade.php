@@ -39,7 +39,7 @@
         inputTest.select();
         document.execCommand('copy');
 
-        swal("", "Código pix copado!!", "success")
+        swal("", "Código pix copiado!!", "success")
     }
 
     myInterval = setInterval(() => {

@@ -14,7 +14,7 @@ class CteOs extends Model
         'municipio_envio', 'municipio_inicio', 'municipio_fim', 'valor_transporte',
         'valor_receber', 'observacao', 'sequencia_cce', 'numero_emissao', 'chave', 'estado_emissao',
         'empresa_id', 'cst', 'perc_icms', 'descricao_servico', 'quantidade_carga', 'veiculo_id',
-        'modal', 'data_viagem', 'horario_viagem', 'cfop'
+        'modal', 'data_viagem', 'horario_viagem', 'cfop', 'local_id'
     ];
 
 
@@ -31,6 +31,11 @@ class CteOs extends Model
     public function emitente()
     {
         return $this->belongsTo(Cliente::class, 'emitente_id');
+    }
+
+    public function localizacao()
+    {
+        return $this->belongsTo(Localizacao::class, 'local_id');
     }
 
     public function empresa()
@@ -185,6 +190,11 @@ class CteOs extends Model
             'infQ',
             'docAnt'
         ];
+    }
+
+    public function percurso()
+    {
+        return $this->hasMany(PercursoCteOs::class, 'cteos_id');
     }
 
     public function estadoEmissao()

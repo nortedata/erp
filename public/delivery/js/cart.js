@@ -60,14 +60,12 @@ function editEndereco(e){
 	$('#rua').val(e.rua)
 	$('#numero').val(e.numero)
 	$('#referencia').val(e.referencia)
+	$('#cep').val(e.cep)
 
 	$('._bairro_id').val(e.bairro_id).change();
 	$('#tipo').val(e.tipo).change()
-	if(e.padrao){
-		$('#padrao').prop('checked', 1)
-	}else{
-		$('#padrao').prop('checked', 0)
-	}
+	$('#padrao').val(e.padrao).change()
+	
 }
 
 

@@ -22,6 +22,10 @@ class ApuracaoMensal extends Model
         return $this->hasMany(ApuracaoMensalEvento::class, 'apuracao_id');
     }
 
+    public function contaPagar(){
+        return $this->belongsTo(ContaPagar::class, 'conta_pagar_id');
+    }
+
     public static function tiposPagamento(){
         return [
             'Dinheiro' => 'Dinheiro',

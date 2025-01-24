@@ -72,11 +72,13 @@ return new class extends Migration
             $table->boolean('status_pagamento')->default(0);
             $table->string('cfop', 4)->nullable();
             $table->boolean('api')->default(0);
+            $table->integer('local_id')->nullable();
 
             $table->timestamps();
 
             // alter table ctes add column status_pagamento boolean default 0;
             // alter table ctes add column api boolean default 0;
+            // alter table ctes add column local_id integer default null;
 
         });
     }

@@ -34,14 +34,23 @@
                 <div class="card">
 
                     <div class="row m-3">
+                        @isset($reserva)
                         <div class="col-md-5">
-                            {!!Form::select('cliente_id', 'Cliente')->attrs(['class' => 'select2 cliente_id'])->options(isset($item) ? [$item->cliente_id => $item->cliente->razao_social] : [])
+                            {!!Form::select('cliente_id', 'Cliente')->attrs(['class' => 'select2 cliente_id'])
+                            ->options([$reserva->cliente_id => $reserva->cliente->razao_social])
                             !!}
                         </div>
+                        @else
+                        <div class="col-md-5">
+                            {!!Form::select('cliente_id', 'Cliente')->attrs(['class' => 'select2 cliente_id'])
+                            ->options(isset($item) ? [$item->cliente_id => $item->cliente->razao_social] : [])
+                            !!}
+                        </div>
+                        @endif
                         <hr class="mt-3">
                         <div class="row g-2">
                             <div class="col-md-3">
-                                {!!Form::text('razao_social', 'Razão Social')->attrs(['class' => ''])->required()
+                                {!!Form::text('razao_social', 'Razão social')->attrs(['class' => ''])->required()
                                 ->value(isset($item) ? $item->razao_social : '')
                                 !!}
                             </div>
@@ -121,11 +130,18 @@
             <div class="tab-pane fade show" id="servico" role="tabpanel">
                 <div class="card">
                     <div class="row m-3 g-2">
+                        @isset($servicoPadrao)
                         <div class="col-md-5">
-
+                            {!!Form::select('servico_id', 'Serviço')->attrs(['class' => 'select2 servico_id'])
+                            ->options([$servicoPadrao->id => $servicoPadrao->nome])->required()
+                            !!}
+                        </div>
+                        @else
+                        <div class="col-md-5">
                             {!!Form::select('servico_id', 'Serviço')->attrs(['class' => 'select2 servico_id'])->options(isset($item) ? [$item->servico->servico_id => $item->servico->servico->nome] : [])->required()
                             !!}
                         </div>
+                        @endif
 
                         <div class="col-md-3">
                             {!!Form::text('natureza_operacao', 'Natureza de Operação')->attrs(['class' => ''])
@@ -133,28 +149,65 @@
                             !!}
                         </div>
 
+                        <div class="col-md-2">
+                            {!!Form::select('gerar_conta_receber', 'Gerar conta a receber', [0 => 'Não', 1 => 'Sim'])
+                            ->attrs(['class' => 'form-select'])
+                            !!}
+                        </div>
+
+                        <div class="col-md-2 div-data_vencimento d-none">
+                            {!!Form::date('data_vencimento', 'Data de vencimento')->required()
+                            !!}
+                        </div>
+
+                        @isset($descricaoServico)
+                        <div class="col-md-12">
+                            {!!Form::text('discriminacao', 'Discriminação')->attrs(['class' => ''])
+                            ->value($descricaoServico)->required()
+                            !!}
+                        </div>
+                        @else
                         <div class="col-md-12">
                             {!!Form::text('discriminacao', 'Discriminação')->attrs(['class' => ''])
                             ->value(isset($item) ? $item->servico->discriminacao : '')->required()
                             !!}
                         </div>
+                        @endif
 
+                        @isset($total)
                         <div class="col-md-2">
-                            {!!Form::tel('valor_servico', 'Valor do Serviço')->attrs(['class' => 'moeda'])
-                            ->value(isset($item) ? $item->servico->valor_servico : '')->required()
+                            {!!Form::tel('valor_servico', 'Valor do serviço')->attrs(['class' => 'moeda'])
+                            ->value(__moeda($total))->required()
                             !!}
                         </div>
+                        @else
+                        <div class="col-md-2">
+                            {!!Form::tel('valor_servico', 'Valor do serviço')->attrs(['class' => 'moeda'])
+                            ->value(isset($item) ? __moedaInput($item->servico->valor_servico) : '')->required()
+                            !!}
+                        </div>
+                        @endif
 
                         <div class="col-md-2">
                             {!!Form::text('codigo_cnae', 'Cód. CNAE')->attrs(['class' => ''])
                             ->value(isset($item) ? $item->servico->codigo_cnae : '')
                             !!}
                         </div>
+
+                        @isset($servicoPadrao)
                         <div class="col-md-2">
-                            {!!Form::text('codigo_servico', 'Cód. do Serviço')->attrs(['class' => ''])
+                            {!!Form::text('codigo_servico', 'Código do serviço')->attrs(['class' => ''])
+                            ->value($servicoPadrao->codigo_servico)->required()
+                            !!}
+                        </div>
+                        @else
+                        <div class="col-md-2">
+                            {!!Form::text('codigo_servico', 'Código do serviço')->attrs(['class' => ''])
                             ->value(isset($item) ? $item->servico->codigo_servico : '')->required()
                             !!}
                         </div>
+                        @endif
+
                         <div class="col-md-3">
                             {!!Form::text('codigo_tributacao_municipio', 'Cód. de tributação do município')->attrs(['class' => ''])
                             ->value(isset($item) ? $item->servico->codigo_tributacao_municipio : '')
@@ -185,13 +238,13 @@
                         </div>
 
                         <div class="col-md-2">
-                            {!!Form::select('estado_local_prestacao_servico', 'UF do Local de Prestação', \App\Models\Cidade::estados())->attrs(['class' => 'form-select'])
+                            {!!Form::select('estado_local_prestacao_servico', 'UF do local de prestação', \App\Models\Cidade::estados())->attrs(['class' => 'form-select'])
                             ->value(isset($item) ? $item->servico->estado_local_prestacao_servico : '')
                             !!}
                         </div>
 
                         <div class="col-md-3">
-                            {!!Form::text('cidade_local_prestacao_servico', 'Cidade do Local de Prestação')->attrs(['class' => ''])
+                            {!!Form::text('cidade_local_prestacao_servico', 'Cidade do local de prestação')->attrs(['class' => ''])
                             ->value(isset($item) ? $item->servico->cidade_local_prestacao_servico : '')
                             !!}
                         </div>
@@ -257,5 +310,4 @@
     <div class="col-12" style="text-align: right;">
         <button type="submit" class="btn btn-success btn-salvar-nfe px-5 m-3">Salvar</button>
     </div>
-</div>
 </div>

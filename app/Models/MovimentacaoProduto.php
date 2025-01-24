@@ -10,11 +10,20 @@ class MovimentacaoProduto extends Model
     use HasFactory;
 
     protected $fillable = [ 
-        'produto_id', 'quantidade', 'tipo', 'codigo_transacao', 'tipo_transacao', 'produto_variacao_id'
+        'produto_id', 'quantidade', 'tipo', 'codigo_transacao', 'tipo_transacao', 'produto_variacao_id', 'user_id', 
+        'estoque_atual'
     ];
 
     public function produto(){
         return $this->belongsTo(Produto::class, 'produto_id');
+    }
+
+    public function user(){
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function produtoVariacao(){
+        return $this->belongsTo(ProdutoVariacao::class, 'produto_variacao_id');
     }
 
     public function tipoTransacao(){

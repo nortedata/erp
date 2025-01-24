@@ -54,11 +54,13 @@ return new class extends Migration
             $table->boolean('confirmacao_pedido_cliente')->default(0);
             $table->string('tipo_entrega', 30);
             $table->string('cor_principal', 10)->nullable();
+            $table->string('funcionamento_descricao', 100)->nullable();
 
             // alter table market_place_configs add column tipo_entrega varchar(30) default '';
             // alter table market_place_configs add column loja_id varchar(15) default null;
             // alter table market_place_configs add column cor_principal varchar(10) default null;
             // alter table market_place_configs add column email varchar(80) default null;
+            // alter table market_place_configs add column funcionamento_descricao varchar(100) default null;
 
             $table->timestamps();
         });

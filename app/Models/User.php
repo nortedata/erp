@@ -7,10 +7,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, HasRoles;
 
     /**
      * The attributes that are mass assignable.
@@ -26,7 +27,8 @@ class User extends Authenticatable
         'notificacao_cardapio',
         'tipo_contador',
         'notificacao_marketplace',
-        'notificacao_ecommerce'
+        'notificacao_ecommerce',
+        'escolher_localidade_venda'
     ];
 
     /**
@@ -62,6 +64,11 @@ class User extends Authenticatable
     public function acessos()
     {
         return $this->hasMany(AcessoLog::class, 'usuario_id')->orderBy('id', 'desc');
+    }
+
+    public function locais()
+    {
+        return $this->hasMany(UsuarioLocalizacao::class, 'usuario_id');
     }
 
     public function getImgAttribute()

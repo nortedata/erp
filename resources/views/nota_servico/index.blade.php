@@ -6,10 +6,12 @@
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-2">
+                        @can('nfse_create')
                         <a href="{{ route('nota-servico.create') }}" class="btn btn-success">
                             <i class="ri-add-circle-fill"></i>
                             Nova NFSe
                         </a>
+                        @endcan
                     </div>
                     <div class="col-md-8"></div>
 
@@ -114,12 +116,17 @@
                                             @endif
                                             
                                             @if($item->estado == 'novo' || $item->estado == 'rejeitado')
+
+                                            @can('nfse_edit')
                                             <a class="btn btn-warning btn-sm" href="{{ route('nota-servico.edit', $item->id) }}">
                                                 <i class="ri-edit-line"></i>
                                             </a>
+                                            @endcan
                                             
+                                            @can('nfse_delete')
                                             <button type="button" class="btn btn-danger btn-sm btn-delete"><i class="ri-delete-bin-line"></i></button>
-
+                                            @endcan
+                                            
                                             <button title="Transmitir NFSe" type="button" class="btn btn-success btn-sm" onclick="transmitir('{{$item->id}}')">
                                                 <i class="ri-send-plane-fill"></i>
                                             </button>

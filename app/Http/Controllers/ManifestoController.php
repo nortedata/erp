@@ -9,6 +9,7 @@ use App\Models\ManifestoDfe;
 use App\Models\NaturezaOperacao;
 use App\Models\Produto;
 use App\Models\Cidade;
+use App\Models\ConfigGeral;
 use App\Models\Transportadora;
 use App\Services\DFeService;
 use Illuminate\Http\Request;
@@ -128,6 +129,10 @@ class ManifestoController extends Controller
 
     public function download($id)
     {
+        if (!__isCaixaAberto()) {
+            session()->flash("flash_warning", "Abrir caixa antes de continuar!");
+            return redirect()->route('caixa.create');
+        }
         $naturezaPadrao = NaturezaOperacao::where('empresa_id', request()->empresa_id)->first();
 
         if ($naturezaPadrao == null) {
@@ -138,6 +143,11 @@ class ManifestoController extends Controller
         $config = Empresa::where('id', request()->empresa_id)
         ->first();
         $dfe = ManifestoDfe::findOrFail($id);
+
+        if($dfe->compra_id > 0){
+            session()->flash('flash_error', 'XML já foi importado!');
+            return redirect()->back();
+        }
 
         $chave = $dfe->chave;
         $cnpj = preg_replace('/[^0-9]/', '', $config->cpf_cnpj);
@@ -356,39 +366,44 @@ class ManifestoController extends Controller
             'itens' => $itens
         ];
 
-
         if (!is_dir(public_path('xml_entrada'))) {
             mkdir(public_path('xml_entrada'), 0777, true);
         }
-
+        $tPag = '';
+        if($xml->NFe->infNFe->pag->detPag){
+            $tPag = $xml->NFe->infNFe->pag->detPag->tPag;
+        }
         $fatura = [];
         if (!empty($xml->NFe->infNFe->cobr->dup)) {
             foreach ($xml->NFe->infNFe->cobr->dup as $dup) {
                 $titulo = $dup->nDup;
-                $vencimento = $dup->dVenc;
-                $vencimento = explode('-', $vencimento);
-                $vencimento = $vencimento[2] . "/" . $vencimento[1] . "/" . $vencimento[0];
+                $vencimento = (string)$dup->dVenc;
+                // $vencimento = explode('-', $vencimento);
+                // $vencimento = $vencimento[2] . "/" . $vencimento[1] . "/" . $vencimento[0];
                 $valor_parcela = number_format((float) $dup->vDup, 2, ".", "");
                 $parcela = [
                     'numero' => (int)$titulo,
                     'vencimento' => $vencimento,
                     'valor_parcela' => $valor_parcela,
-                    'rand' => rand(0, 10000)
+                    'rand' => rand(0, 10000),
+                    'tipo_pagamento' => $tPag
                 ];
                 array_push($fatura, $parcela);
             }
         } else {
-            $vencimento = explode('-', substr($xml->NFe->infNFe->ide->dhEmi[0], 0, 10));
-            $vencimento = $vencimento[2] . "/" . $vencimento[1] . "/" . $vencimento[0];
+
+            $vencimento = (string)substr($xml->NFe->infNFe->ide->dhEmi[0], 0, 10);
+            // $vencimento = $vencimento[2] . "/" . $vencimento[1] . "/" . $vencimento[0];
             $parcela = [
                 'numero' => 1,
                 'vencimento' => $vencimento,
                 'valor_parcela' => (float)$xml->NFe->infNFe->total->ICMSTot->vProd,
-                'rand' => rand(0, 10000)
+                'rand' => rand(0, 10000),
+                'tipo_pagamento' => $tPag
             ];
             array_push($fatura, $parcela);
         }
-
+        // dd($fatura);
         $dadosXml['fatura'] = $fatura;
 
         $transportadoras = Transportadora::where('empresa_id', request()->empresa_id)->get();
@@ -398,8 +413,14 @@ class ManifestoController extends Controller
             session()->flash("flash_warning", "Primeiro cadastre um natureza de operação!");
             return redirect()->route('natureza-operacao.create');
         }
-
-        return view('compras.import_xml', compact('dadosXml', 'transportadoras', 'cidades', 'naturezas', 'fornecedor'));
+        $lucroPadraoProduto = 0;
+        $configGeral = ConfigGeral::where('empresa_id', request()->empresa_id)->first();
+        if($configGeral != null){
+            $lucroPadraoProduto = $configGeral->percentual_lucro_produto;
+        }
+        $isCompra = 1;
+        return view('compras.import_xml', compact('dadosXml', 'transportadoras', 'cidades', 'naturezas', 'fornecedor', 
+            'lucroPadraoProduto', 'isCompra'));
 
     }
 
@@ -474,7 +495,7 @@ class ManifestoController extends Controller
     private function cadastraFornecedor($dataFornecedor)
     {
         $fornecedor = Fornecedor::where('cpf_cnpj', $dataFornecedor['cpf_cnpj'])
-            ->where('empresa_id', request()->empresa_id)->first();
+        ->where('empresa_id', request()->empresa_id)->first();
 
         if ($fornecedor == null) {
             $fornecedor = Fornecedor::create($dataFornecedor);

@@ -47,10 +47,13 @@ class ApontamentoController extends Controller
             $codigo_transacao = $apontamento->id;
             $tipo_transacao = 'alteracao_estoque';
 
-            $this->util->movimentacaoProduto($request->produto_composto_id, $request->quantidade, $tipo, $codigo_transacao, $tipo_transacao);
+            $this->util->movimentacaoProduto($request->produto_composto_id, $request->quantidade, $tipo, $codigo_transacao, $tipo_transacao, 
+                \Auth::user()->id);
 
             session()->flash('flash_success', 'Apontamento realizado com sucesso');
         } catch (\Exception $e) {
+            echo $e->getMessage();
+            die;
             session()->flash('flash_error', 'Algo deu errado:' . $e->getMessage());
         }
         return redirect()->route('estoque.index');

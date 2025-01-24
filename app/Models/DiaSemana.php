@@ -44,7 +44,7 @@ class DiaSemana extends Model
 			'quarta' => 'Quarta-feira', 
 			'quinta' => 'Quinta-feira', 
 			'sexta' => 'Sexta-feira',
-			'sabado' => 'Sabado',
+			'sabado' => 'Sábado',
 		];
 	}
 

@@ -14,6 +14,8 @@ class EnderecoDelivery extends Model
         'longitude', 'cep', 'tipo', 'padrao'
     ];
 
+    protected $appends = [ 'info' ];
+
     public function getInfoAttribute()
     {
         $end = "$this->rua, $this->numero - " . $this->bairro->nome . " $this->referencia";
@@ -22,6 +24,7 @@ class EnderecoDelivery extends Model
         }else{
             $end .= ' - Trabalho';
         }
+
         return $end;
     }
 

@@ -29,7 +29,8 @@ $("#inp-produto_id").select2({
             var query = {
                 pesquisa: params.term,
                 lista_id: $('#lista_id').val(),
-                empresa_id: empresa_id
+                empresa_id: empresa_id,
+                usuario_id: $('#usuario_id').val(),
             };
             return query;
         },
@@ -57,7 +58,7 @@ $("#inp-produto_id").select2({
                     o.text += ' [' + v.codigo_barras  + ']';
                 }
                 o.value = v.id;
-                console.log(o)
+                // console.log(o)
                 results.push(o);
             });
             return {
@@ -115,12 +116,11 @@ function validaItens(){
         })
     }, 20)
 
-    setTimeout(() => {
-        $('#inp-codigo_barras').focus()
-    }, 500)
+    // setTimeout(() => {
+    //     $('#inp-codigo_barras').focus()
+    // }, 500)
 }
 
-$('#inp-codigo_barras')
 
 $('body').on('blur', '.valor_parcela', function () {
     calcTotalFatura()
@@ -256,7 +256,8 @@ function gerarNFe(fatura) {
         pre_venda_id: $('#pre_venda_id').val(),
         conta_receber: $('#inp-gerar_conta_receber').val(),
         fatura: fatura,
-        empresa_id: $('#empresa_id').val()
+        empresa_id: $('#empresa_id').val(),
+        usuario_id: $('#usuario_id').val()
     })
     .done((success) => {
         transmitir(success)
@@ -271,7 +272,8 @@ function gerarNFCe(fatura) {
         pre_venda_id: $('#pre_venda_id').val(),
         conta_receber: $('#inp-gerar_conta_receber').val(),
         fatura: fatura,
-        empresa_id: $('#empresa_id').val()
+        empresa_id: $('#empresa_id').val(),
+        usuario_id: $('#usuario_id').val()
     })
     .done((success) => {
         transmitirNfce(success)
@@ -282,11 +284,12 @@ function gerarNFCe(fatura) {
 }
 
 function gerarVenda(fatura) {
+
     $.post(path_url + "api/nfce/gerarVenda", {
         pre_venda_id: $('#pre_venda_id').val(),
         conta_receber: $('#inp-gerar_conta_receber').val(),
         fatura: fatura,
-        empresa_id: $('#empresa_id').val()
+        empresa_id: $('#empresa_id').val(),
     })
     .done((success) => {
         swal({
@@ -385,7 +388,8 @@ $('#codBarras').keyup((v) => {
             {
                 barcode: barcode,
                 empresa_id: $('#empresa_id').val(),
-                lista_id: $('#lista_id').val()
+                lista_id: $('#lista_id').val(),
+                usuario_id: $('#usuario_id').val()
             })
             .done((e) => {
                 if (e.valor_unitario) {
@@ -409,6 +413,7 @@ $('#codBarras').keyup((v) => {
             })
             .fail((err) => {
                 console.log(err);
+                buscarPorReferencia(barcode)
             });
         }
     }, 500)
@@ -445,6 +450,7 @@ function selectCat(id) {
     $.get(path_url + "api/produtos/findByCategory",
     {
         lista_id: $('#lista_id').val(),
+        usuario_id: $('#usuario_id').val(),
         id: id
     })
     .done((e) => {
@@ -463,6 +469,7 @@ function todos() {
     $.get(path_url + "api/produtos/all", { 
         empresa_id: $('#empresa_id').val(),
         lista_id: $('#lista_id').val(),
+        usuario_id: $('#usuario_id').val(),
     })
     .done((e) => {
 
@@ -473,9 +480,12 @@ function todos() {
     });
 }
 
+
 $(function () {
+
     setTimeout(() => {
         $("#inp-produto_id").change(() => {
+
             let product_id = $("#inp-produto_id").val();
 
             if (product_id) {
@@ -484,6 +494,7 @@ $(function () {
                 { 
                     produto_id: product_id,
                     lista_id: $('#lista_id').val(),
+                    usuario_id: $('#usuario_id').val(),
                 })
                 .done((e) => {
                     if(e.variacao_modelo_id){
@@ -507,6 +518,10 @@ $(function () {
                         $("#inp-valor_unitario").val(convertFloatToMoeda(e.valor_unitario));
                         $("#inp-subtotal").val(convertFloatToMoeda(e.valor_unitario));
                     }
+
+                    setTimeout(() => {
+                        $("#inp-quantidade").focus()
+                    }, 20)
                 })
                 .fail((e) => {
                     console.log(e);
@@ -526,17 +541,25 @@ $(function () {
 
 var PRODUTOID = null
 function addProdutos(id) {
+
     $.get(path_url + "api/frenteCaixa/linhaProdutoVendaAdd", {
         id: id, 
         qtd: 0,
-        lista_id: $('#lista_id').val()
+        lista_id: $('#lista_id').val(),
+        usuario_id: $('#usuario_id').val(),
     })
     .done((e) => {
+        if(!e){
+            swal("Alerta", "Produto sem estoque", "warning")
+        }
         $(".table-itens tbody").append(e);
         calcTotal();
     })
     .fail((e) => {
-        // console.log(e);
+        console.log(e);
+        if(e.responseJSON == 'Produto sem estoque'){
+            swal("Alerta", "Produto sem estoque", "warning")
+        }
         PRODUTOID = id
         if(e.status == 402){
             buscarVariacoes(id)
@@ -567,13 +590,24 @@ function selecionarVariacao(id, descricao, valor){
     if(PRODUTOID != null){
         addItem()
     }
-    
 }
+
+$("#inp-quantidade").on('keypress',function(e) {
+    if(e.which == 13) {
+        $("#inp-valor_unitario").focus()
+    }
+});
+
+$("#inp-valor_unitario").on('keypress',function(e) {
+    if(e.which == 13) {
+        $('.btn-add-item').trigger('click')
+    }
+});
 
 function addItem(){
     $.get(path_url + "api/produtos/findId/" + PRODUTOID)
     .done((res) => {
-        console.log(res)
+        // console.log(res)
         var newOption = new Option(res.nome, res.id, false, false);
         $('#inp-produto_id').html('')
         $('#inp-produto_id').append(newOption);
@@ -609,6 +643,7 @@ $("#lista_precos select").each(function () {
                     var query = {
                         pesquisa: params.term,
                         empresa_id: $("#empresa_id").val(),
+                        usuario_id: $("#usuario_id").val(),
                         tipo_pagamento_lista: $("#inp-tipo_pagamento_lista").val(),
                         funcionario_lista_id: $("#inp-funcionario_lista_id").val(),
                     };

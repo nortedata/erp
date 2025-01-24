@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\CarrosselCardapio;
+use App\Models\Produto;
 use App\Utils\UploadUtil;
 
 class CarrosselCardapioController extends Controller
@@ -27,13 +28,17 @@ class CarrosselCardapioController extends Controller
 
     public function create()
     {
-        return view('carrossel.create');
+        $produtos = Produto::where('empresa_id', request()->empresa_id)
+        ->where('cardapio', 1)->orderBy('nome', 'asc')->get();
+        return view('carrossel.create', compact('produtos'));
     }
 
     public function edit($id)
     {
+        $produtos = Produto::where('empresa_id', request()->empresa_id)
+        ->where('cardapio', 1)->orderBy('nome', 'asc')->get();
         $item = CarrosselCardapio::findOrFail($id);
-        return view('carrossel.edit', compact('item'));
+        return view('carrossel.edit', compact('item', 'produtos'));
     }
 
     public function store(Request $request)

@@ -7,6 +7,25 @@ $('body').on('change', '.cliente_id', function () {
     }
 })
 
+$(function(){
+    validaContaReceber()
+})
+
+function validaContaReceber(){
+    let selected = $('#inp-gerar_conta_receber').val()
+    if(selected == 1){
+        $('.div-data_vencimento').removeClass('d-none')
+        $('#inp-data_vencimento').attr('required', 1)
+    }else{
+        $('.div-data_vencimento').addClass('d-none')
+        $('#inp-data_vencimento').removeAttr('required')
+    }
+}
+
+$('body').on('change', '#inp-gerar_conta_receber', function () {
+    validaContaReceber()
+})
+
 function getClient(cliente) {
 
     $.get(path_url + "api/clientes/find/" + cliente)

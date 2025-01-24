@@ -39,28 +39,42 @@ class CteController extends Controller
         if (!is_dir(public_path('dacte'))) {
             mkdir(public_path('dacte'), 0777, true);
         }
+
+        $this->middleware('permission:cte_create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:cte_edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:cte_view', ['only' => ['show', 'index']]);
+        $this->middleware('permission:cte_delete', ['only' => ['destroy']]);
     }
 
     public function index(Request $request)
     {
-        // $clientes = Cliente::where('empresa_id', request()->empresa_id)->get();
+
+        $locais = __getLocaisAtivoUsuario();
+        $locais = $locais->pluck(['id']);
 
         $start_date = $request->get('start_date');
         $end_date = $request->get('end_date');
         $estado = $request->get('estado');
+        $local_id = $request->get('local_id');
 
         $data = Cte::where('empresa_id', request()->empresa_id)
-            ->when(!empty($start_date), function ($query) use ($start_date) {
-                return $query->whereDate('created_at', '>=', $start_date);
-            })
-            ->when(!empty($end_date), function ($query) use ($end_date,) {
-                return $query->whereDate('created_at', '<=', $end_date);
-            })
-            ->when($estado != "", function ($query) use ($estado) {
-                return $query->where('estado', $estado);
-            })
-            ->orderBy('created_at', 'desc')
-            ->paginate(env("PAGINACAO"));
+        ->when(!empty($start_date), function ($query) use ($start_date) {
+            return $query->whereDate('created_at', '>=', $start_date);
+        })
+        ->when(!empty($end_date), function ($query) use ($end_date,) {
+            return $query->whereDate('created_at', '<=', $end_date);
+        })
+        ->when($estado != "", function ($query) use ($estado) {
+            return $query->where('estado', $estado);
+        })
+        ->when($local_id, function ($query) use ($local_id) {
+            return $query->where('local_id', $local_id);
+        })
+        ->when(!$local_id, function ($query) use ($locais) {
+            return $query->whereIn('local_id', $locais);
+        })
+        ->orderBy('created_at', 'desc')
+        ->paginate(env("PAGINACAO"));
         return view('cte.index', compact('data'));
     }
 
@@ -76,8 +90,9 @@ class CteController extends Controller
             session()->flash('flash_warning', 'Cadastar um cliente para continuar');
             return redirect()->route('clientes.create');
         }
-        $veiculos = Veiculo::where('empresa_id', request()->empresa_id)->get();
-        if (count($veiculos) == 0) {
+        $veiculos = Veiculo::where('empresa_id', request()->empresa_id)
+        ->where('status', 1)->get();
+        if (sizeof($veiculos) == 0) {
             session()->flash('flash_warning', 'Cadastar um veículo para continuar');
             return redirect()->route('veiculos.create');
         }
@@ -99,7 +114,8 @@ class CteController extends Controller
         $item = Cte::findOrFail($id);
         $naturezas = NaturezaOperacao::where('empresa_id', request()->empresa_id)->get();
         $clientes = Cliente::where('empresa_id', request()->empresa_id)->get();
-        $veiculos = Veiculo::where('empresa_id', request()->empresa_id)->get();
+        $veiculos = Veiculo::where('empresa_id', request()->empresa_id)
+        ->where('status', 1)->get();
         $unidadesMedida = Cte::unidadesMedida();
         $tiposMedida = Cte::tiposMedida();
         $cidades = Cidade::all();
@@ -125,7 +141,7 @@ class CteController extends Controller
                     'valor_receber' => __convert_value_bd($request->valor_receber) ?? 0,
                     'detalhes_retira' => $request->detalhes_retira ?? '',
                     'observacao' => $request->observacao ?? '',
-                    'numero_serie' => $config->numero_serie_cte,
+                    'numero_serie' => $config->numero_serie_cte ? $config->numero_serie_cte : 0,
                     'numero' => $request->numero ?? 0,
                     'perc_red_bc' => $request->perc_red_bc ? __convert_value_bd($request->perc_red_bc) : 0,
                     'ambiente' => $config->ambiente
@@ -157,9 +173,12 @@ class CteController extends Controller
                         ]);
                     }
                 }
+                $descricaoLog = "Número: $cte->numero - Remetente: " . $cte->remetente->info;
+                __createLog($request->empresa_id, 'CTe', 'cadastrar', $descricaoLog);
             });
             session()->flash("flash_success", "CTe cadastrada com sucesso!");
         } catch (\Exception $e) {
+            __createLog(request()->empresa_id, 'CTe', 'erro', $e->getMessage());
             session()->flash("flash_error", "Não foi possível cadastrar a CTe!" . $e->getMessage());
         }
         return redirect()->route('cte.index');
@@ -213,11 +232,14 @@ class CteController extends Controller
                         ]);
                     }
                 }
+                $descricaoLog = "Número: $item->numero - Remetente: " . $item->remetente->info;
+                __createLog($request->empresa_id, 'CTe', 'editar', $descricaoLog);
             });
             session()->flash("flash_success", "CTe atualizado!");
         } catch (\Exception $e) {
             // echo $e->getMessage();
             // die;
+            __createLog(request()->empresa_id, 'CTe', 'erro', $e->getMessage());
             session()->flash("flash_error", "Algo deu errado: " . $e->getMessage());
         }
         return redirect()->route('cte.index');
@@ -227,15 +249,17 @@ class CteController extends Controller
     {
         $item = Cte::findOrFail($id);
         try {
+            $descricaoLog = "Número: $item->numero - Remetente: " . $item->remetente->info;
+
             $item->componentes()->delete();
             $item->medidas()->delete();
             $item->chaves_nfe()->delete();
             $item->delete();
+            __createLog(request()->empresa_id, 'CTe', 'excluir', $descricaoLog);
             session()->flash("flash_success", "CTe removida!");
         } catch (\Exception $e) {
-            echo $e->getMessage();
-            die;
-            session()->flash("flash_error", 'Algo deu errado.', $e->getMessage());
+            __createLog(request()->empresa_id, 'CTe', 'erro', $e->getMessage());
+            session()->flash("flash_error", 'Algo deu errado: ' . $e->getMessage());
         }
         return redirect()->route('cte.index');
     }
@@ -250,6 +274,8 @@ class CteController extends Controller
             session()->flash("flash_error", "Certificado não encontrado para este emitente");
             return redirect()->route('config.index');
         }
+
+        $empresa = __objetoParaEmissao($empresa, $item->local_id);
 
         $cte_service = new CTeService([
             "atualizacao" => date('Y-m-d h:i:s'),
@@ -267,7 +293,7 @@ class CteController extends Controller
             $xml = $doc['xml'];
 
             return response($xml)
-                ->header('Content-Type', 'application/xml');
+            ->header('Content-Type', 'application/xml');
         } else {
             return response()->json($doc['erros_xml'], 401);
         }
@@ -277,7 +303,7 @@ class CteController extends Controller
     {
         $item = Cte::findOrFail($id);
         $config = Empresa::where('id', request()->empresa_id)
-            ->first();
+        ->first();
         $cnpj = preg_replace('/[^0-9]/', '', $config->cnpj);
         $cte_service = new CTeService([
             "atualizacao" => date('Y-m-d h:i:s'),
@@ -285,8 +311,8 @@ class CteController extends Controller
             "razaosocial" => $config->razao_social,
             "siglaUF" => $config->cidade->uf,
             "cnpj" => $cnpj,
-            "schemes" => "PL_CTe_300",
-            "versao" => '3.00',
+            "schemes" => "PL_CTe_400",
+            "versao" => '4.00',
             "proxyConf" => [
                 "proxyIp" => "",
                 "proxyPort" => "",
@@ -306,7 +332,7 @@ class CteController extends Controller
             $dacte->setDefaultDecimalPlaces(2);
             $pdf = $dacte->render();
             return response($pdf)
-                ->header('Content-Type', 'application/pdf');
+            ->header('Content-Type', 'application/pdf');
         } else {
             foreach ($cte['erros_xml'] as $err) {
                 echo $err;
@@ -323,7 +349,7 @@ class CteController extends Controller
         $danfe = new Dacte($xml, $item->estado);
         $pdf = $danfe->render();
         return response($pdf)
-            ->header('Content-Type', 'application/pdf');
+        ->header('Content-Type', 'application/pdf');
     }
 
     public function imprimirCancela($id)
@@ -340,7 +366,7 @@ class CteController extends Controller
                 $pdf = $daevento->render();
                 header('Content-Type: application/pdf');
                 return response($pdf)
-                    ->header('Content-Type', 'application/pdf');
+                ->header('Content-Type', 'application/pdf');
             } catch (InvalidArgumentException $e) {
                 echo "Ocorreu um erro durante o processamento :" . $e->getMessage();
             }
@@ -363,7 +389,7 @@ class CteController extends Controller
             $pdf = $daevento->render();
             header('Content-Type: application/pdf');
             return response($pdf)
-                ->header('Content-Type', 'application/pdf');
+            ->header('Content-Type', 'application/pdf');
         } catch (InvalidArgumentException $e) {
             echo "Ocorreu um erro durante o processamento :" . $e->getMessage();
         }
@@ -406,11 +432,12 @@ class CteController extends Controller
             $item->estado = $request->estado_emissao;
             if ($request->hasFile('file')) {
                 $xml = simplexml_load_file($request->file);
-                $chave = substr($xml->infCte->attributes()->Id, 3, 44);
+
+                $chave = substr($xml->CTe->infCte->attributes()->Id, 3, 44);
                 $file = $request->file;
-                $file->move(public_path('xml_cte/'), $chave . '.xml');
+                $file->move(public_path('xml_cte/'), $chave.'.xml');
                 $item->chave = $chave;
-                $item->numero = (int)$xml->infCte->ide->nCT;
+                $item->numero = $xml->CTe->infCte->ide->nCT;
             }
             $item->save();
             session()->flash("flash_success", "Estado alterado");

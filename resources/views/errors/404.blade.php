@@ -69,6 +69,8 @@
 							<div class="text-center">
 								<h1 class="text-error">4<i class="ri-emotion-sad-line"></i>4</h1>
 								<h4 class="text-uppercase text-danger mt-3">Página não encontrada</h4>
+
+								@if(Auth::user())
 								<p class="text-muted mt-3">Parece que você pegou o caminho errado. Não se preocupe. Aqui está um
 								pequena dica que pode ajudá-lo a voltar aos trilhos.</p>
 
@@ -76,6 +78,7 @@
 									<i class="ri-home-4-line"></i>
 									Voltar
 								</a>
+								@endif
 							</div>
 						</div>
 					</div>

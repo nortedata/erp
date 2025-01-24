@@ -6,10 +6,13 @@ use Illuminate\Http\Request;
 use App\Models\Pedido;
 use App\Models\ItemPedido;
 use App\Models\Empresa;
+use App\Models\Nfce;
+use App\Models\ConfigGeral;
 use App\Models\Produto;
 use App\Models\ItemAdicional;
 use App\Models\ItemPizzaPedido;
 use App\Models\Adicional;
+use App\Models\Marca;
 use App\Models\CategoriaProduto;
 use App\Models\ConfiguracaoCardapio;
 use App\Models\TamanhoPizza;
@@ -33,6 +36,7 @@ class PedidoCardapioController extends Controller
     public function store(Request $request){
         $cliente_id = $request->cliente_id;
         $comanda = $request->comanda;
+        $mesa = $request->mesa;
         $clienteNome = $request->cliente_nome;
         $clienteFone = $request->cliente_fone;
         $item = Pedido::where('status', 1)
@@ -51,6 +55,7 @@ class PedidoCardapioController extends Controller
                 'cliente_nome' => $clienteNome,
                 'cliente_fone' => $clienteFone,
                 'comanda' => $comanda,
+                'mesa' => $mesa,
                 'total' => 0,
                 'empresa_id' => $request->empresa_id
             ];
@@ -133,11 +138,29 @@ class PedidoCardapioController extends Controller
 
     }
 
+    public function destroy($id){
+        $item = Pedido::findOrFail($id);
+        try {
+            foreach($item->itens as $it){
+                $it->adicionais()->delete();
+                $it->pizzas()->delete();
+                $it->delete();
+            }
+            $item->delete();
+            
+            session()->flash("flash_success", "Comanda removida!");
+        } catch (\Exception $e) {
+            session()->flash("flash_error", 'Algo deu errado '. $e->getMessage());
+        }
+        return redirect()->back();
+    }
+
     public function destroyItem($id){
         $item = ItemPedido::findOrFail($id);
         try {
             $pedido = $item->pedido;
             $item->adicionais()->delete();
+            $item->pizzas()->delete();
             $item->delete();
             $pedido->sumTotal();
             
@@ -162,7 +185,8 @@ class PedidoCardapioController extends Controller
         $domPdf->loadHtml($p);
         $pdf = ob_get_clean();
         $domPdf->setPaper([0,0,204,$height]);
-        $domPdf->render();
+        $pdf = $domPdf->render();
+
         $domPdf->stream("Pedido $id.pdf", array("Attachment" => false));
     }
 
@@ -199,8 +223,51 @@ class PedidoCardapioController extends Controller
         $funcionarios = Funcionario::where('empresa_id', request()->empresa_id)->get();
 
         $itens = $pedido->itens;
+        $caixa = __isCaixaAberto();
 
-        // dd($itens->pluck('valor_unitario'));
-        return view('front_box.create', compact('categorias', 'abertura', 'funcionarios', 'pedido', 'itens'));
+        $config = ConfigGeral::where('empresa_id', request()->empresa_id)->first();
+        $tiposPagamento = Nfce::tiposPagamento();
+        if($config != null){
+            $config->tipos_pagamento_pdv = $config != null && $config->tipos_pagamento_pdv ? json_decode($config->tipos_pagamento_pdv) : [];
+            $temp = [];
+            if(sizeof($config->tipos_pagamento_pdv) > 0){
+                foreach($tiposPagamento as $key => $t){
+                    if(in_array($t, $config->tipos_pagamento_pdv)){
+                        $temp[$key] = $t;
+                    }
+                }
+                $tiposPagamento = $temp;
+            }
+        }
+
+        $isVendaSuspensa = 0;
+
+        $view = 'front_box.create';
+        $produtos = [];
+        $marcas = [];
+
+        if($config != null && $config->modelo == 'compact'){
+            $view = 'front_box.create2';
+            $categorias = CategoriaProduto::where('empresa_id', request()->empresa_id)
+            ->where('categoria_id', null)
+            ->orderBy('nome', 'asc')
+            ->paginate(4);
+
+            $marcas = Marca::where('empresa_id', request()->empresa_id)
+            ->orderBy('nome', 'asc')
+            ->paginate(4);
+
+            $produtos = Produto::select('produtos.*', \DB::raw('sum(quantidade) as quantidade'))
+            ->where('empresa_id', request()->empresa_id)
+            ->where('produtos.status', 1)
+            ->where('status', 1)
+            ->leftJoin('item_nfces', 'item_nfces.produto_id', '=', 'produtos.id')
+            ->groupBy('produtos.id')
+            ->orderBy('quantidade', 'desc')
+            ->paginate(12);
+        }
+
+        return view($view, compact('categorias', 'abertura', 'funcionarios', 'pedido', 'itens', 'caixa', 'config', 
+            'tiposPagamento', 'isVendaSuspensa', 'produtos', 'marcas'));
     }
 }

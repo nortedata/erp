@@ -8,6 +8,8 @@ use App\Models\UsuarioEmpresa;
 use App\Models\User;
 use App\Models\FinanceiroContador;
 use App\Models\ContadorEmpresa;
+use App\Models\EscritorioContabil;
+use App\Models\Cidade;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
@@ -137,10 +139,15 @@ class ContadorController extends Controller
     {
 
         $item = Empresa::findOrFail($id);
+        foreach($item->usuarios as $u){
+            die;
+            $u->usuario->acessos()->delete();
+        }
         $item->usuarios()->delete();
-        $item->user()->delete();
+        // $item->user()->delete();
         $item->plano()->delete();
-
+        \App\Models\Role::where('empresa_id', $id)->delete();
+        ContadorEmpresa::where('contador_id', $id)->delete();
         try {
             $item->delete();
             session()->flash("flash_success", "Contador removido!");
@@ -283,6 +290,29 @@ class ContadorController extends Controller
             session()->flash("flash_error", "Algo deu Errado: " . $e->getMessage());
         }
         return redirect()->back();
+    }
+
+    public function escritorios(Request $request){
+        $cnpj = $request->cnpj;
+        $razao_social = $request->razao_social;
+        $cidade_id = $request->cidade_id;
+        $data = EscritorioContabil::orderBy('razao_social')
+        ->when(!empty($razao_social), function ($q) use ($razao_social) {
+            return $q->where('razao_social', 'LIKE', "%$razao_social%");
+        })
+        ->when(!empty($cnpj), function ($q) use ($cnpj) {
+            return $q->where('cnpj', 'LIKE', "%$cnpj%");
+        })
+        ->when(!empty($cidade_id), function ($q) use ($cidade_id) {
+            return $q->where('cidade_id', $cidade_id);
+        })
+        ->paginate(env("PAGINACAO"));
+
+        $cidade = null;
+        if(!empty($cidade_id)){
+            $cidade = Cidade::findOrFail($cidade_id);
+        }
+        return view('contadores.escritorios', compact('data', 'cidade'));
     }
     
 

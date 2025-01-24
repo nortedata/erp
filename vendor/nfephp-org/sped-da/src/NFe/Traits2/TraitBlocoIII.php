@@ -16,11 +16,11 @@ trait TraitBlocoIII
         $matrix = [0.12, $this->descPercent, 0.08, 0.09, 0.156, 0.156];
         //$aFont = ['font'=> $this->fontePadrao, 'size' => 7, 'style' => ''];
         //$this->pdf->textBox($this->margem, $y, $this->wPrint, $this->bloco3H, '', $aFont, 'T', 'C', true, '', false);
-        $fsize = 7;
+        $fsize = 9;
         if ($this->paperwidth < 70) {
             $fsize = 5;
         }
-        $aFont = ['font'=> $this->fontePadrao, 'size' => $fsize, 'style' => ''];
+        $aFont = ['font' => 'arial', 'size' => 9, 'style' => 'B'];
 
         $texto = "Código";
         $x = $this->margem;
@@ -92,19 +92,10 @@ trait TraitBlocoIII
                 '',
                 true
             );
-            // $this->pdf->textBox(
-            //     $x3,
-            //     $y2,
-            //     ($this->wPrint * $matrix[3]),
-            //     $it->height,
-            //     $item->produto->unidade_venda,
-            //     $aFont,
-            //     'T',
-            //     'C',
-            //     false,
-            //     '',
-            //     true
-            // );
+            
+            if($this->isPreVenda){
+                $item->valor_unitario = $item->valor;
+            }
             $this->pdf->textBox(
                 $x4,
                 $y2,
@@ -135,16 +126,111 @@ trait TraitBlocoIII
             $y2 += 3;
             $lenDescription = strlen($item->produto->nome);
 
-            if($lenDescription > 20){
-                $y2+=2;
+            if($lenDescription > 12 && $lenDescription < 20){
+                $y2+=5;
+            }else if($lenDescription > 20 && $lenDescription < 40){
+                $y2+=8;
+            }else if($lenDescription > 40 && $lenDescription < 60){
+                $y2+=10;
+            }else{
+                $y2+=12;
             }
             
+        }
+
+        if($this->troca != null){
+            $texto = "Itens alterados";
+            $aFont2 = ['font' => 'arial', 'size' => 12, 'style' => 'B'];
+            $this->pdf->textBox($x, $y2, 80, 3, $texto, $aFont2, 'T', 'C', false, '', true);
+
+            foreach ($this->troca->itens as $item) {
+                $it = (object) $item;
+
+
+                $this->pdf->textBox(
+                    $x,
+                    $y2,
+                    ($this->wPrint * $matrix[0]),
+                    $it->height,
+                    $item->produto->id,
+                    $aFont,
+                    'T',
+                    'L',
+                    false,
+                    '',
+                    true
+                );
+                $this->pdf->textBox(
+                    $x1,
+                    $y2,
+                    ($this->wPrint * $matrix[1]),
+                    $it->height,
+                    $item->produto->nome,
+                    $aFont,
+                    'T',
+                    'L',
+                    false,
+                    '',
+                    false
+                );
+                $this->pdf->textBox(
+                    $x2,
+                    $y2,
+                    ($this->wPrint * $matrix[2]),
+                    $it->height,
+                    number_format($item->quantidade,2),
+                    $aFont,
+                    'T',
+                    'R',
+                    false,
+                    '',
+                    true
+                );
+
+
+                $item->valor_unitario = $item->produto->valor_unitario;
+                
+                $this->pdf->textBox(
+                    $x4,
+                    $y2,
+                    ($this->wPrint * $matrix[4]-1),
+                    $it->height,
+                    number_format($item->valor_unitario, 2, ',', '.'),
+                    $aFont,
+                    'T',
+                    'R',
+                    false,
+                    '',
+                    true
+                );
+                $this->pdf->textBox(
+                    $x5,
+                    $y2,
+                    ($this->wPrint * $matrix[5]),
+                    $it->height,
+                    number_format($item->valor_unitario*$item->quantidade, 2, ',', '.'),
+                    $aFont,
+                    'T',
+                    'R',
+                    false,
+                    '',
+                    true
+                );
+                $y2 += $it->height;
+                $y2 += 3;
+                $lenDescription = strlen($item->produto->nome);
+
+                if($lenDescription > 10){
+                    $y2+=12;
+                }
+
+            }
         }
         $this->pdf->dashedHLine($this->margem, $this->bloco3H+$y, $this->wPrint, 0.1, 30);
         return $this->bloco3H + $y;
     }
     
-    protected function calculateHeightItens($descriptionWidth, $itens)
+    protected function calculateHeightItens($descriptionWidth, $itens, $troca = null)
     {
 
         if ($this->flagResume) {
@@ -161,25 +247,48 @@ trait TraitBlocoIII
         foreach ($itens as $item) {
 
             $cProd      = $item->produto->id;
-            $xProd      = substr($item->produto->nome, 0, 45);
+            $xProd      = substr($item->produto->nome, 0, 100);
             $qCom       = number_format((float) $item->quantidade, 2, ",", ".");
             $uCom       = $item->produto->unidade_venda;
             $vUnCom     = number_format((float) $item->valor_unitario, 2, ",", ".");
             $vProd      = number_format((float) $item->valor_unitario*$item->quantidade, 2, ",", ".");
 
-                $tempPDF = new \NFePHP\DA\Legacy\Pdf(); // cria uma instancia temporaria da class pdf
-                $tempPDF->setFont($this->fontePadrao, '', $fsize); // seta a font do PDF
-                
+            $tempPDF = new \NFePHP\DA\Legacy\Pdf();
+            $tempPDF->setFont($this->fontePadrao, '', $fsize);
+
+            $n = $tempPDF->wordWrap($xProd, $descriptionWidth);
+            $limit = 45;
+
+            $h = ($hfont * $n)+10.0;
+            $this->itens[] = [
+                "codigo" => $cProd,
+                "desc" => $xProd,
+                "qtd" => $qCom,
+                "un" => $uCom,
+                "vunit" => $vUnCom,
+                "valor" => $vProd,
+                "height" => $h
+            ];
+            $htot += $h;
+        }
+
+        if($this->troca != null){
+            foreach ($this->troca->itens as $item) {
+
+                $cProd      = $item->produto->id;
+                $xProd      = substr($item->produto->nome, 0, 45);
+                $qCom       = number_format((float) $item->quantidade, 2, ",", ".");
+                $uCom       = $item->produto->unidade_venda;
+                $vUnCom     = number_format((float) $item->valor_unitario, 2, ",", ".");
+                $vProd      = number_format((float) $item->valor_unitario*$item->quantidade, 2, ",", ".");
+
+                $tempPDF = new \NFePHP\DA\Legacy\Pdf();
+                $tempPDF->setFont($this->fontePadrao, '', $fsize);
+
                 $n = $tempPDF->wordWrap($xProd, $descriptionWidth);
                 $limit = 45;
 
-                // while ($n > 2) {
-
-                //     $xProd = substr($xProd, 0, $limit);
-                //     $p = $xProd;
-                //     $n = $tempPDF->wordWrap($p, $descriptionWidth);
-                // }
-                $h = ($hfont * $n)+0.5;
+                $h = ($hfont * $n)+15.0;
                 $this->itens[] = [
                     "codigo" => $cProd,
                     "desc" => $xProd,
@@ -191,6 +300,10 @@ trait TraitBlocoIII
                 ];
                 $htot += $h;
             }
-            return $htot+2;
+            if(sizeof($this->troca->itens) == 0){
+                $htot += 10;
+            }
         }
+        return $htot;
     }
+}

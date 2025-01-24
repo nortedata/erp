@@ -32,6 +32,17 @@
                             !!}
                         </div>
 
+                        <div class="col-md-2">
+                            {!!Form::select('estado', 'Estado',
+                            ['novo' => 'Novas',
+                            'rejeitado' => 'Rejeitadas',
+                            'cancelado' => 'Canceladas',
+                            'aprovado' => 'Aprovadas',
+                            '' => 'Todos'])
+                            ->attrs(['class' => 'form-select'])
+                            !!}
+                        </div>
+
                         <div class="col-lg-3 col-12">
                             <br>
 
@@ -98,6 +109,7 @@
                                         @endif
                                     </td>
                                     <td>
+                                        @if($item->estado == 'aprovado')
                                         <a class="btn btn-primary btn-sm" title="Download XML" href="{{ route('contador-empresa-nfe.download', [$item->id]) }}">
                                             <i class="ri-file-download-fill"></i>
                                         </a>
@@ -105,6 +117,7 @@
                                         <a target="_blank" class="btn btn-dark btn-sm" title="Danfe" href="{{ route('contador-empresa-nfe.danfe', [$item->id]) }}">
                                             <i class="ri-printer-fill"></i>
                                         </a>
+                                        @endif
                                     </td>
                                 </tr>
                                 @empty
@@ -115,13 +128,14 @@
                             </tbody>
                         </table>
                     </div>
+                    <br>
                     {!! $data->appends(request()->all())->links() !!}
                 </div>
                 <div class="row">
                     <div class="col-lg-6 col-12">
                         <h5 class="mt-2">Soma: <strong class="text-success">R$ {{ __moeda($data->sum('total')) }}</strong></h5>
                     </div>
-                    @if($contXml > 0)
+                    @if($contXml > 0 && request()->estado == 'aprovado')
                     <div class="col-lg-6 col-12">
 
                         <h5 class="mt-2 float-end">Total de arquivos XML: <strong class="text-primary">{{ $contXml }}</strong></h5>
@@ -154,8 +168,10 @@
     }
 
     $('#btn-consulta-sefaz').click(() => {
+
         $.post(path_url + 'api/nfe_painel/consulta-status-sefaz', {
-            empresa_id: $('#empresa_id').val()
+            empresa_id: $('#empresa_id').val(),
+            usuario_id: $('#usuario_id').val(),
         })
         .done((res) => {
             let msg = "cStat: " + res.cStat

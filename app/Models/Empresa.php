@@ -17,7 +17,8 @@ class Empresa extends Model
         'numero_ultima_cte_producao', 'numero_ultima_cte_homologacao', 'numero_serie_cte', 'natureza_id_pdv',
         'numero_ultima_mdfe_producao', 'numero_ultima_mdfe_homologacao', 'numero_serie_mdfe', 'logo',
         'tipo_contador', 'limite_cadastro_empresas', 'percentual_comissao', 'exclusao_icms_pis_cofins',
-        'token_nfse', 'numero_ultima_nfse', 'numero_serie_nfse', 'aut_xml'
+        'token_nfse', 'numero_ultima_nfse', 'numero_serie_nfse', 'aut_xml', 'observacao_padrao_nfe', 'observacao_padrao_nfce',
+        'perc_ap_cred', 'mensagem_aproveitamento_credito'
     ];
 
     protected $appends = [ 'info' ];
@@ -52,7 +53,19 @@ class Empresa extends Model
     }
 
     public function usuarios(){
-        return $this->hasMany(UsuarioEmpresa::class, 'usuario_id');
+        return $this->hasMany(UsuarioEmpresa::class, 'empresa_id');
+    }
+
+    public function roles(){
+        return $this->hasMany(Role::class, 'empresa_id');
+    }
+
+    public function naturezasOperacao(){
+        return $this->hasMany(NaturezaOperacao::class, 'empresa_id');
+    }
+
+    public function padraoTributacaoProduto(){
+        return $this->hasMany(PadraoTributacaoProduto::class, 'empresa_id');
     }
 
     public function segmentos(){
@@ -73,6 +86,10 @@ class Empresa extends Model
 
     public function plano(){
         return $this->hasOne(PlanoEmpresa::class, 'empresa_id')->with('plano')->orderBy('data_expiracao', 'desc');
+    }
+
+    public function financeiroPlano(){
+        return $this->hasMany(FinanceiroPlano::class, 'empresa_id');
     }
 
     public function financeiro(){
@@ -135,6 +152,22 @@ class Empresa extends Model
                 return $key;
             }
         }
+    }
+
+    public static function tiposTributacao(){
+        return [
+            'MEI' => 'MEI', 
+            'Simples Nacional' => 'Simples Nacional',
+            'Simples Nacional, excesso sublimite de receita bruta' => 'Simples Nacional, excesso sublimite de receita bruta',
+            'Regime Normal' => 'Regime Normal'
+        ];
+    }
+
+    public function getCRT(){
+        if($this->tributacao == 'Simples Nacional') return 1;
+        else if($this->tributacao == 'Simples Nacional, excesso sublimite de receita bruta') return 2;
+        else if($this->tributacao == 'Regime Normal') return 3;
+        else return 4;
     }
 
 }

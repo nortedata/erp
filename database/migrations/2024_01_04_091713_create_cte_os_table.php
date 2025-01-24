@@ -17,13 +17,9 @@ return new class extends Migration
             $table->foreignId('empresa_id')->nullable()->constrained('empresas');
 
             $table->foreignId('emitente_id')->nullable()->constrained('clientes');
-
             $table->foreignId('tomador_id')->nullable()->constrained('clientes');
-
             $table->foreignId('municipio_envio')->nullable()->constrained('cidades');
-
             $table->foreignId('municipio_inicio')->nullable()->constrained('cidades');
-
             $table->foreignId('municipio_fim')->nullable()->constrained('cidades');
 
             $table->foreignId('veiculo_id')->nullable()->constrained('veiculos');
@@ -55,15 +51,15 @@ return new class extends Migration
             $table->string('horario_viagem', 5);
 
             $table->string('cfop', 4)->nullable();
-
             $table->string('recibo', 30)->nullable();
-
+            $table->integer('local_id')->nullable();
 
             // alter table cte_os add column data_viagem varchar(10) default '';
             // alter table cte_os add column horario_viagem varchar(5) default '';
 
             // alter table cte_os add column cfop varchar(4) default null;
             // alter table cte_os add column recibo varchar(30) default null;
+            // alter table cte_os add column local_id integer default null;
 
             $table->timestamps();
         });

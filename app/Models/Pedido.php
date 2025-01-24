@@ -11,11 +11,11 @@ class Pedido extends Model
 
     protected $fillable = [
         'empresa_id', 'cliente_id', 'comanda', 'observacao', 'tipo_pagamento', 'data_fechamento', 'total',
-        'status', 'cliente_nome', 'cliente_fone', 'mesa'
+        'status', 'cliente_nome', 'cliente_fone', 'mesa', 'funcionario_id'
     ];
 
     public function itens(){
-        return $this->hasMany(ItemPedido::class, 'pedido_id')->with(['produto', 'adicionais', 'tamanho', 'pizzas']);
+        return $this->hasMany(ItemPedido::class, 'pedido_id')->with(['produto', 'adicionais', 'tamanho', 'pizzas', 'funcionario']);
     }
 
     public function countItens(){

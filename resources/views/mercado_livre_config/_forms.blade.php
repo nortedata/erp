@@ -20,6 +20,9 @@
     <div class="col-6">
         Access Token: <strong>{{ $item->access_token }}</strong>
     </div>
+    <div class="col-6">
+        Refresh Token: <strong>{{ $item->refresh_token }}</strong>
+    </div>
     <div class="col-2">
         User ID: <strong>{{ $item->user_id }}</strong>
     </div>

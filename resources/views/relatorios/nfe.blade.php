@@ -12,7 +12,9 @@
 			<th>Data</th>
 			<th>Finalidade</th>
 			<th>Tipo</th>
-			
+			@if(__countLocalAtivo() > 1)
+			<th>Local</th>
+			@endif
 		</tr>
 	</thead>
 	<tbody>
@@ -31,8 +33,9 @@
 			<td>{{ __data_pt($item->data_emissao) }}</td>
 			<td>{{ $item->getFinNFe() }}</td>
 			<td>{{ $item->tpNF == 1 ? 'Saída' : 'Entrada' }}</td>
-			
-			
+			@if(__countLocalAtivo() > 1)
+			<td class="text-danger">{{ $item->localizacao->descricao }}</td>
+			@endif
 		</tr>
 		@endforeach
 	</tbody>

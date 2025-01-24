@@ -7,6 +7,15 @@ use Illuminate\Http\Request;
 
 class EventoFuncionarioController extends Controller
 {
+
+    public function __construct()
+    {
+        $this->middleware('permission:apuracao_mensal_create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:apuracao_mensal_edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:apuracao_mensal_view', ['only' => ['show', 'index']]);
+        $this->middleware('permission:apuracao_mensal_delete', ['only' => ['destroy']]);
+    }
+
     public function index(Request $request)
     {
         $data = EventoSalario::where('empresa_id', request()->empresa_id)
@@ -16,7 +25,6 @@ class EventoFuncionarioController extends Controller
             });
         })
         ->paginate(env("PAGINACAO"));
-
         return view('eventos.index', compact('data'));
     }
 
@@ -29,8 +37,10 @@ class EventoFuncionarioController extends Controller
     {
         try {
             EventoSalario::create($request->all());
+            __createLog($request->empresa_id, 'Evento Salário', 'cadastrar', $request->nome);
             session()->flash("flash_success", "Evento cadastrado!");
         } catch (\Exception $e) {
+            __createLog($request->empresa_id, 'Evento Salário', 'erro', $e->getMessage());
             session()->flash("flash_error", "Algo deu errado: " . $e->getMessage());
         }
         return redirect()->route('evento-funcionarios.index');
@@ -47,8 +57,10 @@ class EventoFuncionarioController extends Controller
         $item = EventoSalario::findOrFail($id);
         try {
             $item->fill($request->all())->save();
+            __createLog($request->empresa_id, 'Evento Salário', 'editar', $request->nome);
             session()->flash("flash_success", "Evento alterado!");
         } catch (\Exception $e) {
+            __createLog($request->empresa_id, 'Evento Salário', 'erro', $e->getMessage());
             session()->flash("flash_error", "Algo deu errado: " . $e->getMessage());
         }
         return redirect()->route('evento-funcionarios.index');
@@ -58,9 +70,12 @@ class EventoFuncionarioController extends Controller
     {
         $item = EventoSalario::findOrFail($id);
         try {
+            $descricaoLog = $item->nome;
             $item->delete();
+            __createLog(request()->empresa_id, 'Evento Salário', 'excluir', $descricaoLog);
             session()->flash("flash_success", "Evento Deletado!");
         } catch (\Exception $e) {
+            __createLog(request()->empresa_id, 'Evento Salário', 'erro', $e->getMessage());
             session()->flash("flash_error", "Algo deu errado: " . $e->getMessage());
         }
         return redirect()->route('evento-funcionarios.index');
@@ -72,9 +87,12 @@ class EventoFuncionarioController extends Controller
         for($i=0; $i<sizeof($request->item_delete); $i++){
             $item = EventoSalario::findOrFail($request->item_delete[$i]);
             try {
+                $descricaoLog = $item->nome;
                 $item->delete();
                 $removidos++;
+                __createLog(request()->empresa_id, 'Evento Salário', 'excluir', $descricaoLog);
             } catch (\Exception $e) {
+                __createLog(request()->empresa_id, 'Evento Salário', 'erro', $e->getMessage());
                 session()->flash("flash_error", 'Algo deu errado: '. $e->getMessage());
                 return redirect()->back();
             }

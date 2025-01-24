@@ -11,11 +11,19 @@ class ItemCarrinhoDelivery extends Model
 
     protected $fillable = [
         'carrinho_id', 'produto_id', 'quantidade', 'valor_unitario', 'sub_total', 'tamanho_id',
-        'observacao'
+        'observacao', 'servico_id'
     ];
 
     public function produto(){
         return $this->belongsTo(Produto::class, 'produto_id');
+    }
+
+    public function servico(){
+        return $this->belongsTo(Servico::class, 'servico_id');
+    }
+
+    public function carrinho(){
+        return $this->belongsTo(CarrinhoDelivery::class, 'carrinho_id');
     }
 
     public function adicionais(){

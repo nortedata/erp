@@ -18,9 +18,14 @@ return new class extends Migration
             $table->string('nome', 50);
 
             $table->string('imagem', 25)->nullable();
+            $table->boolean('marketplace')->default(0);
+            $table->string('hash_delivery', 50)->nullable();
 
             // alter table categoria_servicos add column imagem varchar(25) default '';
+            // alter table categoria_servicos add column marketplace boolean default 0;
 
+            // alter table categoria_servicos add column hash_delivery varchar(50) default null;
+            
             $table->timestamps();
         });
     }

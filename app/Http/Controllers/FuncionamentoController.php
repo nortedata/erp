@@ -21,7 +21,12 @@ class FuncionamentoController extends Controller
         })
         ->paginate(env("PAGINACAO"));
 
-        return view('funcionamento.index', compact('data'));
+        $funcionario = null;
+        if($funcionario_id){
+            $funcionario = Funcionario::findOrFail($funcionario_id);
+        }
+
+        return view('funcionamento.index', compact('data', 'funcionario'));
     }
 
     public function create()

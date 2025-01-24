@@ -16,6 +16,7 @@ return new class extends Migration
 
             $table->foreignId('empresa_id')->constrained('empresas');
             $table->foreignId('cliente_id')->nullable()->constrained('clientes');
+            $table->foreignId('funcionario_id')->nullable()->constrained('funcionarios');
 
             $table->string('cliente_nome', 100)->nullable();
             $table->string('cliente_fone', 20)->nullable();
@@ -32,6 +33,7 @@ return new class extends Migration
 
             // alter table pedidos add column em_atendimento boolean default 1;
             // alter table pedidos add column nfce_id integer default null;
+            // alter table pedidos add column funcionario_id integer default null;
             $table->timestamps();
         });
     }

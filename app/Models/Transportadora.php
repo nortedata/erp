@@ -17,4 +17,9 @@ class Transportadora extends Model
     public function cidade(){
         return $this->belongsTo(Cidade::class, 'cidade_id');
     }
+
+    public function getEnderecoAttribute()
+    {
+        return "$this->rua, $this->numero - $this->bairro";
+    }
 }

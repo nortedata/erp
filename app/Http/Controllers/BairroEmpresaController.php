@@ -23,6 +23,7 @@ class BairroEmpresaController extends Controller
         when(!empty($request->nome), function ($q) use ($request) {
             return $q->where('nome', 'LIKE', "%$request->nome%");
         })
+        ->where('empresa_id', $request->empresa_id)
         ->paginate(env("PAGINACAO"));
 
         return view('bairros.index', compact('config', 'data'));

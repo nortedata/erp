@@ -12,7 +12,16 @@ use Illuminate\Support\Facades\Auth;
 use Laravel\Ui\Presets\React;
 
 class FuncionarioController extends Controller
-{
+{   
+
+    public function __construct()
+    {
+        $this->middleware('permission:funcionario_create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:funcionario_edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:funcionario_view', ['only' => ['show', 'index']]);
+        $this->middleware('permission:funcionario_delete', ['only' => ['destroy']]);
+    }
+
     public function index(Request $request)
     {
         $data = Funcionario::where('empresa_id', request()->empresa_id)
@@ -42,10 +51,21 @@ class FuncionarioController extends Controller
                 'comissao' => $request->comissao ? __convert_value_bd($request->comissao) : 0,
                 'salario' => $request->salario ? __convert_value_bd($request->salario) : 0,
             ]);
+
+            if($request->codigo){
+                $funcionario = Funcionario::where('empresa_id', $request->empresa_id)
+                ->where('codigo', $request->codigo)->first();
+                if($funcionario != null){
+                    session()->flash("flash_error", "Já existe um funcionário com esse código!");
+                    return redirect()->back();
+                }
+            }
+            __createLog($request->empresa_id, 'Funcionario', 'cadastrar', $request->nome);
             Funcionario::create($request->all());
             session()->flash("flash_success", "Cadastrado com Sucesso");
         } catch (\Exception $e) {
-            session()->flash("flash_error", "Não foi possivel fazer o cadastro" . $e->getMessage());
+            __createLog($request->empresa_id, 'Funcionario', 'erro', $e->getMessage());
+            session()->flash("flash_error", "Não foi possivel fazer o cadastro " . $e->getMessage());
         }
         return redirect()->route('funcionarios.index');
     }
@@ -68,10 +88,21 @@ class FuncionarioController extends Controller
                 'comissao' => $request->comissao ? __convert_value_bd($request->comissao) : 0,
                 'salario' => $request->salario ? __convert_value_bd($request->salario) : 0,
             ]);
+
+            if($request->codigo){
+                $funcionario = Funcionario::where('empresa_id', $request->empresa_id)
+                ->where('codigo', $request->codigo)->first();
+                if($funcionario != null && $item->codigo != $funcionario->codigo){
+                    session()->flash("flash_error", "Já existe um funcionário com esse código!");
+                    return redirect()->back();
+                }
+            }
             $item->fill($request->all())->save();
-            session()->flash("flash_success", "Cadastrado com Sucesso");
+            __createLog($request->empresa_id, 'Funcionario', 'editar', $request->nome);
+            session()->flash("flash_success", "Funcionário atualizado!");
         } catch (\Exception $e) {
-            session()->flash("flash_error", "Não foi possivel fazer o cadastro" . $e->getMessage());
+            __createLog($request->empresa_id, 'Funcionario', 'erro', $e->getMessage());
+            session()->flash("flash_error", "Não foi possivel fazer o cadastro " . $e->getMessage());
         }
         return redirect()->route('funcionarios.index');
     }
@@ -80,9 +111,13 @@ class FuncionarioController extends Controller
     {
         $item = Funcionario::findOrFail($id);
         try {
+            
+            $descricaoLog = $item->nome;
             $item->delete();
-            session()->flash("flash_success", "Deletado com Sucesso");
+            __createLog(request()->empresa_id, 'Funcionario', 'excluir', $descricaoLog);
+            session()->flash("flash_success", "Removido com Sucesso");
         } catch (\Exception $e) {
+            __createLog(request()->empresa_id, 'Funcionario', 'erro', $e->getMessage());
             session()->flash("flash_error", "Não foi possivel deletar" . $e->getMessage());
         }
         return redirect()->route('funcionarios.index');

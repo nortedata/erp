@@ -238,6 +238,7 @@ function calcSubtotalModal(){
 }
 
 $('#btn-save-modal').click(() => {
+
     let qtd = convertMoedaToFloat($('#inp-quantidade').val())
     let vl_unit = convertMoedaToFloat($('#inp-valor_unitario').val())
     let vl_add = 0

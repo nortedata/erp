@@ -372,6 +372,18 @@ $('#btn-inutiliza-send').click(() => {
     }
 })
 
+$('body').on('change', '#inp-local_id', function () {
+    let local_id = $(this).val()
+    $.get(path_url + "api/localizacao/find-number-doc", {local_id: local_id})
+    .done((res) => {
+        console.log(res)
+        $('#inp-numero').val(res.numero_cte)
+    })
+    .fail((err) => {
+        console.error(err)
+    })
+});
+
 $('#inp-remetente_id').change(() => {
     $('.div-remetente').addClass('d-none')
     let remetente_id = $('#inp-remetente_id').val()
@@ -480,6 +492,7 @@ $("body").on("change", ".class-required", function () {
 function validateButtonSave() {
     $('.alerts').html('')
 
+    let local_id = $('#inp-local_id').val()
     let natureza_id = $('#inp-natureza_id').val()
     let perc_icms = $('#inp-perc_icms').val()
     let rementente_id = $('#inp-remetente_id').val()
@@ -488,6 +501,9 @@ function validateButtonSave() {
 
     // let count_itens = $(".table-itens tbody tr").length
 
+    if (!local_id) {
+        alertCreate("Selecione o local!")
+    }
     if (!natureza_id) {
         alertCreate("Selecione uma natureza de operação!")
     }
@@ -536,7 +552,6 @@ $('.btn-salvarCte').click(() => {
     addClassRequired()
 })
 
-
 function alertCreate(msg) {
     var div = '<div class="alert alert-danger border-0 bg-danger alert-dismissible fade show">'
     div += '<div class="text-white">' + msg + '</div>'
@@ -557,8 +572,6 @@ function addClassRequired() {
         }
     })
 }
-
-
 
 // adicinar chave
 

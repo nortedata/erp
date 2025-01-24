@@ -124,7 +124,7 @@ class ProdutoCardapioController extends Controller
                     'valor' => __convert_value_bd($request->valor[$i])
                 ]);
             }
-            session()->flash("flash_success", "Valor para pizza setado(s)");
+            session()->flash("flash_success", "Valores para pizza salvo!");
 
         }catch(\Exception $e){
             session()->flash("flash_error", "Algo deu Errado: " . $e->getMessage());

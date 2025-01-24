@@ -66,10 +66,10 @@
 							<table class="table">
 								<thead>
 									<tr>
-										<th style="width: 400px">Produto</th>
-										<th style="width: 150px">Quantidade</th>
-										<th style="width: 150px">Valor Unitário<span class="text-danger">*</span></th>
-										<th style="width: 150px">Subtotal<span class="text-danger">*</span></th>
+										<th>Produto</th>
+										<th>Quantidade</th>
+										<th>Valor Unitário<span class="text-danger">*</span></th>
+										<th>Subtotal<span class="text-danger">*</span></th>
 										<th>Observação do item</th>
 									</tr>
 								</thead>
@@ -79,28 +79,25 @@
 									<tr>
 										<input type="hidden" class="" name="item_id[]" value="{{ $p->id }}">
 										<td>
-											<input disabled type="tel" class="form-control" name="produto_nome[]" value="{{ $p->produto->nome }}">
+											<input style="width: 300px" disabled type="tel" class="form-control" name="produto_nome[]" value="{{ $p->produto->nome }}">
 										</td>
 										<td id="quantity">
 											@php
 											$casasDecimais = 2;
-											if($p->produto->unidade == 'UN'){
-												$casasDecimais = 0;
-											}
 											@endphp
-											<input required readonly type="tel" class="form-control moeda" value="{{ number_format($p->quantidade, $casasDecimais) }}" name="quantidade[]">
+											<input style="width: 100px" required readonly type="tel" class="form-control moeda" value="{{ number_format($p->quantidade, $casasDecimais) }}" name="quantidade[]">
 										</td>
 
 										<td>
-											<input required type="tel" class="form-control moeda value" id="value" name="valor_unitario[]">
+											<input style="width: 100px" required type="tel" class="form-control moeda value" id="value" name="valor_unitario[]">
 										</td>
 
 										<td>
-											<input readonly type="text" name="subtotal[]" class="form-control subtotal">
+											<input style="width: 100px" readonly type="text" name="subtotal[]" class="form-control subtotal">
 										</td>
 
 										<td>
-											<input type="tel" name="observacao_item[]" class="form-control ">
+											<input style="width: 300px" type="tel" name="observacao_item[]" class="form-control ">
 										</td>
 									</tr>
 									@endforeach
@@ -154,13 +151,13 @@
 									<tbody>
 										<tr class="dynamic-form">
 											<td>
-												<input type="date" name="data_vencimento[]" class="form-control">
+												<input style="width: 150px" type="date" name="data_vencimento[]" class="form-control">
 											</td>
 											<td>
-												<input type="tel" name="valor_parcela[]" class="form-control moeda valor_parcela">
+												<input style="width: 150px" type="tel" name="valor_parcela[]" class="form-control moeda valor_parcela">
 											</td>
 											<td>
-												<select class="form-control form-select" name="tipo_pagamento[]">
+												<select style="width: 200px" class="form-control form-select" name="tipo_pagamento[]">
 													@foreach(App\Models\FaturaCotacao::tiposPagamento() as $key => $tp)
 													<option value="{{ $key }}">{{ $tp }}</option>
 													@endforeach

@@ -6,10 +6,12 @@
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-4">
+                        @can('lista_preco_create')
                         <a href="{{ route('lista-preco.create') }}" class="btn btn-success">
                             <i class="ri-add-circle-fill"></i>
                             Nova Lista
                         </a>
+                        @endcan
                     </div>
                     <div class="col-md-6"></div>
                     <div class="col-md-2">
@@ -50,11 +52,13 @@
                         <table class="table table-striped table-centered mb-0">
                             <thead class="table-dark">
                                 <tr>
+                                    @can('lista_preco_delete')
                                     <th>
                                         <div class="form-check form-checkbox-danger mb-2">
                                             <input class="form-check-input" type="checkbox" id="select-all-checkbox">
                                         </div>
                                     </th>
+                                    @endcan
                                     <th style="width: 25%">Nome</th>
                                     <th>Ajuste sobre</th>
                                     <th>Tipo</th>
@@ -68,11 +72,13 @@
                             <tbody>
                                 @forelse($data as $item)
                                 <tr>
+                                    @can('lista_preco_delete')
                                     <td>
                                         <div class="form-check form-checkbox-danger mb-2">
                                             <input class="form-check-input check-delete" type="checkbox" name="item_delete[]" value="{{ $item->id }}">
                                         </div>
                                     </td>
+                                    @endcan
                                     <td>{{ $item->nome }}</td>
                                     <td>{{ $item->ajuste_sobre == 'valor_venda' ? 'Valor de venda' : 'Valor de compra' }}</td>
                                     <td>{{ $item->tipo == 'incremento' ? 'Incremento' : 'Redução' }}</td>
@@ -81,15 +87,19 @@
                                     <td>{{ $item->tipo_pagamento ? $item->getTipoPagamento() : '' }}</td>
                                     <td>{{ $item->funcionario ? $item->funcionario->nome : '' }}</td>
                                     <td>
-                                        <form action="{{ route('lista-preco.destroy', $item->id) }}" method="post" id="form-{{$item->id}}">
+                                        <form style="width: 150px;" action="{{ route('lista-preco.destroy', $item->id) }}" method="post" id="form-{{$item->id}}">
                                             @method('delete')
+                                            @can('lista_preco_edit')
                                             <a class="btn btn-warning btn-sm text-white" href="{{ route('lista-preco.edit', [$item->id]) }}">
                                                 <i class="ri-pencil-fill"></i>
                                             </a>
+                                            @endcan
                                             @csrf
+                                            @can('lista_preco_delete')
                                             <button type="button" class="btn btn-delete btn-sm btn-danger">
                                                 <i class="ri-delete-bin-line"></i>
                                             </button>
+                                            @endcan
 
                                             <a title="Ver produtos" class="btn btn-dark btn-sm text-white" href="{{ route('lista-preco.show', [$item->id]) }}">
                                                 <i class="ri-file-list-2-fill"></i>
@@ -105,6 +115,7 @@
                             </tbody>
                         </table>
                         <br>
+                        @can('lista_preco_delete')
                         <form action="{{ route('lista-preco.destroy-select') }}" method="post" id="form-delete-select">
                             @method('delete')
                             @csrf
@@ -113,6 +124,7 @@
                                 <i class="ri-close-circle-line"></i> Remover selecionados
                             </button>
                         </form>
+                        @endcan
                     </div>
                 </div>
             </div>

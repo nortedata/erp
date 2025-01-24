@@ -1,9 +1,9 @@
-@extends('layouts.app', ['title' => 'Cadastrar Dias de Expediente'])
+@extends('layouts.app', ['title' => 'Cadastrar Dias de Atendimento'])
 @section('content')
 
 <div class="card mt-1">
     <div class="card-header">
-        <h4>Cadastrar Dias de Expediente</h4>
+        <h4>Cadastrar Dias de Atendimento</h4>
         <div style="text-align: right; margin-top: -35px;">
             <a href="{{ route('atendimentos.index') }}" class="btn btn-danger btn-sm px-3">
                 <i class="ri-arrow-left-double-fill"></i>Voltar

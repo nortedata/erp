@@ -5,7 +5,7 @@
     <div class="row">
         <div class="card">
             <div class="card-header">
-                <h3>Lista de NFCe</h3>
+                <h3>NFCe Lista Todas as Empresas</h3>
             </div>
             <div class="card-body">
                 <div class="col-lg-12">
@@ -14,8 +14,9 @@
                     !!}
                     <div class="row mt-3">
                         <div class="col-md-4">
-                            {!!Form::select('empresa_id', 'Empresa', ['' => 'Selecione'])
+                            {!!Form::select('empresa', 'Empresa')
                             ->attrs(['class' => 'select2'])
+                            ->options($empresa != null ? [$empresa->id => $empresa->info] : [])
                             !!}
                         </div>
                         <div class="col-md-2">
@@ -45,7 +46,7 @@
                     </div>
                     {!!Form::close()!!}
                 </div>
-                <div class="col-lg-12 mt-4">
+                <div class="col-lg-12 mt-3">
                     <div class="table-responsive">
                         <table class="table table-striped">
                             <thead>
@@ -57,6 +58,7 @@
                                     <th>Estado</th>
                                     <th>Ambiente</th>
                                     <th>Data</th>
+                                    <th>Data de emissão</th>
                                     <th>Ações</th>
                                 </tr>
                             </thead>
@@ -81,19 +83,20 @@
                                     <td>{{ $item->ambiente == 2 ? 'Homologação' : 'Produção' }}</td>
 
                                     <td>{{ \Carbon\Carbon::parse($item->created_at)->format('d/m/Y H:i') }}</td>
-                                    <td width="300">
-                                        <form action="{{ route('nfce.destroy', $item->id) }}" method="post" id="form-{{$item->id}}">
+                                    <td><label style="width: 120px">{{ $item->data_emissao ? __data_pt($item->data_emissao, 1) : '--' }}</label></td>
+                                    <td>
+                                        <form action="{{ route('nfce.destroy', $item->id) }}" method="post" id="form-{{$item->id}}" style="width: 250px;">
                                             @if($item->estado == 'aprovado')
                                             <a class="btn btn-primary btn-sm" target="_blank" href="{{ route('nfce.imprimir', [$item->id]) }}">
                                                 <i class="ri-printer-line"></i>
                                             </a>
 
-                                            <button title="Cancelar NFe" type="button" class="btn btn-danger btn-sm" onclick="cancelar('{{$item->id}}', '{{$item->numero}}')">
+                                            <button type="button" title="Cancelar NFe" type="button" class="btn btn-danger btn-sm" onclick="cancelar('{{$item->id}}', '{{$item->numero}}')">
                                                 <i class="ri-close-circle-line"></i>
                                             </button>
                                             @endif
                                             @if($item->estado == 'aprovado' || $item->estado == 'rejeitado')
-                                            <button class="btn btn-dark btn-sm" onclick="info('{{$item->motivo_rejeicao}}', '{{$item->chave}}', '{{$item->estado}}', '{{$item->recibo}}')">
+                                            <button type="button" class="btn btn-dark btn-sm" onclick="info('{{$item->motivo_rejeicao}}', '{{$item->chave}}', '{{$item->estado}}', '{{$item->recibo}}')">
                                                 <i class="ri-file-line"></i>
                                             </button>
                                             @endif
@@ -101,9 +104,11 @@
                                             @method('delete')
                                             @csrf
 
-                                            <button type="submit" class="btn btn-danger btn-sm">
-                                                <i class="ri-delete-bin-line"></i>
-                                            </button>
+                                            @endif
+                                            @if($item->estado == 'novo' || $item->estado == 'rejeitado')
+                                            <a target="_blank" title="XML temporário" class="btn btn-light btn-sm" href="{{ route('nfce.xml-temp', $item->id) }}">
+                                                <i class="ri-file-line"></i>
+                                            </a>
                                             @endif
                                         </form>
 

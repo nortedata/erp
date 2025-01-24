@@ -140,6 +140,7 @@ trait TraitBlocoIII
         if ($this->flagResume) {
             return 0;
         }
+
         $fsize = 7;
         if ($this->paperwidth < 70) {
             $fsize = 5;

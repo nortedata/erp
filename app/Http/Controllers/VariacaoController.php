@@ -9,6 +9,15 @@ use Illuminate\Support\Facades\DB;
 
 class VariacaoController extends Controller
 {
+
+    public function __construct()
+    {
+        $this->middleware('permission:variacao_create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:variacao_edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:variacao_view', ['only' => ['show', 'index']]);
+        $this->middleware('permission:variacao_delete', ['only' => ['destroy']]);
+    }
+
     public function index(Request $request){
         $data = VariacaoModelo::where('empresa_id', $request->empresa_id)
         ->get();
@@ -39,8 +48,11 @@ class VariacaoController extends Controller
                 }
                 return 1;
             });
+
+            __createLog($request->empresa_id, 'Variação  de Produto', 'cadastrar', $request->descricao);
             session()->flash("flash_success", "Cadastrado com Sucesso");
         }catch(\Exception $e){
+            __createLog($request->empresa_id, 'Variação de Produto', 'erro', $e->getMessage());
             session()->flash("flash_error", "Não foi possivel fazer o cadastro" . $e->getMessage());
         }
         return redirect()->route('variacoes.index');
@@ -62,8 +74,10 @@ class VariacaoController extends Controller
                 }
                 return 1;
             });
+            __createLog($request->empresa_id, 'Variação  de Produto', 'editar', $request->descricao);
             session()->flash("flash_success", "Atualizado com Sucesso");
         }catch(\Exception $e){
+            __createLog($request->empresa_id, 'Variação de Produto', 'erro', $e->getMessage());
             session()->flash("flash_error", "Não foi possivel fazer o cadastro" . $e->getMessage());
         }
         return redirect()->route('variacoes.index');
@@ -74,10 +88,13 @@ class VariacaoController extends Controller
         $item = VariacaoModelo::findOrFail($id);
         __validaObjetoEmpresa($item);
         try {
+            $descricaoLog = $item->descricao;
             $item->itens()->delete();
             $item->delete();
+            __createLog(request()->empresa_id, 'Variação de Produto', 'excluir', $descricaoLog);
             session()->flash("flash_success", "Removido com sucesso!");
         } catch (\Exception $e) {
+            __createLog(request()->empresa_id, 'Variação de Produto', 'erro', $e->getMessage());
             session()->flash("flash_error", 'Algo deu errado: ' . $e->getMessage());
         }
         return redirect()->route('variacoes.index');
@@ -89,10 +106,13 @@ class VariacaoController extends Controller
         for($i=0; $i<sizeof($request->item_delete); $i++){
             $item = VariacaoModelo::findOrFail($request->item_delete[$i]);
             try {
+                $descricaoLog = $item->nome;
                 $item->itens()->delete();
                 $item->delete();
                 $removidos++;
+                __createLog(request()->empresa_id, 'Variação de Produto', 'excluir', $descricaoLog);
             } catch (\Exception $e) {
+                __createLog(request()->empresa_id, 'Variação de Produto', 'erro', $e->getMessage());
                 session()->flash("flash_error", 'Algo deu errado: '. $e->getMessage());
                 return redirect()->route('variacoes.index');
             }

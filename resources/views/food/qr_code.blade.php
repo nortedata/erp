@@ -7,7 +7,7 @@
 		<div class="row featured__filter">
 			<input type="hidden" value="{{$item->transacao_id}}" id="transacao_id" name="">
 			<input type="hidden" value="{{$item->status_pagamento}}" id="status" name="">
-
+			<br>
 			<div class="col-md-4"></div>
 			<div class="col-md-4 text-center div-pix">
 				<img style="width: 300px; height: 300px;" src="data:image/jpeg;base64,{{$item->qr_code_base64}}"/>
@@ -17,12 +17,12 @@
 				<input type="text" readonly class="form-control" value="{{$item->qr_code}}" id="qrcode_input" />
 			</div>
 			<div class="col-md-1 div-pix">
-				<button class="btn btn-dark w-100" onclick="copy()">
+				<button class="btn" onclick="copy()" style="background-color: var(--main); color: #fff;">
 					Copiar
 				</button>
 			</div>
 
-			<div class="col-12 status-approved text-center d-none">
+			<div class="col-md-12 status-approved text-center d-none">
 
 				<h2 class="text-success mt-3" style="">
 					<i class="fa fa-check"></i>
@@ -47,7 +47,7 @@
 		inputTest.select();
 		document.execCommand('copy');
 
-		swal("", "Código pix copado!!", "success")
+		swal("", "Código pix copiado!!", "success")
 	}
 
 	if($('#status').val() != "approved"){

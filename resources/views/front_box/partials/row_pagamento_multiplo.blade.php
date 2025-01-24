@@ -6,7 +6,7 @@
         value="{{ $tipo_pagamento_row }}">
     </td>
 	<td>
-		<input readonly type="date" name="data_vencimento_row[]" class="form-control  "
+		<input readonly type="date" name="data_vencimento_row[]" class="form-control data_multiplo"
         value="{{ $data_vencimento_row }}">
 	</td>
 	<td>

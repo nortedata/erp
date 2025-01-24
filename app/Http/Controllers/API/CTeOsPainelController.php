@@ -14,9 +14,11 @@ class CTeOsPainelController extends Controller
 {
     public function emitir(Request $request)
     {
+
         $item = CteOs::findOrFail($request->id);
 
         $empresa = Empresa::findOrFail($item->empresa_id);
+        $empresa = __objetoParaEmissao($empresa, $item->local_id);
 
         $cte_service = new CTeOsService([
             "atualizacao" => date('Y-m-d h:i:s'),
@@ -84,6 +86,8 @@ class CTeOsPainelController extends Controller
         $item = CteOs::findOrFail($request->id);
         $empresa = Empresa::findOrFail($item->empresa_id);
         if ($item != null) {
+            $empresa = __objetoParaEmissao($empresa, $item->local_id);
+            
             $cnpj = preg_replace('/[^0-9]/', '', $empresa->cpf_cnpj);
             $cte_service = new CTeOsService([
                 "atualizacao" => date('Y-m-d h:i:s'),
@@ -115,7 +119,8 @@ class CTeOsPainelController extends Controller
     {
         $item = CteOs::findOrFail($request->id);
         $empresa = Empresa::findOrFail($item->empresa_id);
-
+        $empresa = __objetoParaEmissao($empresa, $item->local_id);
+        
         if ($item != null) {
             $cnpj = preg_replace('/[^0-9]/', '', $empresa->cpf_cnpj);
             $cte_service = new CTeOsService([
@@ -157,6 +162,7 @@ class CTeOsPainelController extends Controller
         $item = CteOs::findOrFail($request->id);
 
         $empresa = Empresa::findOrFail($item->empresa_id);
+        $empresa = __objetoParaEmissao($empresa, $item->local_id);
 
         $cnpj = preg_replace('/[^0-9]/', '', $empresa->cpf_cnpj);
         $cte_service = new CTeOsService([

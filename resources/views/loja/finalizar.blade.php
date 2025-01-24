@@ -93,7 +93,7 @@
 		inputTest.select();
 		document.execCommand('copy');
 
-		swal("", "Código pix copado!!", "success")
+		swal("", "Código pix copiado!!", "success")
 	}
 
 	if($('#status').val() != "approved" && $('#tipo_pagamento').val() == "pix"){

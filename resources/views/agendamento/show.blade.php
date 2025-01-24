@@ -31,9 +31,11 @@
                 <div class="row">
                     <div class="col-sm-6">
                         <div class="mt-3" style="line-height: 0.7;">
+                            @can('clientes_edit')
                             <a class="btn btn-sm btn-warning mb-2 d-print-none" href="{{ route('clientes.edit', [$item->cliente_id]) }}">
                                 <i class="ri-edit-line"></i> Editar cliente
                             </a>
+                            @endcan
                             <p>
                                 <b>Cliente: <strong class="text-primary">{{ $item->cliente->razao_social }}</strong></b> 
                             </p>
@@ -41,12 +43,13 @@
                             <p><b>Telefone: <strong class="text-primary">{{ $item->cliente->telefone }}</strong></b></p>
                             <p><b>Total de serviços: <strong class="text-primary">{{ sizeof($item->itens) }}</strong></b></p>
                             <p><b>Desconto: <strong class="text-danger">{{ __moeda($item->desconto) }}</strong></b></p>
-                            <p><b>Atendente: <strong class="text-primary">{{ $item->funcionario->nome }}</strong></b></p>
+                            <p><b>Atendente: <strong class="text-primary">{{ $item->funcionario ? $item->funcionario->nome : '' }}</strong></b></p>
                             
                         </div>
 
                     </div><!-- end col -->
                     <div class="col-sm-4 offset-sm-2">
+                        @can('agendamento_edit')
                         <form method="POST" action="{{ route('agendamentos.update', [$item->id]) }}" class="mt-3 float-sm-end" style="line-height: 1.2;">
                             @method('put')
                             @csrf
@@ -70,6 +73,7 @@
                                 </button>
                             </div>
                         </form>
+                        @endcan
                     </div><!-- end col -->
                 </div>
                 <!-- end row -->
@@ -126,14 +130,16 @@
                     <!-- end row-->
 
                     <div class="d-print-none mt-4">
+
+                        @can('agendamento_delete')
                         <form action="{{ route('agendamentos.destroy', $item->id) }}" method="post" id="form-{{$item->id}}">
                             @method('delete')
                             @csrf
                             <button type="button" class="btn btn-delete btn-danger">
                                 <i class="ri-delete-bin-line"></i> Remover agendamento
                             </button>
-
                         </form>
+                        @endcan
                         
                         <div class="text-end">
 
@@ -141,9 +147,22 @@
                                 @method('PUT')
                                 @csrf
 
+                                @if($item->nfce_id == null)
+                                @can('pdv_create')
+                                <a href="{{ route('agendamentos.pdv', [$item->id]) }}" class="btn btn-dark">
+                                    <i class="ri-price-tag-3-fill"></i> 
+                                    Finalizar no PDV
+                                </a>
+                                @endcan
+                                @endif
+
+                                @if($item->status == 0)
+                                @can('agendamento_edit')
                                 <button type="button" class="btn btn-success btn-confirm">
-                                    <i class="ri-check-line"></i> Finalizar agendamento
+                                    <i class="ri-check-line"></i> Alterar para finalizado
                                 </button>
+                                @endcan
+                                @endif
 
                                 <a href="javascript:window.print()" class="btn btn-primary"><i class="ri-printer-line"></i> Imprimir</a>
                             </form>

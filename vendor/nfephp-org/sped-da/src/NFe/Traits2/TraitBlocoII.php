@@ -12,9 +12,14 @@ trait TraitBlocoII
         //$this->bloco2H = 12;
         //$aFont = ['font'=> $this->fontePadrao, 'size' => 7, 'style' => ''];
         //$this->pdf->textBox($this->margem, $y, $this->wPrint, $this->bloco2H, '', $aFont, 'T', 'C', true, '', false);
-
-        $texto = "Documento auxiliar não fiscal";
-        $aFont = ['font'=> $this->fontePadrao, 'size' => 7, 'style' => ''];
+        $texto = "Cupom não fiscal";
+        if($this->isPreVenda){
+            $texto = "Pré venda";
+        }
+        if($this->troca != null){
+            $texto = "Comprovante de troca";
+        }
+        $aFont = ['font' => 'arial', 'size' => 10, 'style' => 'B'];
         $y1 = $this->pdf->textBox(
             $this->margem,
             $this->bloco1H-2,

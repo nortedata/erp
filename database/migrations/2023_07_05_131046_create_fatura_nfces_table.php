@@ -18,6 +18,9 @@ return new class extends Migration
             $table->string('tipo_pagamento', 2); 
             $table->date('data_vencimento');
             $table->decimal('valor', 10,2);
+            $table->string('observacao', 100)->nullable();
+
+            // alter table fatura_nfces add column observacao varchar(100) default null;
 
             $table->timestamps();
         });

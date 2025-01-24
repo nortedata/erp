@@ -13,15 +13,32 @@ class PedidoDelivery extends Model
         'cliente_id', 'valor_total', 'tipo_pagamento', 'observacao',
         'telefone', 'estado', 'endereco_id', 'motivo_estado', 'troco_para', 'cupom_id', 'desconto', 'app',
         'empresa_id', 'valor_entrega', 'qr_code_base64', 'qr_code', 'transacao_id', 'status_pagamento',
-        'pedido_lido', 'horario_cricao', 'horario_leitura', 'horario_entrega', 'motoboy_id', 'comissao_motoboy'
+        'pedido_lido', 'horario_cricao', 'horario_leitura', 'horario_entrega', 'motoboy_id', 'comissao_motoboy',
+        'funcionario_id_agendamento', 'inicio_agendamento', 'fim_agendamento', 'data_agendamento'
     ];
 
     public function itens(){
-        return $this->hasMany(ItemPedidoDelivery::class, 'pedido_id')->with(['produto', 'adicionais', 'tamanho']);
+        return $this->hasMany(ItemPedidoDelivery::class, 'pedido_id')->with(['produto', 'adicionais', 'tamanho', 'servico']);
+    }
+
+    public function itensProdutos(){
+        return $this->hasMany(ItemPedidoDelivery::class, 'pedido_id')->where('produto_id', '!=', null);
+    }
+
+    public function itensServico(){
+        return $this->hasMany(ItemPedidoDelivery::class, 'pedido_id')->where('servico_id', '!=', null);
+    }
+
+    public function agendamento(){
+        return $this->hasOne(Agendamento::class, 'pedido_delivery_id');
     }
 
     public function cliente(){
         return $this->belongsTo(Cliente::class, 'cliente_id');
+    }
+
+    public function funcionario(){
+        return $this->belongsTo(Funcionario::class, 'funcionario_id_agendamento');
     }
 
     public function motoboy(){

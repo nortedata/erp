@@ -21,7 +21,7 @@
     </div>
 
     <div class="col-md-2">
-        {!!Form::text('quantidade_pedacos', 'Qtd. pedaços')->required()
+        {!!Form::text('quantidade_pedacos', 'Qtd. fatias')->required()
         ->attrs(['data-mask' => '00'])
         !!}
     </div>

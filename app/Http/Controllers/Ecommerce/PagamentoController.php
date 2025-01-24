@@ -91,9 +91,8 @@ class PagamentoController extends Controller
     public function pagamentoNovoPix(Request $request){
         try{
             $config = EcommerceConfig::findOrfail($request->loja_id);
-            $result = DB::transaction(function () use ($request, $config) {
-
-                $pedido = PedidoEcommerce::findOrfail($request->pedido_id);
+            $pedido = PedidoEcommerce::findOrfail($request->pedido_id);
+            $result = DB::transaction(function () use ($request, $config, $pedido) {
 
                 \MercadoPago\SDK::setAccessToken($config->mercadopago_access_token);
                 $payment = new \MercadoPago\Payment();
@@ -145,7 +144,8 @@ class PagamentoController extends Controller
             });
 
             if(isset($result['sucesso'])){
-                return redirect()->route('loja.finalizar', 'link='.$config->loja_id .'&transacao_id='.$result['transacao_id']);
+
+                return redirect()->route('loja.finalizar', 'link='.$config->loja_id .'&transacao_id='.$result['transacao_id'].'&hash_pedido='.$pedido->hash_pedido);
             }else{
                 return redirect()->back();
             }
@@ -200,7 +200,8 @@ class PagamentoController extends Controller
                     session()->flash("flash_success", "PIX gerado!");
                     return [
                         'sucesso' => 1,
-                        'transacao_id' => $pedido->transacao_id
+                        'transacao_id' => $pedido->transacao_id,
+                        'hash_pedido' => $pedido->hash_pedido
                     ];
                 }else{
 
@@ -212,7 +213,7 @@ class PagamentoController extends Controller
             });
 
             if(isset($result['sucesso'])){
-                return redirect()->route('loja.finalizar', 'link='.$config->loja_id .'&transacao_id='.$result['transacao_id']);
+                return redirect()->route('loja.finalizar', 'link='.$config->loja_id .'&transacao_id='.$result['transacao_id'].'&hash_pedido='.$result['hash_pedido']);
             }else{
                 return redirect()->back();
             }
@@ -225,6 +226,7 @@ class PagamentoController extends Controller
     public function pagamentoBoleto(Request $request){
         try{
             $config = EcommerceConfig::findOrfail($request->loja_id);
+
             $result = DB::transaction(function () use ($request, $config) {
 
                 $pedido = $this->createPedido($request);
@@ -266,7 +268,8 @@ class PagamentoController extends Controller
                     session()->flash("flash_success", "Boleto gerado!");
                     return [
                         'sucesso' => 1,
-                        'transacao_id' => $pedido->transacao_id
+                        'transacao_id' => $pedido->transacao_id,
+                        'hash_pedido' => $pedido->hash_pedido
                     ];
                 }else{
 
@@ -278,8 +281,9 @@ class PagamentoController extends Controller
             });
 
             if(isset($result['sucesso'])){
-                return redirect()->route('loja.finalizar', 'link='.$config->loja_id .'&transacao_id='.$result['transacao_id']);
+                return redirect()->route('loja.finalizar', 'link='.$config->loja_id .'&transacao_id='.$result['transacao_id'].'&hash_pedido='.$result['hash_pedido']);
             }else{
+                session()->flash("flash_error", $result['erro']);
                 return redirect()->back();
             }
         }catch(\Exception $e){

@@ -12,4 +12,9 @@ class AcessoLog extends Model
     protected $fillable = [
         'usuario_id', 'ip'
     ];
+
+    public function usuario()
+    {
+        return $this->belongsTo(User::class, 'usuario_id');
+    }
 }

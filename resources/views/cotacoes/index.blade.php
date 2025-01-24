@@ -5,17 +5,19 @@
         <div class="card">
             <div class="card-body">
                 <div class="col-md-2">
+                    @can('cotacao_create')
                     <a href="{{ route('cotacoes.create') }}" class="btn btn-success">
                         <i class="ri-add-circle-fill"></i>
                         Nova Cotação
                     </a>
+                    @endcan
                 </div>
                 <hr class="mt-3">
                 <div class="col-lg-12">
                     {!!Form::open()->fill(request()->all())
                     ->get()
                     !!}
-                    <div class="row mt-3">
+                    <div class="row mt-3 g-1">
                         <div class="col-md-3">
                             {!!Form::select('fornecedor_id', 'Fornecedor')
                             ->options($fornecedor != null ? [$fornecedor->id => $fornecedor->info] : [])
@@ -119,13 +121,17 @@
                                             @csrf
                                             
                                             @if($item->estado != 'aprovada')
+                                            @can('cotacao_edit')
                                             <a class="btn btn-warning btn-sm" href="{{ route('cotacoes.edit', $item->id) }}">
                                                 <i class="ri-edit-line"></i>
                                             </a>
+                                            @endcan
 
+                                            @can('cotacao_delete')
                                             <button type="button" class="btn btn-delete btn-sm btn-danger">
                                                 <i class="ri-delete-bin-line"></i>
                                             </button>
+                                            @endcan
                                             @endif
 
                                             <a title="Link para responder cotação" target="_blank" class="btn btn-dark btn-sm" href="{{ route('cotacoes.resposta', $item->hash_link) }}">

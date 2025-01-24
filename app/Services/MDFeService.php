@@ -31,8 +31,8 @@ class MDFeService{
 		$this->empresa_id = $emitente->empresa_id;
 	// 	$this->config = json_encode($config);
 		$this->config = $config;
+
 		$this->tools = new Tools(json_encode($config), Certificate::readPfx($emitente->arquivo, $emitente->senha));
-		$emitente = $config;
 
 		$config = ConfiguracaoSuper::first();
 		if($config){
@@ -48,8 +48,8 @@ class MDFeService{
 
 		$emitente = Empresa::where('id', request()->empresa_id)
 		->first();
+        $emitente = __objetoParaEmissao($emitente, $mdfe->local_id);
 
-        // dd($emitente);
 		$std = new \stdClass();
 		$std->cUF = Empresa::getCodUF($emitente->cidade->uf); 
 		$std->tpAmb = (int)$emitente->ambiente;
@@ -76,7 +76,7 @@ class MDFeService{
 		$std->nMDF = $mdfe->mdfe_numero; // ver aqui
 		$std->cMDF = rand(11111111, 99999999);
 		$std->cDV = '0';
-		$std->modal = '1';
+		$std->modal = $mdfe->tipo_modal;
 		$std->dhEmi = date("Y-m-d\TH:i:sP");
 		$std->tpEmis = '1';
 		$std->procEmi = '0';
@@ -232,7 +232,7 @@ class MDFeService{
 			$veicReboque->placa = strtoupper($placa);
 			$veicReboque->tara = $mdfe->veiculoReboque->tara;
 			$veicReboque->capKG = $mdfe->veiculoReboque->capacidade;
-			$veicReboque->tpCar = $mdfe->veiculoReboque->tipo_carroceira;
+			$veicReboque->tpCar = $mdfe->veiculoReboque->tipo_carroceria;
 			$veicReboque->UF = $mdfe->veiculoReboque->uf;
 
 			$prop = new \stdClass();
@@ -265,7 +265,7 @@ class MDFeService{
 			$veicReboque->placa = strtoupper($placa);
 			$veicReboque->tara = $mdfe->veiculoReboque2->tara;
 			$veicReboque->capKG = $mdfe->veiculoReboque2->capacidade;
-			$veicReboque->tpCar = $mdfe->veiculoReboque2->tipo_carroceira;
+			$veicReboque->tpCar = $mdfe->veiculoReboque2->tipo_carroceria;
 			$veicReboque->UF = $mdfe->veiculoReboque2->uf;
 
 			$prop = new \stdClass();
@@ -298,7 +298,7 @@ class MDFeService{
 			$veicReboque->placa = strtoupper($placa);
 			$veicReboque->tara = $mdfe->veiculoReboque3->tara;
 			$veicReboque->capKG = $mdfe->veiculoReboque3->capacidade;
-			$veicReboque->tpCar = $mdfe->veiculoReboque3->tipo_carroceira;
+			$veicReboque->tpCar = $mdfe->veiculoReboque3->tipo_carroceria;
 			$veicReboque->UF = $mdfe->veiculoReboque3->uf;
 
 			$prop = new \stdClass();
@@ -666,16 +666,24 @@ class MDFeService{
 
 	public function transmitir($signXml){
 		try{
-			$resp = $this->tools->sefazEnviaLote([$signXml], rand(1, 10000));
+			$resp = $this->tools->sefazEnviaLote([$signXml], rand(1, 10000), 1);
 
 			$st = new Standardize();
 			$std = $st->toStd($resp);
 
-			// sleep(3);
 			sleep($this->timeout);
 
-			$resp = $this->tools->sefazConsultaRecibo($std->infRec->nRec);
-			$std = $st->toStd($resp);
+			if ($std->cStat != 100) {
+				return [
+					'erro' => true, 
+					'message' => $std->xMotivo, 
+					'cStat' => $std->cStat
+				];
+			}
+			// sleep(3);
+
+			// $resp = $this->tools->sefazConsultaRecibo($std->infRec->nRec);
+			// $std = $st->toStd($resp);
 
 			if(!isset($std->protMDFe)){
 				return [
@@ -689,8 +697,8 @@ class MDFeService{
 			$cStat = $std->protMDFe->infProt->cStat;
 
 			if($cStat == '100'){
-
-				file_put_contents(public_path('xml_mdfe/').$chave.'.xml', $signXml);
+				$xml = Complements::toAuthorize($signXml, $resp);
+				file_put_contents(public_path('xml_mdfe/').$chave.'.xml', $xml);
 				return [
 					'chave' => $chave, 
 					'protocolo' => $std->protMDFe->infProt->nProt, 

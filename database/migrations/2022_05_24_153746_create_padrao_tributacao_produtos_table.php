@@ -36,11 +36,22 @@ return new class extends Migration
             $table->string('ncm', 10)->nullable();
             $table->string('codigo_beneficio_fiscal', 15)->nullable();
             $table->boolean('padrao')->default(0);
+
+            $table->integer('modBCST')->nullable();
+            $table->decimal('pMVAST', 5,2)->nullable();
+            $table->decimal('pICMSST', 5,2)->nullable();
+            $table->decimal('redBCST', 5,2)->nullable();
+
             // alter table padrao_tributacao_produtos add column codigo_beneficio_fiscal varchar(10) default null;
 
             // alter table padrao_tributacao_produtos add column cfop_entrada_estadual varchar(4) default null;
             // alter table padrao_tributacao_produtos add column cfop_entrada_outro_estado varchar(4) default null;
             // alter table padrao_tributacao_produtos add column padrao boolean default 0;
+
+            // alter table padrao_tributacao_produtos add column modBCST integer default null;
+            // alter table padrao_tributacao_produtos add column pMVAST decimal(5,2) default null;
+            // alter table padrao_tributacao_produtos add column pICMSST decimal(5,2) default null;
+            // alter table padrao_tributacao_produtos add column redBCST decimal(5,2) default null;
             $table->timestamps();
         });
     }

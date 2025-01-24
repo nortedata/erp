@@ -6,7 +6,7 @@
     <div class="row">
         <div class="card">
             <div class="card-body">
-                <h4>Configurar o(s) dia(s) funcionamento, horário de início e fim do expediente</h4>
+                <h4>Configurar os dias de funcionamento, horário de início e fim do expediente</h4>
                 <hr>
                 <a class="btn btn-success px-3" href="{{ route('funcionamentos.create') }}">
                     <i class="ri-add-circle-fill"></i>
@@ -21,6 +21,7 @@
                     <div class="row mt-3">
                         <div class="col-md-3">
                             {!!Form::select('funcionario_id', 'Pesquisar por funcionario')
+                            ->options($funcionario != null ? [$funcionario->id => $funcionario->nome] : [])
                             !!}
                         </div>
                         <div class="col-md-3 text-left">

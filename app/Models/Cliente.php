@@ -12,7 +12,8 @@ class Cliente extends Model
     protected $fillable = [
         'empresa_id', 'razao_social', 'nome_fantasia', 'cpf_cnpj', 'ie', 'contribuinte', 'consumidor_final',
         'email', 'telefone', 'cidade_id', 'rua', 'cep', 'numero', 'bairro', 'complemento', 'status', 'uid',
-        'senha', 'token', 'valor_cashback'
+        'senha', 'token', 'valor_cashback', 'nuvem_shop_id', 'valor_credito', 'limite_credito',
+        'lista_preco_id'
     ];
 
     protected $appends = [ 'endereco', 'info' ];
@@ -31,6 +32,14 @@ class Cliente extends Model
 		return $this->belongsTo(Cidade::class, 'cidade_id');
 	}
 
+    public function listaPreco(){
+        return $this->belongsTo(ListaPreco::class, 'lista_preco_id');
+    }
+
+    public function vendas(){
+        return $this->hasMany(Nfe::class, 'cliente_id');
+    }
+
     //delivery
 
     public function enderecos(){
@@ -39,6 +48,10 @@ class Cliente extends Model
 
     public function enderecosEcommerce(){
         return $this->hasMany(EnderecoEcommerce::class, 'cliente_id');
+    }
+
+    public function enderecosDelivery(){
+        return $this->hasMany(EnderecoDelivery::class, 'cliente_id');
     }
 
     public function pedidosEcommerce(){
@@ -56,5 +69,9 @@ class Cliente extends Model
 
     public function cashBacks(){
         return $this->hasMany(CashBackCliente::class, 'cliente_id');
+    }
+
+    public static function getClienteDelivery($hash){
+        return Cliente::where('uid', $hash)->first();
     }
 }

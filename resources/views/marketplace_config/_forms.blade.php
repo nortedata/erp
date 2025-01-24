@@ -41,7 +41,7 @@
     </div>
 
     <div class="col-md-2">
-        {!!Form::tel('telefone', 'Telefone')
+        {!!Form::tel('telefone', 'WhatsApp')
         ->attrs(['class' => 'fone'])
         ->required()
         !!}
@@ -110,7 +110,7 @@
 
     <div class="col-lg-3 col-12">
         <label for="">Tipo de entrega</label>
-        <select class="select2 form-control select2-multiple" name="tipo_entrega[]" data-toggle="select2" multiple="multiple" id="tipo_entrega">
+        <select required class="select2 form-control select2-multiple" name="tipo_entrega[]" data-toggle="select2" multiple="multiple" id="tipo_entrega">
             <option @if(in_array('balcao', (isset($item) ? $item->tipo_entrega : []))) selected @endif value="balcao">Balcão</option>
             <option @if(in_array('delivery', (isset($item) ? $item->tipo_entrega : []))) selected @endif value="delivery">Delivery</option>
         </select>
@@ -153,13 +153,19 @@
         !!}
     </div>
 
-    <div class="col-lg-8 col-12">
+    <div class="col-lg-6 col-12">
         <label for="">Tipos de pagamento</label>
         <select class="select2 form-control select2-multiple" name="tipos_pagamento[]" data-toggle="select2" multiple="multiple" id="tipos_pagamento">
             @foreach(\App\Models\MarketPlaceConfig::tiposPagamento() as $t)
             <option @if(in_array($t, (isset($item) ? $item->tipos_pagamento : []))) selected @endif value="{{ $t }}">{{ $t }}</option>
             @endforeach
         </select>
+    </div>
+
+    <div class="col-md-4">
+        {!!Form::text('funcionamento_descricao', 'Descreva o funcionamento')
+        ->required()
+        !!}
     </div>
 
     <div class="col-md-4">

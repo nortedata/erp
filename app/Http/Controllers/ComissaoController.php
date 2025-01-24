@@ -71,6 +71,14 @@ class ComissaoController extends Controller
             $item->save();
         }
 
+        $local_id = null;
+        $caixa = __isCaixaAberto();
+        if($caixa != null){
+            $local_id = $caixa->local_id;
+        }else{
+            $local_id = __getLocalAtivo()->id;
+        }
+
         if($request->gerar_conta){
             ContaPagar::create([
                 'empresa_id' => $request->empresa_id,
@@ -80,6 +88,7 @@ class ComissaoController extends Controller
                 'tipo_pagamento' => $request->tipo_pagamento,
                 'descricao' => $request->descricao,
                 'status' => $request->status,
+                'local_id' => $local_id
             ]);
             session()->flash("flash_success", "Comissões adicionadas no conta a pagar!");
 
@@ -88,4 +97,18 @@ class ComissaoController extends Controller
         }
         return redirect()->back();
     }
+
+    public function destroy($id)
+    {
+        $item = ComissaoVenda::findOrFail($id);
+        try {
+
+            $item->delete();
+            session()->flash('flash_success', 'Deletado com sucesso');
+        } catch (\Exception $e) {
+            session()->flash('flash_error', 'Não foi possível deletar' . $e->getMessage());
+        }
+        return redirect()->back();
+    }
+
 }

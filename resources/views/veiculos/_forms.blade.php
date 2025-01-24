@@ -37,7 +37,7 @@
 
     <div class="col-md-2">
         {!!Form::text('renavam', 'Renavam')
-        ->attrs(['data-mask' => '000000000'])
+        ->attrs(['data-mask' => '000000000000'])
         !!}
     </div>
 
@@ -109,6 +109,18 @@
     <div class="col-md-2">
         {!!Form::select('proprietario_tp', 'Tipo do proprietário', App\Models\Veiculo::tiposProprietario())
         ->attrs(['class' => 'form-select'])->required()
+        !!}
+    </div>
+
+    <div class="col-md-3">
+        {!!Form::select('funcionario_id', 'Motorista', ['' => 'Selecione'] + $funcionarios->pluck('nome', 'id')->all())
+        ->attrs(['class' => 'select2'])
+        !!}
+    </div>
+
+    <div class="col-md-2">
+        {!!Form::select('status', 'Ativo', ['1' => 'Sim', '0' => 'Não'])
+        ->attrs(['class' => 'form-select'])
         !!}
     </div>
 

@@ -55,6 +55,14 @@
                     !!}
                 </div>
 
+                <div class="col-md-3 mt-2">
+                    {!!Form::select('status_pagamento', 'Status de pagamento', \App\Models\FinanceiroPlano::statusDePagamentos())
+                    ->required()
+                    ->attrs(['class' => 'select2'])
+                    ->value('recebido')
+                    !!}
+                </div>
+
                 <div class="col-12" style="text-align: right;">
                     <button type="submit" class="btn btn-success px-5" id="btn-store">Salvar</button>
                 </div>

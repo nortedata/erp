@@ -8,8 +8,9 @@ class ModuloUtil
 {
 	public function getModulos(){
 		return [
-			'Produtos', 'Pessoas', 'Compras', 'PDV', 'NFe', 'NFCe', 'CTe', 'MDFe', 'Financeiro', 'Veiculos', 'Serviços',
-			'Atendimento', 'Cardapio', 'Agendamentos', 'Delivery', 'Ecommerce', 'NFSe'
+			'Produtos', 'Pessoas', 'Usuários', 'Compras', 'PDV', 'Vendas', 'NFCe', 'CTe', 'MDFe', 'Financeiro', 'Veiculos', 
+			'Serviços', 'Atendimento', 'Cardapio', 'Agendamentos', 'Delivery', 'Ecommerce', 'NFSe', 'Mercado Livre', 
+			'Nuvem Shop', 'Pré venda', 'Reservas', 'Localizações', 'Woocommerce', 'Controle de Fretes', 'Sped'
 		];
 	}
 

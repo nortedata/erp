@@ -11,8 +11,17 @@
                     </a>
                 </div>
                 <hr class="mt-3">
+
+                <a class="btn btn-dark mb-2" title="Imprimir" target="_blank" href="{{ route('frontbox.imprimir-nao-fiscal', [$data->id]) }}">
+                    Imprimir
+                    <i class="ri-printer-line"></i>
+                </a>
                 <div class="">
                     <h4>Cliente: <strong style="color: steelblue">{{ $data->cliente_id ? $data->cliente->razao_social : 'Consumidor Final'}}</strong></h4>
+
+                    @if($data->user)
+                    <h5>Usuário: <strong class="text-">{{ $data->user->name}}</strong></h5>
+                    @endif
                 </div>
                 <hr>
                 <div class="col-lg-12 mt-4">

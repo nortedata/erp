@@ -6,6 +6,18 @@ $(function () {
     
 })
 
+$('body').on('change', '#inp-local_id', function () {
+    let local_id = $(this).val()
+    $.get(path_url + "api/localizacao/find-number-doc", {local_id: local_id})
+    .done((res) => {
+        console.log(res)
+        $('#inp-mdfe_numero').val(res.numero_mdfe)
+    })
+    .fail((err) => {
+        console.error(err)
+    })
+});
+
 function selectDiv2(ref) {
     $('.btn-outline-primary').removeClass('active')
     if (ref == 'gerais') {

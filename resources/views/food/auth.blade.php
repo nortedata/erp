@@ -10,7 +10,48 @@
 </style>
 @endsection
 
-<section class="featured spad" style="margin-top: -100px">
+<div class="container">
+
+	<div id="dvUsuario" hidden="" class="elemento-usuario" style="display: block;">
+		<div class="titler">
+			<div class="row">
+				<div class="col-md-12">
+					<div class="title-line mt-0 pd-0">
+						<i class="lni lni-user"></i>
+						<span>Dados do cliente</span>
+						<div class="clear"></div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<input type="hidden" id="inp-empresa_id" value="{{ $config->empresa_id }}">
+		<input type="hidden" value="{{ $config->loja_id }}" id="inp-link">
+		<input type="hidden" value="{{ $carrinho->id }}" id="inp-carrinho_id">
+
+		<div class="row">
+			<div class="col-md-12">
+				<div class="form-field-default">
+					<label>Whatsapp:</label>
+					<input class="maskcel inptWhatsapp" type="text" id="inp-fone" placeholder="Whatsapp:" value="">
+				</div>
+			</div>
+		</div>
+		<div class="row">
+			<div class="col-md-12">
+				<div class="form-field-default">
+					<label>Nome completo:</label>
+					<input type="text" class="inptNome" id="inp-nome" placeholder="Nome:" value="">
+				</div>
+			</div>
+		</div>
+		
+		
+		<button class="botao-acao pt-3 btn-main" style="display: none;">PRÓXIMO</button>
+
+	</div>
+</div>
+
+<!-- <section class="featured spad" style="margin-top: -100px">
 	<div class="container">
 		<br>
 		<input type="hidden" value="{{ $config->loja_id }}" id="inp-link">
@@ -29,7 +70,7 @@
 			</div>
 		</div>
 	</div>
-</section>
+</section> -->
 @section('js')
 <script type="text/javascript" src="/delivery/js/auth.js"></script>
 @endsection

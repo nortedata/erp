@@ -32,17 +32,26 @@ class HelperController extends Controller
         // return response()->json($carrinho, 404);
 
         if($item == null){
-            return response()->json("cupom não encontrado", 404);
+
+            $carrinho->valor_desconto = 0;
+            $carrinho->cupom = '';
+            $carrinho->valor_frete = 0;
+            $carrinho->valor_total = $carrinho->itens->sum('sub_total') + $carrinho->valor_frete;
+            $carrinho->save();
+            return response()->json('cupom não encontrado', 404);
         }
-        $total = $request->total;
+        $total = $carrinho->valor_total;
+
+        if($carrinho->valor_desconto > 0){
+            return response()->json("Desconto já foi aplicado", 401);
+        }
 
         if($total < $item->valor_minimo_pedido){
             return response()->json("valor minímo para este cupom R$ " . __moeda($item->valor_minimo_pedido), 401);
         }
 
-        $cliente = Cliente::where('uid', $request->uid)->first();
-        if($cliente == null || $request->uid == ""){
-        // if($cliente == null){
+        $cliente = $carrinho->cliente;
+        if($cliente == null){
             return response()->json("cliente não encontrado", 404);
         }
 
@@ -92,6 +101,7 @@ class HelperController extends Controller
         try{
             $carrinho_id = $request->carrinho_id;
             $fone = $request->fone;
+            // return response()->json($fone, 403);
 
             $item = Cliente::create([
                 'empresa_id' => $request->empresa_id,
@@ -101,6 +111,7 @@ class HelperController extends Controller
             ]);
 
             $carrinho = CarrinhoDelivery::findOrFail($carrinho_id);
+            $carrinho->cliente_id = $item->id;
             $carrinho->fone = $fone;
             $carrinho->save();
             return response()->json($item, 200);

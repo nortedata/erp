@@ -4,6 +4,7 @@
 {!!Form::open()->fill($item)
 ->put()
 ->route('frontbox.update', [$item->id])
+->id('form-pdv-update')
 ->multipart()
 !!}
 <div class="pl-lg-4">

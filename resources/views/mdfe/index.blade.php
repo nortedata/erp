@@ -5,15 +5,20 @@
         <div class="card">
             <div class="card-body">
                 <div class="col-md-12">
+                    @can('mdfe_create')
                     <a href="{{ route('mdfe.create') }}" class="btn btn-success">
                         <i class="ri-add-circle-fill"></i> Nova MDFe
                     </a>
+                    @endcan
                     <a href="{{ route('mdfe.nao-encerrados') }}" type="button" class="btn btn-danger">
                         <i class="ri-close-fill"></i> Ver documentos não encerrados
                     </a>
+
+                    @can('mdfe_create')
                     <button class="btn btn-dark" id="btn-importar_nfe" data-bs-toggle="modal" data-bs-target="#modal-importar_nfe">
                         <i class="ri-file-upload-fill"></i> Selecionar Documentos NFe
                     </button>
+                    @endcan
                 </div>
 
                 <hr class="mt-3">
@@ -40,6 +45,14 @@
                             ->attrs(['class' => 'form-select'])
                             !!}
                         </div>
+
+                        @if(__countLocalAtivo() > 1)
+                        <div class="col-md-2">
+                            {!!Form::select('local_id', 'Local', ['' => 'Selecione'] + __getLocaisAtivoUsuario()->pluck('descricao', 'id')->all())
+                            ->attrs(['class' => 'select2'])
+                            !!}
+                        </div>
+                        @endif
                         <div class="col-md-4">
                             <br>
                             <button class="btn btn-primary" type="submit"> <i class="ri-search-line"></i>Pesquisar</button>
@@ -56,13 +69,16 @@
                                 <tr>
                                     <th>Data Início da Viagem</th>
                                     <th>Data Criação</th>
+                                    @if(__countLocalAtivo() > 1)
+                                    <th>Local</th>
+                                    @endif
                                     <th>CNPJ Contratante</th>
                                     <th>Estado Fiscal</th>
                                     <th>Chave</th>
                                     <th>Número</th>
                                     <th>Veículo Tração</th>
                                     <th>Quantidade Carga</th>
-                                    <th>Valor Cargar</th>
+                                    <th>Valor Carga</th>
                                     <th>Local de emissão</th>
                                     <th>Ações</th>
                                 </tr>
@@ -72,6 +88,9 @@
                                 <tr>
                                     <td>{{ __data_pt($item->data_inicio_viagem, 0) }}</td>
                                     <td>{{ __data_pt($item->created_at, 0) }}</td>
+                                    @if(__countLocalAtivo() > 1)
+                                    <td class="text-danger">{{ $item->localizacao->descricao }}</td>
+                                    @endif
                                     <td>{{ $item->cnpj_contratante }}</td>
                                     <td>{!! $item->estadoEmissao($item->estado_emissao) !!}</td>
                                     <td>{{ $item->chave }}</td>
@@ -117,15 +136,20 @@
                                             @endif
                                             @if($item->estado_emissao == 'novo' || $item->estado_emissao == 'rejeitado')
 
+                                            @can('mdfe_edit')
                                             <a class="btn btn-warning btn-sm" href="{{ route('mdfe.edit', $item->id) }}">
                                                 <i class="ri-edit-line"></i>
                                             </a>
+                                            @endcan
 
                                             <a target="_blank" title="XML temporário" class="btn btn-light btn-sm" href="{{ route('mdfe.xml-temp', $item->id) }}">
                                                 <i class="ri-file-line"></i>
                                             </a>
-                                            <button type="button" class="btn btn-danger btn-sm btn-delete"><i class="ri-delete-bin-line"></i></button>
 
+                                            @can('mdfe_delete')
+                                            <button type="button" class="btn btn-danger btn-sm btn-delete"><i class="ri-delete-bin-line"></i></button>
+                                            @endcan
+                                            
                                             <button title="Transmitir MDFe" type="button" class="btn btn-success btn-sm" onclick="transmitir('{{$item->id}}')">
                                                 <i class="ri-send-plane-fill"></i>
                                             </button>

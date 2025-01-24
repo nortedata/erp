@@ -21,6 +21,8 @@
         <h4 class="text-center mt-2">Itens</h4>
         <p class="mensagem-itens m-2 text-danger"></p>
 
+
+        @if($config && $config->confirmar_itens_prevenda)
         <div class="col-md-4 mb-2">
             <div class="input-group input-group-merge">
                 <div class="input-group-text" data-password="false">
@@ -29,6 +31,7 @@
                 <input @if($item->status == 0) disabled @endif type="text" id="inp-codigo_barras" class="form-control">
             </div>
         </div>
+        @endif
 
         <input type="hidden" id="pre_venda_id" name="pre_venda_id" value="{{ $item->id }}">
         <table class="table table-striped table-centered mb-0">

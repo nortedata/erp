@@ -1,8 +1,8 @@
-@extends('layouts.app', ['title' => 'Configuração MarketPlace'])
+@extends('layouts.app', ['title' => 'Configuração de MarketPlace'])
 @section('content')
 <div class="card mt-1">
     <div class="card-header">
-        <h4>Configuração MarketPlace</h4>
+        <h4>Configuração de MarketPlace</h4>
 
     </div>
     <div class="card-body">

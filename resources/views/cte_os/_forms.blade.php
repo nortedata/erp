@@ -19,22 +19,29 @@
 
 </style>
 @endsection
-<div class="row g-3">
-    {{-- <div class="col-md-3 file-certificado">
-        {!! Form::file('xml', 'Importar XML NFe')->attrs(['accept' => '.xml']) !!}
-    </div> --}}
-</div>
-<br>
-<input type="hidden" id="clientes" value="{{json_encode($clientes)}}" name="">
 
 <div class="row g-3">
-    <div class="col-md-5">
+    @if(__countLocalAtivo() > 1)
+    <div class="col-md-2">
+        <label for="">Local</label>
+
+        <select id="inp-local_id" required class="select2 class-required" data-toggle="select2" name="local_id">
+            <option value="">Selecione</option>
+            @foreach(__getLocaisAtivoUsuario() as $local)
+            <option @isset($item) @if($item->local_id == $local->id) selected @endif @endif value="{{ $local->id }}">{{ $local->descricao }}</option>
+            @endforeach
+        </select>
+    </div>
+    @else
+    <input id="inp-local_id" type="hidden" value="{{ __getLocalAtivo() ? __getLocalAtivo()->id : '' }}" name="local_id">
+    @endif
+    <div class="col-md-4">
         {!! Form::select('natureza_id', 'Natureza de operação', ['' => 'Selecione'] + $naturezas->pluck('descricao', 'id')->all())->attrs([
         'class' => 'select2 class-required',
         ])->required() !!}
     </div>
 
-    <div class="col-md-5">
+    <div class="col-md-3">
         {!! Form::select('cst', 'CST', App\Models\CteOs::getCsts())->attrs(['class' => 'select2']) !!}
     </div>
     <div class="col-md-1">
@@ -127,7 +134,7 @@
     </div>
 
     <div class="col-md-2">
-        {!! Form::text('quantidade_carga', 'Qtd de carga')->attrs(['class' => 'qtd'])->required() !!}
+        {!! Form::text('quantidade_carga', 'Quantidade de carga')->attrs(['class' => 'qtd'])->required() !!}
     </div>
 
     <div class="col-md-2">
@@ -136,9 +143,72 @@
     <div class="col-md-2">
         {!! Form::text('horario_viagem', 'Horário de viagem')->attrs(['data-mask' => '00:00'])->required() !!}
     </div>
+
+    <div class="col-12 col-md-4">
+            <div class="row">
+                <div class="col-12 mt-3">
+                    <h4>Percurso</h4>
+                    <div class="row">
+                        <table class="table mb-0 table-striped table-dynamic">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>UF</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody class="datatable-body" id="tbody">
+                                @if (isset($item) && sizeof($item->percurso) > 0)
+                                @foreach($item->percurso as $p)
+                                <tr class="dynamic-form">
+                                    <td class="col-10">
+                                        <br>
+
+                                        {!! Form::select('uf[]', '', ['' => 'Selecione...'] + App\Models\Cidade::estados())
+                                        ->attrs(['class' => 'select2'])
+                                        ->value($p->uf)
+                                        !!}
+                                    </td>
+                                    <td>
+                                        <br>
+                                        <button class="btn btn-danger btn-sm btn-remove-tr">
+                                            <i class="ri-delete-bin-line"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                @endforeach
+                                @else
+                                <tr class="dynamic-form">
+                                    <td class="col-10">
+                                        <br>
+                                        {!! Form::select('uf[]', '', ['' => 'Selecione...'] + App\Models\Cidade::estados())
+                                        ->attrs(['class' => 'select2']) !!}
+                                    </td>
+                                    <td>
+                                        <br>
+                                        <button class="btn btn-danger btn-sm btn-remove-tr">
+                                            <i class="ri-delete-bin-line"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                @endif
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="row">
+                        <div class="col-12">
+                            <br>
+                            <button type="button" class="btn btn-dark btn-add-tr">
+                                <i class="ri-add-line"></i>
+                                Adicionar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     <hr class="mt-5">
     <div class="col-md-12">
-        {!! Form::text('observacao', 'Informação adicional')->required() !!}
+        {!! Form::text('observacao', 'Informação adicional') !!}
     </div>
 
     <hr class="mt-4">

@@ -45,9 +45,19 @@ return new class extends Migration
             $table->string('horario_leitura', 5)->nullable();
             $table->string('horario_entrega', 5)->nullable();
             $table->integer('nfce_id')->nullable();
+
+            $table->integer('funcionario_id_agendamento')->nullable();
+            $table->string('inicio_agendamento', 5)->nullable();
+            $table->string('fim_agendamento', 5)->nullable();
+            $table->date('data_agendamento')->nullable();
             
             // alter table pedido_deliveries add column finalizado boolean default 0;
             // alter table pedido_deliveries add column nfce_id integer default null;
+
+            // alter table pedido_deliveries add column funcionario_id_agendamento integer default null;
+            // alter table pedido_deliveries add column inicio_agendamento varchar(5) default null;
+            // alter table pedido_deliveries add column fim_agendamento varchar(5) default null;
+            // alter table pedido_deliveries add column data_agendamento date default null;
             
             $table->timestamps();
         });

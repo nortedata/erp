@@ -1,4 +1,4 @@
-@extends('layouts.app', ['title' => 'Lista de Pré vendas'])
+@extends('layouts.app', ['title' => 'Lista de Pré Vendas'])
 @section('css')
 <style type="text/css">
     td:hover{
@@ -13,17 +13,19 @@
         <div class="card">
             <div class="card-body">
                 <div class="col-md-2">
+                    @can('pre_venda_create')
                     <a href="{{ route('pre-venda.create') }}" class="btn btn-success">
                         <i class="ri-add-circle-fill"></i>
                         Nova Pré venda
                     </a>
+                    @endcan
                 </div>
                 <hr class="mt-3">
                 <div class="col-lg-12">
                     {!!Form::open()->fill(request()->all())
                     ->get()
                     !!}
-                    <div class="row mt-3">
+                    <div class="row mt-3 g-1">
                         <div class="col-md-4">
                             {!!Form::select('cliente_id', 'Pesquisar por nome')->attrs(['class' => 'select2'])
                             !!}
@@ -47,6 +49,14 @@
                             ->attrs(['class' => 'form-select'])
                             !!}
                         </div>
+
+                        @if(__countLocalAtivo() > 1)
+                        <div class="col-md-2">
+                            {!!Form::select('local_id', 'Local', ['' => 'Selecione'] + __getLocaisAtivoUsuario()->pluck('descricao', 'id')->all())
+                            ->attrs(['class' => 'select2'])
+                            !!}
+                        </div>
+                        @endif
                         <div class="col-md-3 text-left">
                             <br>
                             <button class="btn btn-primary" type="submit"> <i class="ri-search-line"></i>Pesquisar</button>
@@ -62,6 +72,9 @@
                                 <tr>
                                     <th>Código</th>
                                     <th>Cliente</th>
+                                    @if(__countLocalAtivo() > 1)
+                                    <th>Local</th>
+                                    @endif
                                     <th>Data</th>
                                     <th>Valor</th>
                                     <th>Status</th>
@@ -70,9 +83,12 @@
                             </thead>
                             <tbody>
                                 @foreach($data as $item)
-                                <tr ondblclick="finalizar('{{$item->id}}')">
+                                <tr @can('nfce_create') ondblclick="finalizar('{{$item->id}}')" @endcan>
                                     <td width="200">{{ $item->codigo }}</td>
                                     <td width="600">{{ $item->cliente_id ? $item->cliente->razao_social : 'Consumidor Final' }}</td>
+                                    @if(__countLocalAtivo() > 1)
+                                    <td class="text-danger">{{ $item->localizacao->descricao }}</td>
+                                    @endif
                                     <td width="200">{{ __data_pt($item->created_at) }}</td>
                                     <td width="200">{{ __moeda($item->valor_total) }}</td>
                                     <td width="150">
@@ -87,17 +103,20 @@
                                             @method('delete')
                                             @csrf
                                             @if($item->status == 1)
+
+                                            @can('pre_venda_delete')
                                             <button type="button" class="btn btn-delete btn-sm btn-danger">
                                                 <i class="ri-delete-bin-line"></i>
                                             </button>
+                                            @endcan
                                             @endif
 
                                             @if($item->status == 0 && $item->venda_id != null && $item->tipo_finalizado == 'nfe')
 
-                                            <a type="button" class="btn btn-light info btn-sm" title="Ver Nfe" href="{{ route('nfe.show', $item->venda_id) }}">
+                                            <a type="button" class="btn btn-light info btn-sm" title="Ver NFe" href="{{ route('nfe.show', $item->venda_id) }}">
                                                 <i class="ri-eye-line"></i>
                                             </a>
-                                            <a class="btn btn-primary btn-sm" title="Imprimir Nfc-e" target="_blank" href="{{ route('nfe.imprimir', [$item->venda_id]) }}">
+                                            <a class="btn btn-primary btn-sm" title="Imprimir pedido" target="_blank" href="{{ route('nfe.imprimir', [$item->venda_id]) }}">
                                                 <i class="ri-printer-line"></i>
                                             </a>
 
@@ -105,12 +124,12 @@
 
                                             @if($item->status == 0 && $item->venda_id != null && $item->tipo_finalizado == 'nfce')
 
-                                            <a type="button" class="btn btn-light info btn-sm" title="Ver Nfc-e" href="{{ route('nfce.show', $item->venda_id) }}">
+                                            <a type="button" class="btn btn-light info btn-sm" title="Ver NFCe" href="{{ route('nfce.show', $item->venda_id) }}">
                                                 <i class="ri-eye-line"></i>
                                             </a>
 
                                             @if($item->tipo_finalizado == 'nfe' && $item->venda_id != null )
-                                            <a class="btn btn-primary btn-sm" title="Imprimir Nfc-e" target="_blank" href="{{ route('nfce.imprimir', [$item->venda_id]) }}">
+                                            <a class="btn btn-primary btn-sm" title="Imprimir NFCe" target="_blank" href="{{ route('nfce.imprimir', [$item->venda_id]) }}">
                                                 <i class="ri-printer-line"></i>
                                             </a>
 
@@ -119,7 +138,7 @@
                                                 <i class="ri-printer-line"></i>
                                             </a>
 
-                                            @if($item->nfce->estado == 'aprovado')
+                                            @if($item->nfce && $item->nfce->estado == 'aprovado')
                                             <a class="btn btn-primary btn-sm" title="Imprimir Nfc-e" target="_blank" href="{{ route('nfce.imprimir', [$item->venda_id]) }}">
                                                 <i class="ri-printer-line"></i>
                                             </a>
@@ -129,9 +148,11 @@
                                             @endif
 
                                             @if($item->status == 1)
+                                            @can('nfce_create')
                                             <button type="button" class="btn btn-dark btn-sm" title="Finalizar" onclick="finalizar('{{$item->id}}')">
                                                 <i class="ri-coins-fill"></i>
                                             </button>
+                                            @endcan
                                             @endif
                                         </form>
                                     </td>

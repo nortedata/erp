@@ -34,6 +34,15 @@
         !!}
     </div>
 
+    <div class="col-lg-6 col-12">
+        <label class="required">Usuários</label>
+        <select required class="select2 form-control select2-multiple" name="usuarios[]" data-toggle="select2" multiple="multiple" id="usuarios">
+            @foreach ($usuarios as $u)
+            <option @isset($item) @if(in_array($u->id, $item->usuarios)) selected @endif @endif value="{{$u->id}}">{{$u->name}}</option>
+            @endforeach
+        </select>
+    </div>
+
     <hr class="mt-4">
     <div class="col-12" style="text-align: right;">
         <button type="submit" class="btn btn-success px-5" id="btn-store">Salvar</button>

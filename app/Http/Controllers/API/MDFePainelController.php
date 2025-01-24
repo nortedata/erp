@@ -7,19 +7,30 @@ use App\Models\Empresa;
 use App\Models\Mdfe;
 use App\Services\MDFeService;
 use Illuminate\Http\Request;
+use App\Utils\EmailUtil;
 
 class MDFePainelController extends Controller
 {
+
+    protected $emailUtil;
+    public function __construct(EmailUtil $util){
+        $this->emailUtil = $util;
+    }
+
     public function emitir(Request $request)
     {
         $item = Mdfe::findOrFail($request->id);
         $config = Empresa::where('id', $request->empresa_id)
-            ->first();
+        ->first();
+
+        $config = __objetoParaEmissao($config, $item->local_id);
+
         if ($config == null) {
             return response()->json("Configure o emitente", 401);
         }
         try {
             $cnpj = preg_replace('/[^0-9]/', '', $config->cpf_cnpj);
+
             $mdfe_service = new MDFeService([
                 "atualizacao" => date('Y-m-d h:i:s'),
                 "tpAmb" => (int)$config->ambiente,
@@ -31,6 +42,7 @@ class MDFePainelController extends Controller
                 "schemes" => "PL_MDFe_300a",
                 "versao" => '3.00'
             ], $config);
+            // return response()->json($config->senha, 401);
 
             if ($item->estado_emissao == 'rejeitado' || $item->estado_emissao == 'novo') {
                 $mdfe = $mdfe_service->gerar($item);
@@ -41,7 +53,7 @@ class MDFePainelController extends Controller
                         $item->chave = $resultado['chave'];
                         $item->estado_emissao = 'aprovado';
                         $item->protocolo = $resultado['protocolo'];
-                        // $item->mdfe_numero = $mdfe['numero'];
+                        $item->mdfe_numero = $mdfe['numero'];
                         if ($config->ambiente == 2) {
                             $config->numero_ultima_mdfe_homologacao = $mdfe['numero'];
                         } else {
@@ -51,6 +63,16 @@ class MDFePainelController extends Controller
                         $config->save();
                         $item->save();
                         $file = file_get_contents(public_path('xml_mdfe/') . $resultado['chave'] . '.xml');
+
+                        $descricaoLog = "Emitida número $item->mdfe_numero - $item->chave APROVADA";
+                        __createLog($item->empresa_id, 'MDFe', 'transmitir', $descricaoLog);
+
+                        try{
+                            $fileDir = public_path('xml_mdfe/').$item->chave.'.xml';
+                            $this->emailUtil->enviarXmlContador($empresa->id, $fileDir, 'MDFe', $item->chave);
+                        }catch(\Exception $e){
+
+                        }
                         return response()->json("[" . $resultado['cStat'] . "] " . $resultado['chave'] . " - " . $resultado['protocolo'], 200);
                     } else {
                         $item->estado_emissao = 'rejeitado';
@@ -72,9 +94,10 @@ class MDFePainelController extends Controller
 
         if ($mdfe->estado_emissao == 'aprovado' || $mdfe->estado_emissao == 'cancelado') {
             $config = Empresa::where('id', $request->empresa_id)
-                ->first();
+            ->first();
             $cnpj = preg_replace('/[^0-9]/', '', $config->cpf_cnpj);
 
+            $config = __objetoParaEmissao($config, $item->local_id);
             $mdfe_service = new MDFeService([
                 "atualizacao" => date('Y-m-d h:i:s'),
                 "tpAmb" => (int)$config->ambiente,

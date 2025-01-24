@@ -132,7 +132,6 @@ class CTeService{
 
 		$cte->tagenderToma($enderToma);   
 
-
 		$emit = new \stdClass();
 		
 		$emit->CNPJ = $cnpj; 
@@ -315,7 +314,6 @@ class CTeService{
 			$cte->taginfOutros($infOut);
 
 		}
-
 
 		$infModal = new \stdClass();
 		$infModal->versaoModal = '4.00';

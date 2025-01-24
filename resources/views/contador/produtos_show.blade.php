@@ -26,6 +26,8 @@
 </div>
 
 @section('js')
+<script type="text/javascript" src="/js/produto.js"></script>
+
 <script type="text/javascript">
     $(function(){
         $('input, select').each(function(){
@@ -34,6 +36,8 @@
 
     })
 </script>
+<script src="/assets/vendor/twitter-bootstrap-wizard/jquery.bootstrap.wizard.min.js"></script>
+<script src="/assets/js/pages/demo.form-wizard.js"></script>
 @endsection
 
 @endsection

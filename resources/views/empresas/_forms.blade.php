@@ -35,7 +35,7 @@
         !!}
     </div>
     <div class="col-md-2">
-        {!!Form::select('tributacao', 'Tipo de tributação', ['Simples Nacional' => 'Simples Nacional', 'MEI' => 'MEI', 'Regime Normal' => 'Regime Normal'])
+        {!!Form::select('tributacao', 'Tipo de tributação', App\Models\Empresa::tiposTributacao())
         ->attrs(['class' => 'form-select'])
         ->required()
         !!}
@@ -55,7 +55,7 @@
     
     <div class="col-md-2">
         {!!Form::tel('ie', 'IE')
-        ->attrs(['data-mask' => '0000000000'])
+        ->attrs(['data-mask' => '000000000000000000'])
         ->required()
         !!}
     </div>
@@ -196,7 +196,7 @@
         !!}
     </div>
     <div class="col-md-2">
-        {!!Form::select('status', 'Status', [1 => 'Ativo', 0 => 'Desativado'])
+        {!!Form::select('status', 'Status da empresa', [1 => 'Ativo', 0 => 'Desativado'])
         ->attrs(['class' => 'form-select'])
         !!}
     </div>
@@ -206,12 +206,14 @@
         !!}
     </div>
 
+    @isset($segmentossegmentos)
     <div class="col-md-2">
         {!!Form::select('segmento_id', 'Segmento', ['' => 'Selecione'] + $segmentos->pluck('nome', 'id')->all())
         ->attrs(['class' => 'form-select'])
         ->value(isset($item) ? (sizeof($item->segmentos) > 0 ? $item->segmentos[0]->segmento_id : '') : '')
         !!}
     </div>
+    @endif
 
     <div class="col-md-4">
         <label for="">Token</label>
@@ -313,7 +315,7 @@
         let token = generate_token(25);
         swal({
             title: "Atenção", 
-            text: "Esse token é o responsavel pela comunicação com a API, tenha atenção!!", 
+            text: "Esse token é o responsavel pela comunicação com a API!!", 
             icon: "warning", 
             buttons: true,
             dangerMode: true

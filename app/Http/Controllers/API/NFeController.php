@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Empresa;
 use App\Models\Cliente;
+use App\Models\Caixa;
 use App\Models\Cidade;
 use App\Models\ContaReceber;
 use App\Models\Produto;
@@ -91,6 +92,7 @@ class NFeController extends Controller
 
         if (!isset($doc['erros_xml'])) {
             $xml = $doc['xml'];
+
             $chave = $doc['chave'];
 
             try {
@@ -127,6 +129,7 @@ class NFeController extends Controller
                     return response()->json($data, 200);
                 } else {
                     $error = $resultado['error'];
+                    $recibo = isset($resultado['recibo']) ? $resultado['recibo'] : null;
                     // return response()->json($resultado, 401);
 
                     if (isset($error['protNFe'])) {
@@ -136,7 +139,11 @@ class NFeController extends Controller
                     }
 
                     $nfe->numero = isset($documento['numero_nfe']) ? $documento['numero_nfe'] :
-                        Nfe::lastNumero($empresa);
+                    Nfe::lastNumero($empresa);
+
+                    if($nfe->signed_xml == null){
+                        $nfe->signed_xml = $signed;
+                    }
                     $nfe->chave = $doc['chave'];
                     $nfe->estado = 'rejeitado';
                     $nfe->save();
@@ -269,8 +276,8 @@ class NFeController extends Controller
         $produto = Produto::where(function ($q) use ($nome_produto, $cod_barras) {
             $q->where('nome', $nome_produto)->orWhere('codigo_barras', $cod_barras);
         })
-            ->where('empresa_id', $empresa_id)
-            ->first();
+        ->where('empresa_id', $empresa_id)
+        ->first();
 
         if ($produto != null) {
             return $produto->id;
@@ -688,16 +695,18 @@ class NFeController extends Controller
     {
         // return sizeof($request->fatura);
         $nfe = DB::transaction(function () use ($request) {
-            
-            $item = PreVenda::findOrFail($request->pre_venda_id);
 
-            $config = Empresa::find($request->empresa_id);
+            $item = PreVenda::findOrFail($request->pre_venda_id);
+            $usuario_id = $request->usuario_id;
+            $config = Empresa::find($item->empresa_id);
             // $caixa = __isCaixaAberto();
             if ($config->ambiente == 2) {
                 $numero = $config->numero_ultima_nfe_homologacao;
             } else {
                 $numero = $config->numero_ultima_nfe_producao;
             }
+
+            $caixa = Caixa::where('usuario_id', $usuario_id)->where('status', 1)->first();
 
             $request->merge([
                 'natureza_id' => $config->natureza_id_pdv,
@@ -707,19 +716,29 @@ class NFeController extends Controller
                 'chave' => '',
                 'cliente_id' => $item->cliente_id,
                 'numero_serie' => $config->numero_serie_nfe,
-                'numero' => $numero++,
+                'numero' => $numero+1,
                 'estado' => 'novo',
+                'orcamento' => 0,
                 'total' => $item->valor_total,
                 'desconto' => $item->desconto,
                 'acrescimo' => $item->acrescimo,
                 'valor_produtos' => $item->valor_total,
-                // 'caixa_id' => $caixa ? $caixa->id : null,
+                'empresa_id' => $item->empresa_id,
+                'caixa_id' => $caixa ? $caixa->id : null,
+                'local_id' => $caixa->local_id,
             ]);
 
             $nfe = Nfe::create($request->all());
+            $cliente = Cliente::findOrFail($item->cliente_id);
 
             for ($i = 0; $i < sizeof($item->itens); $i++) {
                 $product = Produto::findOrFail($item->itens[$i]->produto_id);
+
+                $cfop = $product->cfop_estadual;
+                if($cliente->cidade->uf != $config->cidade->uf){
+                    $cfop = $product->cfop_outro_estado;
+                }
+
                 ItemNfe::create([
                     'nfe_id' => $nfe->id,
                     'produto_id' => (int)$product->id,
@@ -735,21 +754,21 @@ class NFeController extends Controller
                     'cst_cofins' => $product->cst_cofins,
                     'cst_ipi' => $product->cst_ipi,
                     'perc_red_bc' => $product->perc_red_bc ? __convert_value_bd($product->perc_red_bc) : 0,
-                    'cfop' => $product->cfop_estadual,
+                    'cfop' => $cfop,
                     'ncm' => $product->ncm,
                     'codigo_beneficio_fiscal' => $product->codigo_beneficio_fiscal ?? 0
                 ]);
 
                 if ($product->gerenciar_estoque) {
                     if (isset($request->is_compra)) {
-                        $this->util->incrementaEstoque($product->id, __convert_value_bd($item->itens[$i]->quantidade));
+                        $this->util->incrementaEstoque($product->id, __convert_value_bd($item->itens[$i]->quantidade), $caixa->local_id);
                     } else {
-                        $this->util->reduzEstoque($product->id, __convert_value_bd($item->itens[$i]->quantidade));
+                        $this->util->reduzEstoque($product->id, __convert_value_bd($item->itens[$i]->quantidade), $caixa->local_id);
                     }
                     $tipo = 'reducao';
                     $codigo_transacao = $nfe->id;
                     $tipo_transacao = 'venda_nfe';
-                    $this->util->movimentacaoProduto($product->id, __convert_value_bd($item->itens[$i]->quantidade), $tipo, $codigo_transacao, $tipo_transacao);
+                    $this->util->movimentacaoProduto($product->id, __convert_value_bd($item->itens[$i]->quantidade), $tipo, $codigo_transacao, $tipo_transacao, $usuario_id);
                 }
             }
 
@@ -773,6 +792,7 @@ class NFeController extends Controller
                         'valor_integral' => __convert_value_bd($objeto->valor),
                         'tipo_pagamento' => $objeto->tipo,
                         'data_vencimento' => $objeto->vencimento,
+                        'local_id' => $caixa->local_id
                     ]);
                 }
             }
@@ -782,6 +802,6 @@ class NFeController extends Controller
 
             return $nfe;
         });
-        return  response()->json($nfe->id);
-    }
+return  response()->json($nfe->id);
+}
 }

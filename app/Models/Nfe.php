@@ -17,7 +17,7 @@ class Nfe extends Model
         'natureza_id', 'observacao', 'api', 'aut_xml', 'referencia', 'tpNF', 'finNFe', 'fornecedor_id',
         'caixa_id', 'gerar_conta_receber', 'gerar_conta_pagar', 'chave_importada', 'orcamento', 'ref_orcamento',
         'data_emissao_saida', 'data_emissao_retroativa', 'bandeira_cartao', 'cnpj_cartao', 'cAut_cartao', 'tipo_pagamento',
-        'numero_sequencial'
+        'numero_sequencial', 'crt', 'local_id', 'user_id', 'data_entrega', 'funcionario_id'
     ];
 
     public function getFinNFe()
@@ -33,14 +33,29 @@ class Nfe extends Model
         }
     }
 
+    public function funcionario()
+    {
+        return $this->belongsTo(Funcionario::class, 'funcionario_id');
+    }
+
     public function cliente()
     {
         return $this->belongsTo(Cliente::class, 'cliente_id');
     }
 
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
     public function fornecedor()
     {
         return $this->belongsTo(Fornecedor::class, 'fornecedor_id');
+    }
+
+    public function localizacao()
+    {
+        return $this->belongsTo(Localizacao::class, 'local_id');
     }
 
     public function natureza()
@@ -58,6 +73,26 @@ class Nfe extends Model
         return $this->belongsTo(Empresa::class, 'empresa_id');
     }
 
+    public function pedidoMercadoLivre()
+    {
+        return $this->hasOne(PedidoMercadoLivre::class, 'nfe_id');
+    }
+
+    public function pedidoNuvemShop()
+    {
+        return $this->hasOne(NuvemShopPedido::class, 'nfe_id');
+    }
+
+    public function pedidoWoocomerce()
+    {
+        return $this->hasOne(WoocommercePedido::class, 'nfe_id');
+    }
+
+    public function reserva()
+    {
+        return $this->hasOne(Reserva::class, 'nfe_id');
+    }
+
     public function pedidoEcommerce()
     {
         return $this->hasOne(PedidoEcommerce::class, 'nfe_id');
@@ -71,6 +106,11 @@ class Nfe extends Model
     public function itens()
     {
         return $this->hasMany(ItemNfe::class, 'nfe_id');
+    }
+
+    public function produtoUnicos()
+    {
+        return $this->hasMany(ProdutoUnico::class, 'nfe_id');
     }
 
     public function fatura()
@@ -104,6 +144,11 @@ class Nfe extends Model
             '15' => 'Boleto Bancário',
             '16' => 'Depósito Bancário',
             '17' => 'Pagamento Instantâneo (PIX)',
+            '18' => 'Transferência bancária, Carteira Digital',
+            '19' => 'Programa de fidelidade, Cashback, Crédito Virtual',
+            // '20' => 'Pagamento Instantâneo (PIX) – Estático',
+            // '21' => 'Crédito em Loja',
+            // '22' => 'Pagamento Eletrônico não Informado - falha de hardware do sistema emissor',
             '90' => 'Sem Pagamento',
             // '99' => 'Outros',
         ];

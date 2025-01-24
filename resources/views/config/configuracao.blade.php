@@ -85,7 +85,7 @@
                         <div class="card m-3">
                             <div class="row m-3">
                                 <div class="col-md-4">
-                                    {!!Form::select('tributacao', 'Tipo de tributação', ['MEI' => 'MEI', 'Simples Nacional' => 'Simples Nacional', 'Regime Normal' => 'Regime Normal'])
+                                    {!!Form::select('tributacao', 'Tipo de tributação', App\Models\Empresa::tiposTributacao())
                                     ->attrs(['class' => 'form-select'])
                                     ->required()
                                     !!}
@@ -110,7 +110,7 @@
                                 </div>
                                 <div class="col-md-2 mt-3">
                                     {!!Form::tel('ie', 'Inscrição estadual')
-                                    ->attrs(['data-mask' => '000000000000'])
+                                    ->attrs(['data-mask' => '000000000000000000'])
                                     ->required()
                                     !!}
                                 </div>
@@ -139,6 +139,7 @@
                                         <button type="button" id="btn-remove-imagem" class="btn btn-link-danger btn-sm btn-danger">x</button>
                                         @isset($item)
                                         <img id="file-ip-1-preview" src="{{ $item->img }}">
+                                        <a href="{{ route('config.delete-logo') }}">remover imagem</a>
                                         @else
                                         <img id="file-ip-1-preview" src="/imgs/no-image.png">
                                         @endif
@@ -246,7 +247,7 @@
                                     !!}
                                 </div>
 
-                                 <div class="col-md-2 mt-3">
+                                <div class="col-md-2 mt-3">
                                     {!!Form::tel('numero_serie_nfse', 'Número de série NFSe')
                                     ->attrs(['class' => ''])
                                     !!}
@@ -255,7 +256,7 @@
                                 <div class="card bg-card">
                                     <div class="card-body">
                                         <h5 class="mt-3">NFe</h5>
-                                        <div class="row">
+                                        <div class="row g-2">
 
                                             <div class="col-md-3">
                                                 {!!Form::tel('numero_serie_nfe', 'Número de série')
@@ -263,14 +264,34 @@
                                                 !!}
                                             </div>
                                             <div class="col-md-3">
-                                                {!!Form::tel('numero_ultima_nfe_producao', 'Número da última NFe (Produção)')
+                                                {!!Form::tel('numero_ultima_nfe_producao', 'Número da última (Produção)')
                                                 ->attrs(['class' => ''])
                                                 !!}
                                             </div>
                                             <div class="col-md-3">
-                                                {!!Form::tel('numero_ultima_nfe_homologacao', 'Número da última NFe (Homologação)')
+                                                {!!Form::tel('numero_ultima_nfe_homologacao', 'Número da última (Homologação)')
                                                 ->attrs(['class' => ''])
                                                 !!}
+                                            </div>
+                                            <div class="col-md-3 div-simples">
+                                                {!!Form::tel('perc_ap_cred', '% Aproveitamento crédito')
+                                                ->attrs(['class' => 'percentual'])
+                                                !!}
+                                            </div>
+
+                                            <div class="col-md-12">
+                                                {!!Form::textarea('observacao_padrao_nfe', 'Observação padrão')
+                                                ->attrs(['rows' => '5'])
+                                                !!}
+                                            </div>
+
+                                            <div class="col-md-12 div-simples">
+                                                {!!Form::textarea('mensagem_aproveitamento_credito', 'Mensagem de aproveitamento de crédito ICMS')
+                                                ->attrs(['rows' => '5', 'class' => 'tooltipp'])
+                                                !!}
+                                                <div class="text-tooltip d-none">
+                                                    Mensagem de aproveitamento de crédito ICMS, exemplo: Permite o aproveitamento de credito R$ correspondente ao %. Use R$ para calcular o valor
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -280,19 +301,19 @@
                                 <div class="card bg-card">
                                     <div class="card-body">
                                         <h5 class="mt-3">NFCe</h5>
-                                        <div class="row">
+                                        <div class="row g-2">
                                             <div class="col-md-3">
                                                 {!!Form::tel('numero_serie_nfce', 'Número de série')
                                                 ->attrs(['class' => ''])
                                                 !!}
                                             </div>
                                             <div class="col-md-3">
-                                                {!!Form::tel('numero_ultima_nfce_producao', 'Número da última NFCe (Produção)')
+                                                {!!Form::tel('numero_ultima_nfce_producao', 'Número da última (Produção)')
                                                 ->attrs(['class' => ''])
                                                 !!}
                                             </div>
                                             <div class="col-md-3">
-                                                {!!Form::tel('numero_ultima_nfce_homologacao', 'Número da última NFCe (Homologação)')
+                                                {!!Form::tel('numero_ultima_nfce_homologacao', 'Número da última (Homologação)')
                                                 ->attrs(['class' => ''])
                                                 !!}
                                             </div>
@@ -303,6 +324,12 @@
                                                 ->attrs(['class' => 'form-select'])
                                                 ->required()
                                                 ->value(isset($item) ? $item->natureza_id_pdv : null)
+                                                !!}
+                                            </div>
+
+                                            <div class="col-md-12">
+                                                {!!Form::textarea('observacao_padrao_nfce', 'Observação padrão')
+                                                ->attrs(['rows' => '5'])
                                                 !!}
                                             </div>
                                         </div>
@@ -320,12 +347,12 @@
                                                 !!}
                                             </div>
                                             <div class="col-md-3">
-                                                {!!Form::tel('numero_ultima_cte_producao', 'Número da última CTe (Produção)')
+                                                {!!Form::tel('numero_ultima_cte_producao', 'Número da última (Produção)')
                                                 ->attrs(['class' => ''])
                                                 !!}
                                             </div>
                                             <div class="col-md-3">
-                                                {!!Form::tel('numero_ultima_cte_homologacao', 'Número da última CTe (Homologação)')
+                                                {!!Form::tel('numero_ultima_cte_homologacao', 'Número da última (Homologação)')
                                                 ->attrs(['class' => ''])
                                                 !!}
                                             </div>
@@ -343,12 +370,12 @@
                                                 !!}
                                             </div>
                                             <div class="col-md-3">
-                                                {!!Form::tel('numero_ultima_mdfe_producao', 'Número da última MDFe (Produção)')
+                                                {!!Form::tel('numero_ultima_mdfe_producao', 'Número da última (Produção)')
                                                 ->attrs(['class' => ''])
                                                 !!}
                                             </div>
                                             <div class="col-md-3">
-                                                {!!Form::tel('numero_ultima_mdfe_homologacao', 'Número da última MDFe (Homologação)')
+                                                {!!Form::tel('numero_ultima_mdfe_homologacao', 'Número da última (Homologação)')
                                                 ->attrs(['class' => ''])
                                                 !!}
                                             </div>
@@ -366,11 +393,14 @@
                             <div class="col-12">
                                 <div class="card m-2">
                                     <div class="card-body">
-
+                                        @isset($dadosCertificado['serial'])
                                         <h6>serial <strong>{{ $dadosCertificado['serial'] }}</strong></h6>
                                         <h6>inicio <strong>{{ $dadosCertificado['inicio'] }}</strong></h6>
                                         <h6>expiracao <strong>{{ $dadosCertificado['expiracao'] }}</strong></h6>
                                         <h6>id <strong>{{ $dadosCertificado['id'] }}</strong></h6>
+                                        @else
+                                        <h6><strong class="text-danger">{{ $dadosCertificado['mensagem'] }}</strong></h6>
+                                        @endif
                                     </div>
                                 </div>
                             </div>
@@ -398,6 +428,21 @@
 
 @section('js')
 <script type="text/javascript">
+    $(function(){
+        isRegimeSimples()
+    })
+
+    function isRegimeSimples(){
+        let tributacao = $('#inp-tributacao').val()
+        if(tributacao == 'Simples Nacional'){
+            $('.div-simples').removeClass('d-none')
+        }else{
+            $('.div-simples').addClass('d-none')
+            $('.div-simples').find('input').val('')
+            $('.div-simples').find('textarea').val('')
+        }
+    }
+
     $('#btn_token').click(() => {
 
         let token = generate_token(25);
@@ -451,6 +496,10 @@
             swal("Campos pendentes", infMsg, "warning")
         }
     }
+
+    $(document).on("change", "#inp-tributacao", function () {
+        isRegimeSimples()
+    })
 
     $(document).on("blur", "#inp-cpf_cnpj", function () {
 

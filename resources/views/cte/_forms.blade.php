@@ -56,9 +56,25 @@
         <div class="tab-content">
             <div class="tab-pane fade show active" id="dados_iniciais" role="tabpanel">
                 <div class="card">
-                    <div class="row m-3">
-                        <div class="col-md-4">
-                            {!!Form::select('natureza_id', 'Natureza de Operação', ['' => 'Selecione'] + $naturezas->pluck('descricao', 'id')->all())->attrs(['class' => 'class-required form-select'])
+                    <div class="row m-3 g-2">
+
+                        @if(__countLocalAtivo() > 1)
+                        <div class="col-md-2">
+                            <label for="">Local</label>
+
+                            <select id="inp-local_id" required class="select2 class-required" data-toggle="select2" name="local_id">
+                                <option value="">Selecione</option>
+                                @foreach(__getLocaisAtivoUsuario() as $local)
+                                <option @isset($item) @if($item->local_id == $local->id) selected @endif @endif value="{{ $local->id }}">{{ $local->descricao }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        @else
+                        <input id="inp-local_id" type="hidden" value="{{ __getLocalAtivo() ? __getLocalAtivo()->id : '' }}" name="local_id">
+                        @endif
+
+                        <div class="col-md-3">
+                            {!!Form::select('natureza_id', 'Natureza de Operação', ['' => 'Selecione'] + $naturezas->pluck('descricao', 'id')->all())->attrs(['class' => 'class-required form-select'])->required()
                             !!}
                         </div>
                         <div class="col-md-2">
@@ -79,18 +95,18 @@
                             !!}
                         </div>
 
-                        <div class="col-md-1 mt-3">
+                        <div class="col-md-1">
                             {!!Form::tel('numero', 'Número CTe')
                             ->required()
                             ->value(isset($item) ? $item->numero : $numeroCte)
                             !!}
                         </div>
-                        <div class="col-md-1 mb-2 mt-3">
+                        <div class="col-md-1 mb-2">
                             {!!Form::text('perc_red_bc', '%Red. BC')->attrs(['class' => 'percentual'])
                             !!}
                         </div>
                         <hr>
-                        <div class="col-md-6 mt-3">
+                        <div class="col-md-6">
                             {!! Form::select('remetente_id','Remetente', ['' => 'Selecione'] + $clientes->pluck('razao_social', 'id')->all(),
                             )->attrs(['class' => 'select2 class-required'])->required()
                             ->value(isset($item) ? $item->remetente_id : null) !!}
@@ -104,7 +120,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-6 mt-3">
+                        <div class="col-md-6">
                             {!! Form::select('destinatario_id', 'Destinatário', ['' => 'Selecione'] + $clientes->pluck('razao_social', 'id')->all())->attrs(['class' => 'select2 class-required'])->required()
                             ->value(isset($item) ? $item->destinatario_id : null) !!}
                             <div class="card border mt-3 div-destinatario d-none">
@@ -117,7 +133,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-6 mt-3">
+                        <div class="col-md-6">
                             {!! Form::select(
                             'expedidor_id',
                             'Expedidor',
@@ -134,7 +150,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-6 mt-3">
+                        <div class="col-md-6">
                             {!! Form::select(
                             'recebedor_id',
                             'Recebedor',

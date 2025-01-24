@@ -50,8 +50,8 @@
                     <div class="card-body">
                         <div class="d-flex justify-content-between">
                             <div class="flex-grow-1 overflow-hidden">
-                                <h5 class="text-muted text-uppercase fs-13 mt-0" title="Conversation Ration">Funcionário</h5>
-                                <h4 class="vendedor_selecionado">--</h4>
+                                <h5 class="text-muted text-uppercase fs-13 mt-0" title="Conversation Ration">Vendedor</h5>
+                                <h4 class="funcionario_selecionado">--</h4>
                             </div>
                             <div class="avatar-sm flex-shrink-0">
                                 <button type="button" class="avatar-title text-bg-warning rounded rounded-3 fs-3 widget-icon-box-avatar" data-bs-toggle="modal" data-bs-target="#funcionario">
@@ -69,7 +69,17 @@
                 !!} --}}
             </div>
             <hr>
-            <h5 class="text-center">Categorias</h5>
+
+            <div class="row">
+            <div class="col-md-6">
+                <h5 class="text-end">Categorias</h5>
+            </div>
+            <div class="col-md-6 text-end">
+                @if(__countLocalAtivo() > 1 && $caixa->localizacao)
+                <strong class="text-danger" style="margin-right: 5px;">{{ $caixa->localizacao->descricao }}</strong>
+                @endif
+            </div>
+            </div>
             <div class="card categorias m-1" data-simplebar data-simplebar-lg style="max-height: 110px;">
                 <div class="d-flex gap-1 m-2">
                     <button type="button" id="cat_todos" onclick="todos()" class="btn btn-light rounded-pill m-1">Todos</button>
@@ -328,6 +338,12 @@
 
 @section('js')
 <script src="/js/pre_venda.js"></script>
+
+<script type="text/javascript">
+    @if(Session::has('codigo'))
+    window.open(path_url + 'pre-venda/imprimir/' + '{{ Session::get('codigo') }}')
+    @endif
+</script>
 @endsection
 @include('modals._lista_precos')
 

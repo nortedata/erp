@@ -3,6 +3,17 @@
         {!!Form::text('nome', 'Nome')->attrs(['class' => ''])->required()
         !!}
     </div>
+
+    @if(__isActivePlan(Auth::user()->empresa, 'Delivery'))
+    <div class="col-md-2">
+        {!!Form::select('marketplace', 'Marketplace', [0 => 'Não', 1 => 'Sim'])
+        ->attrs(['class' => 'form-select tooltipp2'])
+        !!}
+        <div class="text-tooltip2 d-none">
+            Marcar como sim se for usar esta categoria no Delivery/Marketplace
+        </div>
+    </div>
+    @endif
     <!-- <hr> -->
     <!-- <div class="card col-md-3 mt-3 form-input">
         <div class="preview">

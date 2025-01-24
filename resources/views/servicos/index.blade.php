@@ -5,10 +5,12 @@
         <div class="card">
             <div class="card-body">
                 <div class="col-md-2">
+                    @can('servico_create')
                     <a href="{{ route('servicos.create') }}" class="btn btn-success">
                         <i class="ri-add-circle-fill"></i>
                         Novo Serviço
                     </a>
+                    @endcan
                 </div>
                 <hr class="mt-3">
                 <div class="col-lg-12">
@@ -16,8 +18,13 @@
                     ->get()
                     !!}
                     <div class="row mt-3">
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             {!!Form::text('nome', 'Pesquisar por nome')
+                            !!}
+                        </div>
+                        <div class="col-md-2">
+                            {!!Form::select('status', 'Status', ['' => 'Todos', '1' => 'Ativos', '0' => 'Desativados'])
+                            ->attrs(['class' => 'form-select'])
                             !!}
                         </div>
                         <div class="col-md-3 text-left">
@@ -33,28 +40,40 @@
                         <table class="table table-striped table-centered mb-0">
                             <thead class="table-dark">
                                 <tr>
+                                    @can('servico_delete')
                                     <th>
                                         <div class="form-check form-checkbox-danger mb-2">
                                             <input class="form-check-input" type="checkbox" id="select-all-checkbox">
                                         </div>
                                     </th>
+                                    @endcan
                                     <th></th>
+                                    <th>#</th>
                                     <th>Descrição</th>
                                     <th>Valor</th>
                                     <th>Duração</th>
                                     <th>Status</th>
+                                    @if(__isActivePlan(Auth::user()->empresa, 'Reservas'))
+                                    <th>Ativo em reserva</th>
+                                    @endif
+                                    @if(__isActivePlan(Auth::user()->empresa, 'Delivery'))
+                                    <th>MarketPlace</th>
+                                    @endif
                                     <th>Ações</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @forelse($data as $item)
                                 <tr>
+                                    @can('servico_delete')
                                     <td>
                                         <div class="form-check form-checkbox-danger mb-2">
                                             <input class="form-check-input check-delete" type="checkbox" name="item_delete[]" value="{{ $item->id }}">
                                         </div>
                                     </td>
+                                    @endcan
                                     <td><img class="img-60" src="{{ $item->img }}"></td>
+                                    <td>{{ $item->numero_sequencial }}</td>
                                     <td>{{ $item->nome }}</td>
                                     <td>{{ __moeda($item->valor) }}</td>
                                     <td>{{ $item->tempo_servico }} - {{ $item->unidade_cobranca }} </td>
@@ -65,28 +84,51 @@
                                         <i class="ri-close-circle-fill text-danger"></i>
                                         @endif
                                     </td>
+                                    @if(__isActivePlan(Auth::user()->empresa, 'Reservas'))
+                                    <td>
+                                        @if($item->reserva)
+                                        <i class="ri-checkbox-circle-fill text-success"></i>
+                                        @else
+                                        <i class="ri-close-circle-fill text-danger"></i>
+                                        @endif
+                                    </td>
+                                    @endif
+                                    @if(__isActivePlan(Auth::user()->empresa, 'Delivery'))
+                                    <td>
+                                        @if($item->marketplace)
+                                        <i class="ri-checkbox-circle-fill text-success"></i>
+                                        @else
+                                        <i class="ri-close-circle-fill text-danger"></i>
+                                        @endif
+                                    </td>
+                                    @endif
                                     <td>
                                         <form action="{{ route('servicos.destroy', $item->id) }}" method="post" id="form-{{$item->id}}">
                                             @method('delete')
+                                            @can('servico_edit')
                                             <a class="btn btn-warning btn-sm" href="{{ route('servicos.edit', [$item->id]) }}">
                                                 <i class="ri-pencil-fill"></i>
                                             </a>
+                                            @endcan
 
                                             @csrf
+                                            @can('servico_delete')
                                             <button type="button" class="btn btn-delete btn-sm btn-danger">
                                                 <i class="ri-delete-bin-line"></i>
                                             </button>
+                                            @endcan
                                         </form>
                                     </td>
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="7" class="text-center">Nada encontrado</td>
+                                    <td colspan="9" class="text-center">Nada encontrado</td>
                                 </tr>
                                 @endforelse
                             </tbody>
                         </table>
                         <br>
+                        @can('servico_delete')
                         <form action="{{ route('servicos.destroy-select') }}" method="post" id="form-delete-select">
                             @method('delete')
                             @csrf
@@ -95,6 +137,7 @@
                                 <i class="ri-close-circle-line"></i> Remover selecionados
                             </button>
                         </form>
+                        @endcan
                     </div>
                 </div>
                 {!! $data->appends(request()->all())->links() !!}

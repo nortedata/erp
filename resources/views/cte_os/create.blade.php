@@ -1,4 +1,4 @@
-@extends('layouts.app', ['title' => 'Nova CTe'])
+@extends('layouts.app', ['title' => 'Nova CTeOs'])
 @section('content')
 
 <div class="card mt-1">

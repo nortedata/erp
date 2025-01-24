@@ -38,7 +38,7 @@
     </td>
 
     <td width="120">
-        <input value="{{ $prod->produto->ncm }}" class="form-control ncm" type="tel" name="ncm[]" id="inp-ncm">
+        <input value="{{ $prod->produto->ncm }}" class="form-control ncm" type="tel" name="ncm[]" id="inp-ncm2">
     </td>
     <td width="120">
         <input value="{{ $prod->produto->codigo_beneficio_fiscal }}" class="form-control ignore codigo_beneficio_fiscal" type="text" name="codigo_beneficio_fiscal[]">
@@ -71,6 +71,18 @@
             <option @if($prod->produto->cst_ipi == $key) selected @endif value="{{$key}}">{{$c}}</option>
             @endforeach
         </select>
+    </td>
+    <td>
+        <input class="form-control" maxlength="15" type="text" name="xPed[]">
+        <div style="width: 200px"></div>
+    </td>
+    <td>
+        <input class="form-control" maxlength="6" type="text" name="nItemPed[]">
+        <div style="width: 200px"></div>
+    </td>
+    <td>
+        <input class="form-control ignore" maxlength="200" type="text" name="infAdProd[]">
+        <div style="width: 300px"></div>
     </td>
     <td width="30">
         <button class="btn btn-danger btn-remove-tr">

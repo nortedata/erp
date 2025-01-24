@@ -73,6 +73,8 @@ $remember = (isset($_COOKIE['ckRemember'])) ? ($_COOKIE['ckRemember']) : '';
                                 </button>
                             </div>
                         </div>
+                        <br>
+                        <a href="https://wa.me/5543920004769">WhatsApp <strong>43920004769</strong></a>
                     </div>
                     @endif
                     <h4 class="mt-0">Login</h4>
@@ -109,7 +111,8 @@ $remember = (isset($_COOKIE['ckRemember'])) ? ($_COOKIE['ckRemember']) : '';
                             <button class="btn btn-primary" type="submit"><i class="ri-login-box-line"></i> Acessar </button>
                         </div>
                         <!-- social-->
-
+                        <br>
+                        <a target="_blank" href="https://wa.me/55{{env('APP_FONE')}}"><i class="ri-whatsapp-fill"></i> Suporte</a>
                     </form>
                     <!-- end form-->
                 </div>

@@ -713,7 +713,7 @@
                 Razão social: <strong>{{$config->nome}}</strong>
             </td>
             <td class="b-top" style="width: 247px;">
-                Documento: <strong>{{$config->cpf_cnpj}}</strong>
+                Documento: <strong>{{ __setMask($config->cpf_cnpj) }}</strong>
             </td>
         </tr>
     </table>
@@ -799,7 +799,7 @@
     <table>
         <tr>
             <td class="b-top text-left" style="width: 350px;">
-                Nº Doc: <strong>{{$ordem->id}}</strong>
+                Nº Doc: <strong>{{ $ordem->codigo_sequencial }}</strong>
             </td>
             <td class="b-top" style="width: 347px;">
 
@@ -855,6 +855,12 @@
             </tr>
             @endforelse
         </tbody>
+        <tfoot>
+            <tr style="font-weight: bold;">
+                <td colspan="3">Total</td>
+                <td>{{ __moeda($ordem->servicos->sum('subtotal')) }}</td>
+            </tr>
+        </tfoot>
     </table>
 
     <table>
@@ -897,7 +903,15 @@
             </tr>
             @endforelse
         </tbody>
+        <tfoot>
+            <tr style="font-weight: bold;">
+                <td colspan="3">Total</td>
+                <td>{{ __moeda($ordem->itens->sum('subtotal')) }}</td>
+            </tr>
+        </tfoot>
     </table>
+
+    <h4>VALOR TOTAL DA OS <strong style="color: #49526B">R$ {{ __moeda($ordem->valor) }}</strong></h4>
 
     <table>
         <tr>

@@ -5,15 +5,18 @@
         <div class="card">
             <div class="card-body">
                 <div class="col-md-12">
+                    @can('clientes_create')
                     <a href="{{ route('clientes.create') }}" class="btn btn-success">
                         <i class="ri-add-circle-fill"></i>
                         Novo Cliente
                     </a>
-
+                    
                     <a href="{{ route('clientes.import') }}" class="btn btn-info pull-right">
                         <i class="ri-file-upload-line"></i>
                         Upload
                     </a>
+                    @endcan
+
                 </div>
                 <hr class="mt-3">
                 <div class="col-lg-12">
@@ -21,19 +24,27 @@
                     ->get()
                     !!}
                     <div class="row mt-3">
-                        <div class="col-md-5">
+                        <div class="col-md-3">
                             {!!Form::text('razao_social', 'Pesquisar por nome')
                             !!}
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             {!!Form::text('cpf_cnpj', 'Pesquisar por CPF/CNPJ')
                             ->attrs(['class' => 'cpf_cnpj'])
                             ->type('tel')
                             !!}
                         </div>
+                        <div class="col-md-2">
+                            {!!Form::date('start_date', 'Data inicial cadastro')
+                            !!}
+                        </div>
+                        <div class="col-md-2">
+                            {!!Form::date('end_date', 'Data final cadastro')
+                            !!}
+                        </div>
                         <div class="col-md-3 text-left ">
                             <br>
-                          
+
                             <button class="btn btn-primary" type="submit"> <i class="ri-search-line"></i>Pesquisar</button>
                             <a id="clear-filter" class="btn btn-danger" href="{{ route('clientes.index') }}"><i class="ri-eraser-fill"></i>Limpar</a>
                         </div>
@@ -45,28 +56,33 @@
                         <table class="table table-striped table-centered mb-0">
                             <thead class="table-dark">
                                 <tr>
+                                    @can('clientes_delete')
                                     <th>
                                         <div class="form-check form-checkbox-danger mb-2">
                                             <input class="form-check-input" type="checkbox" id="select-all-checkbox">
                                         </div>
                                     </th>
+                                    @endcan
                                     <th>Razão Social</th>
                                     <th>CPF/CNPJ</th>
                                     <th>Cidade</th>
                                     <th>Endereço</th>
                                     <th>CEP</th>
                                     <th>Status</th>
+                                    <th>Data de cadastro</th>
                                     <th width="10%">Ações</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @forelse($data as $item)
                                 <tr>
+                                    @can('clientes_delete')
                                     <td>
                                         <div class="form-check form-checkbox-danger mb-2">
                                             <input class="form-check-input check-delete" type="checkbox" name="item_delete[]" value="{{ $item->id }}">
                                         </div>
                                     </td>
+                                    @endcan
                                     <td width="500">{{ $item->razao_social }}</td>
                                     <td>{{ $item->cpf_cnpj }}</td>
                                     <td>{{ $item->cidade ? $item->cidade->info : '' }}</td>
@@ -79,19 +95,29 @@
                                         <i class="ri-close-circle-fill text-danger"></i>
                                         @endif
                                     </td>
+                                    <td>{{ __data_pt($item->created_at) }}</td>
                                     <td>
-                                        <form action="{{ route('clientes.destroy', $item->id) }}" method="post" id="form-{{$item->id}}" style="width: 150px;">
+                                        <form action="{{ route('clientes.destroy', $item->id) }}" method="post" id="form-{{$item->id}}" style="width: 200px;">
                                             @method('delete')
+                                            @can('clientes_edit')
                                             <a class="btn btn-warning btn-sm" href="{{ route('clientes.edit', [$item->id]) }}">
                                                 <i class="ri-pencil-fill"></i>
                                             </a>
+                                            @endcan
+
                                             @csrf
+                                            @can('clientes_delete')
                                             <button type="button" class="btn btn-delete btn-sm btn-danger">
                                                 <i class="ri-delete-bin-line"></i>
                                             </button>
+                                            @endcan
 
-                                            <a title="Informações de CashBack" class="btn btn-dark btn-sm" href="{{ route('clientes.cash-back', [$item->id]) }}">
+                                            <a title="Informações de cashBack" class="btn btn-dark btn-sm" href="{{ route('clientes.cash-back', [$item->id]) }}">
                                                 <i class="ri-coins-fill"></i>
+                                            </a>
+
+                                            <a title="Histórico" class="btn btn-primary btn-sm" href="{{ route('clientes.historico', [$item->id]) }}">
+                                                <i class="ri-file-list-3-fill"></i>
                                             </a>
                                         </form>
                                     </td>
@@ -104,6 +130,7 @@
                             </tbody>
                         </table>
                         <br>
+                        @can('clientes_delete')
                         <form action="{{ route('clientes.destroy-select') }}" method="post" id="form-delete-select">
                             @method('delete')
                             @csrf
@@ -112,8 +139,10 @@
                                 <i class="ri-close-circle-line"></i> Remover selecionados
                             </button>
                         </form>
+                        @endcan
                     </div>
                 </div>
+                <br>
                 {!! $data->appends(request()->all())->links() !!}
             </div>
         </div>

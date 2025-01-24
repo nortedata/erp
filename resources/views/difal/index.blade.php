@@ -5,10 +5,12 @@
         <div class="card">
             <div class="card-body">
                 <div class="col-md-2">
+                    @can('difal_view')
                     <a href="{{ route('difal.create') }}" class="btn btn-success">
                         <i class="ri-add-circle-fill"></i>
                         Adicionar
                     </a>
+                    @endcan
                 </div>
                 <hr class="mt-3">
                 <div class="col-lg-12">
@@ -54,13 +56,17 @@
                                     <td>
                                         <form action="{{ route('difal.destroy', $item->id) }}" method="post" id="form-{{$item->id}}">
                                             @method('delete')
+                                            @can('difal_edit')
                                             <a class="btn btn-warning btn-sm text-white" href="{{ route('difal.edit', [$item->id]) }}">
                                                 <i class="ri-pencil-fill"></i>
                                             </a>
+                                            @endcan
                                             @csrf
+                                            @can('difal_delete')
                                             <button type="button" class="btn btn-delete btn-sm btn-danger">
                                                 <i class="ri-delete-bin-line"></i>
                                             </button>
+                                            @endcan
                                         </form>
                                     </td>
                                 </tr>

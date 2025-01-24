@@ -50,10 +50,10 @@
                 <h5><strong class="text-primary">CST COFINS</strong><span class="text-danger">*</span> - tipo númerico</h5>
                 <h5><strong class="text-primary">CST IPI</strong><span class="text-danger">*</span> - tipo númerico</h5>
                 <h5><strong class="text-primary">% Red. base de cálculo</strong> - tipo percentual</h5>
-            </div>
-            <div class="col-12 col-md-6">
                 <h5><strong class="text-primary">Origem</strong> - tipo númerico</h5>
                 <h5><strong class="text-primary">Código de enquadramento IPI</strong> - tipo númerico</h5>
+            </div>
+            <div class="col-12 col-md-6">
                 <h5><strong class="text-primary">CFOP estadual</strong><span class="text-danger">*</span> - tipo númerico</h5>
                 <h5><strong class="text-primary">CFOP outro estado</strong><span class="text-danger">*</span> - tipo númerico</h5>
                 <h5><strong class="text-primary">Código do benefício</strong> - tipo texto</h5>
@@ -64,6 +64,10 @@
                 <h5><strong class="text-primary">%PIS</strong> - tipo percentual</h5>
                 <h5><strong class="text-primary">%COFINS</strong> - tipo percentual</h5>
                 <h5><strong class="text-primary">%IPI</strong> - tipo percentual</h5>
+                <h5><strong class="text-primary">CFOP entrada estadual</strong> - tipo númerico</h5>
+                <h5><strong class="text-primary">CFOP entrada outro estado</strong> - tipo númerico</h5>
+                <h5><strong class="text-primary">Estoque</strong> - tipo númerico</h5>
+                <h5><strong class="text-primary">Estoque mínimo</strong> - tipo númerico</h5>
             </div>
         </div>
         <div class="col-12 col-md-2">
@@ -78,7 +82,7 @@
         <form id="form-import" class="row" method="post" action="{{ route('produtos.import-store') }}" enctype="multipart/form-data">
             @csrf
             <p>Importar modelo preenchido</p>
-            <div class="form-group validated col-12 col-lg-6">
+            <div class="form-group validated col-12 col-md-2">
                 <label class="col-form-label">.xls/.xlsx</label>
                 <div class="">
                     <span class="btn btn-success btn-file">
@@ -86,6 +90,29 @@
                         Procurar arquivo<input accept=".xls, .xlsx" name="file" type="file" id="file">
                     </span>
                 </div>
+                <span class="text-danger" id="filename"></span>
+            </div>
+
+            @if(__countLocalAtivo() > 1)
+            <div class="col-md-3" style="margin-top: 15px;">
+                <label for="">Disponibilidade</label>
+
+                <select required class="select2 form-control select2-multiple" data-toggle="select2" name="locais[]" multiple="multiple">
+                    @foreach(__getLocaisAtivoUsuario() as $local)
+                    <option @if(in_array($local->id, (isset($item) ? $item->locais->pluck('localizacao_id')->toArray() : []))) selected @endif value="{{ $local->id }}">{{ $local->descricao }}</option>
+                    @endforeach
+                </select>
+            </div>
+            @else
+
+            <input type="hidden" value="{{ __getLocalAtivo() ? __getLocalAtivo()->id : '' }}" name="local_id">
+            @endif
+
+            <div class="col-md-2">
+                <button type="button" class="btn btn-dark btn-save" style="margin-top: 36px;">
+                    <i class="ri-uninstall-fill"></i>
+                    Importar produtos
+                </button>
             </div>
         </form>
     </div>
@@ -94,9 +121,13 @@
 @section('js')
 <script type="text/javascript">
     $('#file').change(function() {
+        
+    });
+
+    $('.btn-save').click(() => {
         $('#form-import').submit();
         $body = $("body");
         $body.addClass("loading");
-    });
+    })
 </script>
 @endsection

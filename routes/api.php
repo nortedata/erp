@@ -22,6 +22,14 @@ Route::get('/cidadePorNome/{nome}', 'HelperController@cidadePorNome');
 Route::get('/cidadePorCodigoIbge/{codigo}', 'HelperController@cidadePorCodigoIbge');
 Route::get('/cidadePorId/{id}', 'HelperController@cidadePorId');
 Route::get('/buscaCidades', 'HelperController@buscaCidades');
+Route::get('/planos-conta', 'HelperController@planoContas');
+Route::get('/contas-empresa', 'HelperController@contasEmpresa');
+Route::get('/conta-boleto', 'HelperController@contaBoleto');
+Route::get('/contas-empresa-count', 'HelperController@contasEmpresaCount');
+Route::get('/video-suporte', 'HelperController@videoSuporte');
+Route::get('/etiqueta', 'HelperController@etiqueta');
+Route::post('/wc-store', 'WoocommercePedidoController@storePedido');
+Route::post('/wc-update', 'WoocommercePedidoController@updatePedido');
 
 Route::middleware(['valid'])->group(function () {
     Route::group(['prefix' => 'nfe'], function () {
@@ -70,6 +78,8 @@ Route::group(['prefix' => 'nfe_painel'], function () {
     Route::post('/consultar', 'NFePainelController@consultar');
     Route::post('/inutilizar', 'NFePainelController@inutilizar');
     Route::post('/consulta-status-sefaz', 'NFePainelController@consultaStatusSefaz');
+    Route::get('/find', 'NFePainelController@find');
+    Route::post('/send-mail', 'NFePainelController@sendMail');
 });
 
 Route::group(['prefix' => 'nfce_painel'], function () {
@@ -77,6 +87,9 @@ Route::group(['prefix' => 'nfce_painel'], function () {
     Route::post('/cancelar', 'NFCePainelController@cancelar');
     Route::post('/consultar', 'NFCePainelController@consultar');
     Route::post('/consulta-status-sefaz', 'NFCePainelController@consultaStatusSefaz');
+    Route::post('/transmitir-contigencia', 'NFCePainelController@transmitirContigencia');
+
+    Route::post('/send-mail', 'NFCePainelController@sendMail');
 });
 
 Route::group(['prefix' => 'cte_painel'], function () {
@@ -87,7 +100,7 @@ Route::group(['prefix' => 'cte_painel'], function () {
 });
 
 Route::group(['prefix' => 'cte_os_painel'], function () {
-    Route::post('/emitir', 'CTeOsPainelController@emitir')->middleware('validaCTe');
+    Route::post('/emitir', 'CTeOsPainelController@emitir');
     Route::post('/cancelar', 'CTeOsPainelController@cancelar');
     Route::post('/corrigir', 'CTeOsPainelController@corrigir');
     Route::post('/consultar', 'CTeOsPainelController@consultar');
@@ -107,6 +120,8 @@ Route::group(['prefix' => 'mdfe'], function () {
 });
 
 Route::group(['prefix' => 'graficos'], function () {
+    Route::get('/grafico-vendas-mes', 'GraficoController@graficoVendasMes');
+    Route::get('/grafico-compras-mes', 'GraficoController@graficoComprasMes');
     Route::get('/grafico-mes', 'GraficoController@graficoMes');
     Route::get('/grafico-mes-contador', 'GraficoController@graficoMesContador');
     Route::get('/grafico-ult-meses', 'GraficoController@graficoUltMeses');
@@ -119,6 +134,10 @@ Route::group(['prefix' => 'graficos'], function () {
 
 Route::group(['prefix' => 'cardapio'], function () {
     Route::get('/switch-categoria', 'ProdutoCardapioController@switchCategoria');
+});
+
+Route::group(['prefix' => 'servico-marketplace'], function () {
+    Route::get('/switch-categoria', 'MarketPlaceController@switchCategoria');
 });
 
 Route::group(['prefix' => 'produtos-delivery'], function () {
@@ -134,22 +153,56 @@ Route::get('/paymentStatus/{id}', 'PaymentController@status');
 Route::group(['prefix' => 'empresas'], function () {
     Route::get('/', 'EmpresaController@pesquisa');
     Route::get('/find-all', 'EmpresaController@findAll');
+    Route::get('/find-user', 'EmpresaController@findUser');
 });
 
+Route::get('/servicos-reserva', 'ServicoController@pesquisaReserva');
 Route::group(['prefix' => 'servicos'], function () {
     Route::get('/', 'ServicoController@pesquisa');
     Route::get('/find/{id}', 'ServicoController@find');
 });
 
+Route::group(['prefix' => 'veiculos'], function () {
+    Route::get('/', 'VeiculoController@pesquisa');
+});
+
 Route::group(['prefix' => 'variacoes'], function () {
     Route::get('/modelo', 'VariacaoController@modelo');
+    Route::get('/modelo-subvariacoes', 'VariacaoController@modeloVariacoes');
     Route::get('/find', 'VariacaoController@find');
     Route::get('/findById', 'VariacaoController@findById');
 });
 
+Route::group(['prefix' => 'combos'], function () {
+    Route::get('/modelo', 'ComboController@modelo');
+});
+
+Route::group(['prefix' => 'localizacao'], function () {
+    Route::get('/find-number-doc', 'LocalizacaoController@findNumberDoc');
+});
+
+Route::group(['prefix' => 'planos'], function () {
+    Route::get('/find', 'PlanoController@find');
+});
+
+Route::group(['prefix' => 'orcamentos'], function () {
+    Route::get('/valida-desconto', 'OrcamentoController@validaDesconto');
+});
+
+Route::group(['prefix' => 'metas'], function () {
+    Route::get('/vendas-funcionario', 'MetaController@vendasFuncionario');
+    Route::get('/vendas-funcionario-grafico', 'MetaController@vendasFuncionarioGrafico'); 
+    Route::get('/os-funcionario', 'MetaController@ordemServicoFuncionario');
+    Route::get('/os-funcionario-grafico', 'MetaController@ordemServicoFuncionarioGrafico');
+});
+
 Route::get('/produtos-composto', 'ProdutoController@pesquisaCompostos');
+Route::get('/produtos-combo', 'ProdutoController@pesquisaCombo');
+Route::get('/produtos-reserva', 'ProdutoController@pesquisaReserva');
 Route::group(['prefix' => 'produtos'], function () {
     Route::get('/', 'ProdutoController@pesquisa');
+    Route::get('/com-estoque', 'ProdutoController@pesquisaComEstoque');
+    Route::get('/codigo-unico', 'ProdutoController@codigoUnico');
     Route::get('/cardapio', 'ProdutoController@pesquisaCardapio');
     Route::get('/delivery', 'ProdutoController@pesquisaDelivery');
     Route::get('/find', 'ProdutoController@find');
@@ -166,7 +219,12 @@ Route::group(['prefix' => 'produtos'], function () {
     Route::get('/findByBarcodeReference', 'ProdutoController@findByBarcodeReference');
     Route::get('/info-vencimento/{id}', 'ProdutoController@infoVencimento');
     Route::get('/valida-estoque', 'ProdutoController@validaEstoque');
-
+    Route::post('/marca-store', 'ProdutoController@marcaStore');
+    Route::post('/categoria-store', 'ProdutoController@categoriaStore');
+    Route::get('/valida-atacado', 'ProdutoController@validaAtacado');
+    Route::get('/dados-produto-unico/{id}', 'ProdutoController@dadosProdutoUnico');
+    Route::get('/info', 'ProdutoController@info');
+    
 });
 
 Route::group(['prefix' => 'nfse'], function () {
@@ -183,6 +241,7 @@ Route::group(['prefix' => 'ncm'], function () {
 
 Route::group(['prefix' => 'usuarios'], function () {
     Route::post('/set-sidebar', 'UserController@setSidebar');
+    Route::get('/', 'UserController@usuarios');
 });
 
 Route::group(['prefix' => 'clientes'], function () {
@@ -190,6 +249,8 @@ Route::group(['prefix' => 'clientes'], function () {
     Route::get('/cashback/{id}', 'ClienteController@cashback');
     Route::get('/pesquisa', 'ClienteController@pesquisa');
     Route::get('/pesquisa-delivery', 'ClienteController@pesquisaDelivery');
+    Route::post('/store', 'ClienteController@store');
+    Route::get('/consulta-debito', 'ClienteController@consultaDebitos');
 });
 
 Route::group(['prefix' => 'motoboys'], function () {
@@ -199,11 +260,14 @@ Route::group(['prefix' => 'motoboys'], function () {
 Route::group(['prefix' => 'fornecedores'], function () {
     Route::get('/find/{id}', 'FornecedorController@find');
     Route::get('/pesquisa', 'FornecedorController@pesquisa');
+    Route::post('/store', 'FornecedorController@store');
+    
 });
 
 Route::group(['prefix' => 'funcionarios'], function () {
     Route::get('/pesquisa', 'FuncionarioController@pesquisa');
     Route::get('/find', 'FuncionarioController@find');
+    Route::get('/valida-atendimento', 'FuncionarioController@validaAtendimento');
 });
 
 Route::group(['prefix' => 'lista-preco'], function () {
@@ -239,16 +303,63 @@ Route::group(['prefix' => 'frenteCaixa'], function () {
     Route::get('/linhaProdutoVendaAdd', 'FrontBoxController@linhaProdutoVendaAdd');
     Route::get('/linhaParcelaVenda', 'FrontBoxController@linhaParcelaVenda');
     Route::post('/store', 'FrontBoxController@store');
+    Route::post('/suspender', 'FrontBoxController@suspender');
+    Route::put('/update/{id}', 'FrontBoxController@update');
     Route::get('/buscaFuncionario/{id}', 'FrontBoxController@buscaFuncionario');
+    Route::get('/venda-suspensas', 'FrontBoxController@vendasSuspensas');
+    Route::get('/gerar-fatura', 'FrontBoxController@gerarFatura');
+
+    Route::get('/categorias-page', 'FrontBoxController@categoriasPage');
+    Route::get('/marcas-page', 'FrontBoxController@marcasPage');
+    Route::get('/produtos-page', 'FrontBoxController@produtosPage');
+    Route::post('/add-produto', 'FrontBoxController@addProduto');
+    Route::get('/pesquisa-produto', 'FrontBoxController@pesquisaProduto');
+    Route::get('/edit-item', 'FrontBoxController@editItem');
+    Route::post('/qr-code-pix', 'FrontBoxController@qrCodePix');
+    Route::get('/consulta-pix', 'FrontBoxController@consultaPix');
+
+});
+
+Route::group(['prefix' => 'tef'], function () {
+    Route::get('/verifica-ativo', 'TefController@verificaAtivo');
+    Route::post('/store', 'TefController@store');
+    Route::post('/consulta', 'TefController@consulta');
+    Route::post('/cancelar', 'TefController@cancelar');
+    Route::post('/consulta-cancelamento', 'TefController@consultaCancelamento');
+    Route::post('/imprimir', 'TefController@imprimir');
+});
+
+Route::group(['prefix' => 'trocas'], function () {
+    Route::post('/store', 'TrocaController@store');
 });
 
 Route::group(['prefix' => 'manifesto'], function () {
     Route::post('/novos-documentos', 'ManifestoController@novosDocumentos');
 });
 
+Route::post('/mercado-livre-notification', 'MercadoLivreController@notification');
+
 Route::group(['prefix' => 'mercadolivre'], function () {
     Route::get('/get-categorias', 'MercadoLivreController@getCategorias');
     Route::get('/get-tipo-publicacao', 'MercadoLivreController@getTiposPublicacao');
+});
+
+Route::group(['prefix' => 'nuvemshop'], function () {
+    Route::get('/get-categorias', 'NuvemShopController@getCategorias');
+});
+
+Route::group(['prefix' => 'categorias-produto-subcategoria'], function () {
+    Route::get('/', 'CategoriaProdutoController@categoriaParaSubcategoria');
+});
+
+Route::group(['prefix' => 'subcategorias'], function () {
+    Route::get('/', 'CategoriaProdutoController@subcategorias');
+});
+
+Route::group(['prefix' => 'reservas'], function () {
+    Route::get('/disponiveis', 'ReservaController@disponiveis');
+    Route::get('/dados-acomodacao', 'ReservaController@dadosAcomodacao');
+    Route::get('/dados-hospedes', 'ReservaController@dadosHospedes');
 });
 
 Route::get('/notificacoes-pedido', 'NotificacaoController@index');
@@ -265,6 +376,10 @@ Route::group(['prefix' => 'ordemServico'], function () {
     Route::get('/findProduto/{id}', 'OrdemServicoController@findProduto');
     Route::get('/findFuncionario/{id}', 'OrdemServicoController@findFuncionario');
     Route::get('/linhaFuncionario', 'OrdemServicoController@linhaFuncionario');
+    Route::get('/medicos', 'OrdemServicoController@medicos');
+    Route::get('/convenios', 'OrdemServicoController@convenios');
+    Route::get('/laboratorios', 'OrdemServicoController@laboratorios');
+    Route::get('/tipos-armacao', 'OrdemServicoController@tiposArmacao');
 });
 
 Route::group(['prefix' => 'agendamentos'], function () {
@@ -302,6 +417,27 @@ Route::middleware(['authCardapio'])->group(function () {
     });
 });
 
+Route::post('/comanda-set-config', 'Comanda\\ConfigController@setConfig');
+
+Route::middleware(['authCardapio'])->group(function () {
+    // app garçom
+    Route::group(['prefix' => 'app-garcom'], function () {
+        Route::get('/get-comandas', 'Comanda\\ComandaController@comandas');
+        Route::get('/find-comanda', 'Comanda\\ComandaController@find');
+        Route::get('/find-produto', 'Comanda\\ComandaController@produto');
+        Route::get('/get-produtos', 'Comanda\\ComandaController@produtos');
+        Route::post('/store-item', 'Comanda\\ComandaController@storeItem');
+        Route::post('/remove-item', 'Comanda\\ComandaController@removeItem');
+        Route::get('/find-cliente', 'Comanda\\ClienteController@findCliente');
+        Route::post('/open-comanda', 'Comanda\\ComandaController@openComanda');
+        Route::post('/fechar-comanda', 'Comanda\\ComandaController@fecharComanda');
+        Route::get('/get-tamanhos', 'Comanda\\ComandaController@getTamanhos');
+        Route::post('/valor-pizza', 'Comanda\\ComandaController@valorPizza');
+        Route::get('/get-sabores', 'Comanda\\ComandaController@getSabores');
+
+    });
+});
+
 Route::group(['prefix' => 'pre-venda'], function () {
     Route::get('/finalizar/{id}', 'PreVendaController@finalizar');
 });
@@ -317,6 +453,24 @@ Route::group(['prefix' => 'delivery-link'], function () {
     Route::post('/store-order-pix', 'Delivery\\HelperController@storePix');
     Route::get('/consulta-pix', 'Delivery\\HelperController@consultaPix');
     Route::get('/consulta-pedido', 'Delivery\\HelperController@consultaPedido');
+
+
+    //novo
+    Route::get('/produto-modal/{hash}', 'Delivery\\ProdutoController@produtoModal')->name('produto-delivery.modal');
+    Route::post('/remove-item', 'Delivery\\CarrinhoController@removeItem');
+    Route::post('/carrinho-count', 'Delivery\\CarrinhoController@carrinhoCount');
+    Route::post('/atualiza-quantidade', 'Delivery\\CarrinhoController@atualizaQuantidade');
+    Route::post('/valida-estoque', 'Delivery\\CarrinhoController@validaEstoque');
+    Route::get('/carrinho-modal', 'Delivery\\CarrinhoController@carrinhoModal')->name('carrinho.modal');
+    Route::post('/atualiza-carrinho', 'Delivery\\CarrinhoController@atualizaCarrinho');
+    Route::post('/comprovante-carrinho', 'Delivery\\CarrinhoController@comprovanteCarrinho');
+    Route::get('/find-endereco', 'Delivery\\CarrinhoController@findEndereco');
+    Route::get('/pesquisa-pizza', 'Delivery\\ProdutoController@pesquisaPizza');
+    Route::get('/monta-pizza', 'Delivery\\ProdutoController@montaPizza');
+
+    Route::get('/servico-modal/{hash}', 'Delivery\\ServicoController@servicoModal')->name('servico-delivery.modal');
+    Route::get('/get-atendentes', 'Delivery\\ServicoController@getAtendentes');
+
 
 });
 
@@ -359,6 +513,109 @@ Route::group(['prefix' => 'pdv'], function () {
     Route::post('/produtos', 'PDV\\ProdutoController@produtos');
     Route::post('/categorias', 'PDV\\ProdutoController@categorias');
     Route::post('/clientes', 'PDV\\ClienteController@all');
+    Route::post('/vendedores', 'PDV\\ClienteController@vendedores');
+    Route::post('/store-venda', 'PDV\\VendaController@store');
+    Route::get('/bandeiras-cartao', 'PDV\\VendaController@bandeirasCartao');
+    Route::get('/dados-empresa', 'PDV\\LoginController@dadosEmpresa');
+    Route::get('/contas-empresa', 'PDV\\VendaController@contasEmpresa');
+    Route::get('/tipos-pagamento', 'PDV\\VendaController@tiposPagamento');
+    Route::get('/get-caixa', 'PDV\\VendaController@getCaixa');
+    Route::get('/get-vendas-caixa', 'PDV\\VendaController@getVendasCaixa');
+    Route::post('/store-caixa', 'PDV\\VendaController@storeCaixa');
+    Route::post('/store-sangria', 'PDV\\VendaController@storeSangria');
+    Route::post('/store-suprimento', 'PDV\\VendaController@storeSuprimento');
+    Route::get('/data-home', 'PDV\\VendaController@dataHome');
+    Route::get('/lista-preco', 'PDV\\ProdutoController@listaPreco');
+    Route::get('/empresa-ativa', 'PDV\\LoginController@empresaAtiva');
+    Route::get('/locais-usuario', 'PDV\\VendaController@locaisUsuario');
+
+});
+
+Route::middleware(['validaApiToken'])->group(function () {
+    Route::group(['prefix' => 'v1'], function () {
+        Route::group(['prefix' => 'categoria-produtos'], function () {
+            Route::get('/', 'Token\\CategoriaProdutoController@index');
+            Route::get('/{id}', 'Token\\CategoriaProdutoController@find');
+            Route::post('/store', 'Token\\CategoriaProdutoController@store');
+            Route::put('/update', 'Token\\CategoriaProdutoController@update');
+            Route::delete('/delete', 'Token\\CategoriaProdutoController@delete');
+        });
+
+        Route::group(['prefix' => 'clientes'], function () {
+            Route::get('/', 'Token\\ClienteController@index');
+            Route::get('/{id}', 'Token\\ClienteController@find');
+            Route::post('/store', 'Token\\ClienteController@store');
+            Route::put('/update', 'Token\\ClienteController@update');
+            Route::delete('/delete', 'Token\\ClienteController@delete');
+        });
+
+        Route::group(['prefix' => 'fornecedores'], function () {
+            Route::get('/', 'Token\\FornecedorController@index');
+            Route::get('/{id}', 'Token\\FornecedorController@find');
+            Route::post('/store', 'Token\\FornecedorController@store');
+            Route::put('/update', 'Token\\FornecedorController@update');
+            Route::delete('/delete', 'Token\\FornecedorController@delete');
+        });
+
+        Route::group(['prefix' => 'produtos'], function () {
+            Route::get('/', 'Token\\ProdutoController@index');
+            Route::get('/{id}', 'Token\\ProdutoController@find');
+            Route::post('/store', 'Token\\ProdutoController@store');
+            Route::put('/update', 'Token\\ProdutoController@update');
+            Route::delete('/delete', 'Token\\ProdutoController@delete');
+        });
+
+        Route::group(['prefix' => 'vendas-pdv'], function () {
+            Route::get('/', 'Token\\VendaPdvController@index');
+            Route::get('/{id}', 'Token\\VendaPdvController@find');
+            Route::post('/store', 'Token\\VendaPdvController@store');
+            Route::put('/update', 'Token\\VendaPdvController@update');
+            Route::delete('/delete', 'Token\\VendaPdvController@delete');
+        });
+
+        Route::group(['prefix' => 'usuarios'], function () {
+            Route::get('/', 'Token\\UsuarioController@index');
+            Route::get('/{id}', 'Token\\UsuarioController@find');
+        });
+
+        Route::group(['prefix' => 'caixa'], function () {
+            Route::get('/open', 'Token\\CaixaController@open');
+            Route::post('/store', 'Token\\CaixaController@store');
+        });
+
+    });
+});
+
+Route::middleware(['validaApiTokenSuperAdmin'])->group(function () {
+    Route::group(['prefix' => 'v1'], function () {
+        Route::group(['prefix' => 'planos'], function () {
+            Route::get('/', 'TokenSuperAdmin\\PlanoController@index');
+            Route::get('/{id}', 'TokenSuperAdmin\\PlanoController@find');
+            Route::post('/store', 'TokenSuperAdmin\\PlanoController@store');
+            Route::put('/update', 'TokenSuperAdmin\\PlanoController@update');
+            Route::delete('/delete', 'TokenSuperAdmin\\PlanoController@delete');
+        });
+
+        Route::group(['prefix' => 'empresas'], function () {
+            Route::get('/', 'TokenSuperAdmin\\EmpresaController@index');
+            Route::get('/{id}', 'TokenSuperAdmin\\EmpresaController@find');
+            Route::post('/store', 'TokenSuperAdmin\\EmpresaController@store');
+            Route::put('/update', 'TokenSuperAdmin\\EmpresaController@update');
+            Route::delete('/delete', 'TokenSuperAdmin\\EmpresaController@delete');
+        });
+
+        Route::group(['prefix' => 'usuarios'], function () {
+            Route::get('/', 'TokenSuperAdmin\\UsuarioController@index');
+            Route::get('/{id}', 'TokenSuperAdmin\\UsuarioController@find');
+            Route::post('/store', 'TokenSuperAdmin\\UsuarioController@store');
+            Route::put('/update', 'TokenSuperAdmin\\UsuarioController@update');
+            Route::delete('/delete', 'TokenSuperAdmin\\UsuarioController@delete');
+        });
+
+        Route::group(['prefix' => 'gerenciar-planos'], function () {
+            Route::post('/store', 'TokenSuperAdmin\\GerenciarPlanoController@store');
+        });
+    });
 });
 
 

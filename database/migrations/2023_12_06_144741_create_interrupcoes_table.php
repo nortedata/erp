@@ -21,8 +21,10 @@ return new class extends Migration
 
             $table->string('motivo', 50);
             $table->foreignId('empresa_id')->nullable()->constrained('empresas');
+            $table->boolean('status')->default(1);
 
             // alter table interrupcoes add column motivo varchar(50) default null;
+            // alter table interrupcoes add column status boolean default 1;
 
             $table->timestamps();
         });

@@ -25,6 +25,7 @@ return new class extends Migration
             $table->boolean('notificacao_marketplace')->default(0);
             $table->boolean('notificacao_ecommerce')->default(0);
             $table->boolean('tipo_contador')->default(0);
+            $table->boolean('escolher_localidade_venda')->default(0);
 
             $table->rememberToken();
             $table->timestamps();
@@ -36,6 +37,7 @@ return new class extends Migration
             // alter table users add column notificacao_marketplace boolean default 0;
             // alter table users add column notificacao_ecommerce boolean default 0;
             // alter table users add column tipo_contador boolean default 0;
+            // alter table users add column escolher_localidade_venda boolean default 0;
 
         });
     }

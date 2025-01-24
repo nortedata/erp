@@ -14,9 +14,10 @@
     </div>
     @endif
 
-    <div class="col-md-2">
-        {!!Form::select('produto_id', 'Produto')
-        ->options((isset($item) && $item->produto) ? [$item->produto_id => $item->produto->nome] : [])
+    <div class="col-md-4">
+        {!!Form::select('produto_id', 'Produto', ['' => 'Selecione'] + $produtos->pluck('nome', 'id')->all())
+        ->attrs(['class' => 'select2'])
+        ->id('prod')
         !!}
     </div>
 
@@ -32,6 +33,7 @@
         ->attrs(['class' => 'form-select'])
         !!}
     </div>
+    <div class="col-12"></div>
 
     <div class="card col-md-3 mt-3 form-input">
         <div class="preview">

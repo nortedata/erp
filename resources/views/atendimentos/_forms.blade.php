@@ -27,3 +27,22 @@
         <button type="submit" class="btn btn-success px-5">Salvar</button>
     </div>
 </div>
+
+@section('js')
+<script type="text/javascript">
+    $(document).on("change", "#inp-funcionario_id", function () {
+        let funcionario_id = $(this).val()
+        $.get(path_url + "api/funcionarios/valida-atendimento", { funcionario_id: funcionario_id })
+        .done((success) => {
+            console.log(success)
+            if(success == 1){
+                swal("Alerta", "Esse funcionário já possui dias de atendimento!", "warning")
+                $('#inp-funcionario_id').html('')
+            }
+        })
+        .fail((err) => {
+            console.log(err)
+        })
+    })
+</script>
+@endsection

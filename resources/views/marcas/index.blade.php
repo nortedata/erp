@@ -5,10 +5,12 @@
         <div class="card">
             <div class="card-body">
                 <div class="col-md-2">
+                    @can('marcas_create')
                     <a href="{{ route('marcas.create') }}" class="btn btn-success">
                         <i class="ri-add-circle-fill"></i>
                         Nova Marca
                     </a>
+                    @endcan
                 </div>
                 <hr class="mt-3">
                 <div class="col-lg-12">
@@ -33,11 +35,13 @@
                         <table class="table table-striped table-centered mb-0">
                             <thead class="table-dark">
                                 <tr>
+                                    @can('marcas_delete')
                                     <th>
                                         <div class="form-check form-checkbox-danger mb-2">
                                             <input class="form-check-input" type="checkbox" id="select-all-checkbox">
                                         </div>
                                     </th>
+                                    @endcan
                                     <th>Nome</th>
                                     <th width="10%">Ações</th>
                                 </tr>
@@ -45,22 +49,28 @@
                             <tbody>
                                 @forelse($data as $item)
                                 <tr>
+                                    @can('marcas_delete')
                                     <td>
                                         <div class="form-check form-checkbox-danger mb-2">
                                             <input class="form-check-input check-delete" type="checkbox" name="item_delete[]" value="{{ $item->id }}">
                                         </div>
                                     </td>
+                                    @endcan
                                     <td>{{ $item->nome }}</td>
                                     <td>
                                         <form action="{{ route('marcas.destroy', $item->id) }}" method="post" id="form-{{$item->id}}">
                                             @method('delete')
+                                            @can('marcas_edit')
                                             <a class="btn btn-warning btn-sm text-white" href="{{ route('marcas.edit', [$item->id]) }}">
                                                 <i class="ri-pencil-fill"></i>
                                             </a>
+                                            @endcan
                                             @csrf
+                                            @can('marcas_delete')
                                             <button type="button" class="btn btn-delete btn-sm btn-danger">
                                                 <i class="ri-delete-bin-line"></i>
                                             </button>
+                                            @endcan
                                         </form>
                                     </td>
                                 </tr>
@@ -72,6 +82,7 @@
                             </tbody>
                         </table>
                         <br>
+                        @can('marcas_delete')
                         <form action="{{ route('marcas.destroy-select') }}" method="post" id="form-delete-select">
                             @method('delete')
                             @csrf
@@ -80,6 +91,7 @@
                                 <i class="ri-close-circle-line"></i> Remover selecionados
                             </button>
                         </form>
+                        @endcan
                     </div>
                 </div>
                 {!! $data->appends(request()->all())->links() !!}

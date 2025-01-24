@@ -10,6 +10,11 @@
                         Novo Contador
                     </a>
 
+                    <a href="{{ route('escritorio-contabils') }}" class="btn btn-dark float-end">
+                        <i class="ri-file-list-fill"></i>
+                        Listar escritórios contábeis
+                    </a>
+
                 </div>
                 <hr class="mt-3">
                 <div class="col-lg-12">

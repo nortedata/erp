@@ -14,8 +14,11 @@ use App\Models\Inutilizacao;
 use App\Models\Produto;
 use App\Models\FaturaNfce;
 use App\Models\Funcionario;
+use App\Models\Caixa;
 use App\Models\NaturezaOperacao;
 use App\Models\PreVenda;
+use App\Models\MargemComissao;
+use App\Models\ConfigGeral;
 use App\Services\NFCeService;
 use App\Services\NFeService;
 use App\Utils\EstoqueUtil;
@@ -517,15 +520,14 @@ class NFCeController extends Controller
         $nfce = DB::transaction(function () use ($request) {
             $config = Empresa::find($request->empresa_id);
             $item = PreVenda::findOrFail($request->pre_venda_id);
+            $usuario_id = $request->usuario_id;
+            
             if ($config->ambiente == 2) {
-                $numero = $config->numero_ultima_nfe_homologacao;
+                $numero = $config->numero_ultima_nfce_homologacao;
             } else {
-                $numero = $config->numero_ultima_nfe_producao;
+                $numero = $config->numero_ultima_nfce_producao;
             }
-            $caixa = null;
-            try{
-                $caixa = __isCaixaAberto();
-            }catch(\Exception $e){}
+            $caixa = Caixa::where('usuario_id', $usuario_id)->where('status', 1)->first();
 
             $request->merge([
                 'emissor_nome' => $config->nome,
@@ -534,7 +536,7 @@ class NFCeController extends Controller
                 'chave' => '',
                 'cliente_id' => $item->cliente_id,
                 'numero_serie' => $config->numero_serie_nfce,
-                'numero' => $numero,
+                'numero' => $numero+1,
                 'cliente_nome' => $item->cliente->razao_social ?? '',
                 'cliente_cpf_cnpj' => $item->cliente->cpf_cnpj ?? '',
                 'estado' => 'novo',
@@ -544,6 +546,7 @@ class NFCeController extends Controller
                 'valor_produtos' => __convert_value_bd($item->valor_total) ?? 0,
                 'valor_frete' => $item->valor_frete ? __convert_value_bd($item->valor_frete) : 0,
                 'caixa_id' => $caixa ? $caixa->id : null,
+                'local_id' => $item->local_id,
                 'tipo_pagamento' => '99',
                 'dinheiro_recebido' => 0,
                 'troco' => 0,
@@ -576,14 +579,14 @@ class NFCeController extends Controller
                 ]);
 
                 if ($product->gerenciar_estoque) {
-                    $this->util->reduzEstoque($product->id, __convert_value_bd($item->itens[$i]->quantidade));
+                    $this->util->reduzEstoque($product->id, __convert_value_bd($item->itens[$i]->quantidade), null, $item->local_id);
                 }
 
                 $tipo = 'reducao';
                 $codigo_transacao = $nfce->id;
                 $tipo_transacao = 'venda_nfce';
 
-                $this->util->movimentacaoProduto($product->id, __convert_value_bd($item->itens[$i]->quantidade), $tipo, $codigo_transacao, $tipo_transacao);
+                $this->util->movimentacaoProduto($product->id, __convert_value_bd($item->itens[$i]->quantidade), $tipo, $codigo_transacao, $tipo_transacao, $item->usuario_id);
             }
 
             for ($i = 0; $i < sizeof($request->fatura); $i++) {
@@ -606,6 +609,7 @@ class NFCeController extends Controller
                         'valor_integral' => __convert_value_bd($objeto->valor),
                         'tipo_pagamento' => $objeto->tipo,
                         'data_vencimento' => $objeto->vencimento,
+                        'local_id' => $caixa->local_id,
                     ]);
                 }
             }
@@ -620,17 +624,43 @@ class NFCeController extends Controller
 return response()->json($nfce->id);
 }
 
+private function getLastNumero($empresa_id){
+    $last = Nfce::where('empresa_id', $empresa_id)
+    ->orderBy('numero_sequencial', 'desc')
+    ->where('numero_sequencial', '>', 0)->first();
+    $numero = $last != null ? $last->numero_sequencial : 0;
+    $numero++;
+    return $numero;
+}
+
 public function gerarVenda(Request $request)
 {
+
     $nfce = DB::transaction(function () use ($request) {
         $config = Empresa::find($request->empresa_id);
         $item = PreVenda::findOrFail($request->pre_venda_id);
+
+        $config = __objetoParaEmissao($config, $item->local_id);
+
         if ($config->ambiente == 2) {
             $numero = $config->numero_ultima_nfe_homologacao;
         } else {
             $numero = $config->numero_ultima_nfe_producao;
         }
+        $troco = 0;
+        $total = 0;
+        if(sizeof($request->fatura) == 1){
+            $objeto = (object)$request->fatura[0];
+            if($objeto->tipo == '01'){
+                $valorFatura = __convert_value_bd($objeto->valor);
+                // $troco = $valorFatura - $item->valor_total;
+            }
 
+            $total += __convert_value_bd($objeto->valor);
+        }
+
+        $usuario_id = $item->usuario_id;
+        $caixa = Caixa::where('usuario_id', $usuario_id)->where('status', 1)->first();
         $request->merge([
             'emissor_nome' => $config->nome,
             'emissor_cpf_cnpj' => $config->cpf_cnpj,
@@ -642,16 +672,19 @@ public function gerarVenda(Request $request)
             'cliente_nome' => $item->cliente->razao_social ?? '',
             'cliente_cpf_cnpj' => $item->cliente->cpf_cnpj ?? '',
             'estado' => 'novo',
-            'total' => $item->valor_total,
-            'desconto' => $item->desconto,
-            'acrescimo' => $item->acrescimo,
+            'total' => $total,
+            'desconto' => 0,
+            'acrescimo' => 0,
             'valor_produtos' => __convert_value_bd($item->valor_total) ?? 0,
             'valor_frete' => $item->valor_frete ? __convert_value_bd($item->valor_frete) : 0,
-                // 'caixa_id' => $caixa ? $caixa->id : null,
+            'caixa_id' => $caixa ? $caixa->id : null,
+            'local_id' => $item->local_id,
             'tipo_pagamento' => '99',
             'dinheiro_recebido' => 0,
-            'troco' => 0,
+            'troco' => $troco,
             'natureza_id' => $config->natureza_id_pdv,
+            'funcionario_id' => $item->funcionario_id,
+            'numero_sequencial' => $this->getLastNumero($request->empresa_id)
         ]);
 
         $nfce = Nfce::create($request->all());
@@ -680,14 +713,15 @@ public function gerarVenda(Request $request)
             ]);
 
             if ($product->gerenciar_estoque) {
-                $this->util->reduzEstoque($product->id, __convert_value_bd($item->itens[$i]->quantidade));
+                $this->util->reduzEstoque($product->id, __convert_value_bd($item->itens[$i]->quantidade), null, $item->local_id);
             }
 
             $tipo = 'reducao';
             $codigo_transacao = $nfce->id;
             $tipo_transacao = 'venda_nfce';
 
-            $this->util->movimentacaoProduto($product->id, __convert_value_bd($item->itens[$i]->quantidade), $tipo, $codigo_transacao, $tipo_transacao);
+            $this->util->movimentacaoProduto($product->id, __convert_value_bd($item->itens[$i]->quantidade), $tipo, 
+                $codigo_transacao, $tipo_transacao, $item->usuario_id);
         }
 
         for ($i = 0; $i < sizeof($request->fatura); $i++) {
@@ -698,34 +732,34 @@ public function gerarVenda(Request $request)
                 'data_vencimento' => $objeto->vencimento,
                 'valor' => __convert_value_bd($objeto->valor)
             ]);
-        }
 
-        for ($i = 0; $i < sizeof($request->fatura); $i++) {
-            $objeto = (object)$request->fatura[$i];
             if ($request->conta_receber == 1) {
                 ContaReceber::create([
-                    'empresa_id' => $request->empresa_id,
+                    'empresa_id' => $item->empresa_id,
                     'nfce_id' => $nfce->id,
                     'cliente_id' => $item->cliente_id,
                     'valor_integral' => __convert_value_bd($objeto->valor),
                     'tipo_pagamento' => $objeto->tipo,
                     'data_vencimento' => $objeto->vencimento,
+                    'local_id' => $caixa->local_id
                 ]);
             }
         }
 
+        
+
         if ($item->funcionario_id != null) {
-            $funcionario = Funcionario::where('empresa_id', $request->empresa_id)->first();
+            $funcionario = Funcionario::findOrFail($request->funcionario_id);
             $funcionario->comissao;
             $comissao = $funcionario->comissao;
-            $valorRetorno = $this->calcularComissaoVenda($nfce, $comissao);
+            $valorRetorno = $this->calcularComissaoVenda($nfce, $comissao, $request->empresa_id);
             ComissaoVenda::create([
                 'funcionario_id' => $request->funcionario_id,
                 'nfe_id' => null,
                 'nfce_id' => $nfce->id,
                 'tabela' => 'nfce',
                 'valor' => $valorRetorno,
-                'valor_venda' => $item->valor_total,
+                'valor_venda' => $total,
                 'status' => 0,
                 'empresa_id' => $request->empresa_id
             ]);
@@ -741,16 +775,41 @@ public function gerarVenda(Request $request)
 return response()->json($nfce->id);
 }
 
-private function calcularComissaoVenda($nfce, $comissao)
+private function calcularComissaoVenda($nfce, $comissao, $empresa_id)
 {
     $valorRetorno = 0;
-    foreach ($nfce->itens as $i) {
-        if ($i->produto->perc_comissao > 0) {
-            $valorRetorno += (($i->valor_unitario * $i->quantidade) * $i->produto->perc_comissao) / 100;
-        } else {
-            $valorRetorno += (($i->valor_unitario * $i->quantidade) * $comissao) / 100;
+    $config = ConfigGeral::where('empresa_id', $empresa_id)->first();
+
+    $tipoComissao = 'percentual_vendedor';
+    if($config != null && $config->tipo_comissao == 'percentual_margem'){
+        $tipoComissao = 'percentual_margem';
+    }
+    if($tipoComissao == 'percentual_vendedor'){
+        $valorRetorno = ($nfce->total * $comissao) / 100;
+    }else{
+        foreach ($nfce->itens as $i) {
+
+            $percentualLucro = ((($i->produto->valor_compra-$i->valor_unitario)/$i->produto->valor_compra)*100)*-1;
+            $margens = MargemComissao::where('empresa_id', $empresa_id)->get();
+            $margemComissao = null;
+            $dif = 0;
+            $difAnterior = 100;
+            foreach($margens as $m){
+                $margem = $m->margem;
+                if($percentualLucro >= $margem){
+                    $dif = $percentualLucro - $margem;
+                    if($dif < $difAnterior){
+                        $margemComissao = $m;
+                        $difAnterior = $dif;
+                    }
+                }
+            }
+            if($margemComissao){
+                $valorRetorno += ($i->sub_total * $margemComissao->percentual) / 100;
+            }
         }
     }
     return $valorRetorno;
 }
+
 }

@@ -12,12 +12,21 @@ use App\Models\Nfe;
 use App\Models\Nfce;
 use App\Models\Cliente;
 use App\Models\Produto;
+use App\Models\Localizacao;
 
 class GraficoController extends Controller
 {
     public function dadosDards(Request $request){
         $periodo = $request->periodo;
         $empresa_id = $request->empresa_id;
+        $usuario_id = $request->usuario_id;
+        $local_id = $request->local_id;
+
+        $locais = Localizacao::where('usuario_localizacaos.usuario_id', $usuario_id)
+        ->select('localizacaos.*')
+        ->join('usuario_localizacaos', 'usuario_localizacaos.localizacao_id', '=', 'localizacaos.id')
+        ->where('localizacaos.status', 1)->get();
+        $locais = $locais->pluck(['id']);
 
         $somaVendas = Nfe::
         where('empresa_id', $empresa_id)
@@ -33,7 +42,14 @@ class GraficoController extends Controller
         ->when($periodo == 365, function ($query) {
             return $query->whereYear('created_at', date('Y'));
         })
+        ->when($local_id, function ($query) use ($local_id) {
+            return $query->where('local_id', $local_id);
+        })
+        ->when(!$local_id, function ($query) use ($locais) {
+            return $query->whereIn('local_id', $locais);
+        })
         ->where('tpNF', 1)
+        ->where('orcamento', 0)
         ->sum('total');
 
         $somaVendasPdv = Nfce::
@@ -49,6 +65,12 @@ class GraficoController extends Controller
         })
         ->when($periodo == 365, function ($query) {
             return $query->whereYear('created_at', date('Y'));
+        })
+        ->when($local_id, function ($query) use ($local_id) {
+            return $query->where('local_id', $local_id);
+        })
+        ->when(!$local_id, function ($query) use ($locais) {
+            return $query->whereIn('local_id', $locais);
         })
         ->sum('total');
 
@@ -70,19 +92,28 @@ class GraficoController extends Controller
 
         $totalProdutos = Produto::
         where('empresa_id', $empresa_id)
+        ->select('produtos.*')
         ->when($periodo == 1, function ($query) {
-            return $query->whereDate('created_at', date('Y-m-d'));
+            return $query->whereDate('produtos.created_at', date('Y-m-d'));
         })
         ->when($periodo == 7, function ($query) {
-            return $query->whereRaw('WEEK(created_at) = ' . (date('W')-1));
+            return $query->whereRaw('WEEK(produtos.created_at) = ' . (date('W')-1));
         })
         ->when($periodo == 30, function ($query) {
-            return $query->whereMonth('created_at', date('m'));
+            return $query->whereMonth('produtos.created_at', date('m'));
         })
         ->when($periodo == 365, function ($query) {
-            return $query->whereYear('created_at', date('Y'));
+            return $query->whereYear('produtos.created_at', date('Y'));
         })
-        ->count('id');
+        ->when($local_id, function ($query) use ($local_id) {
+            return $query->join('produto_localizacaos', 'produto_localizacaos.produto_id', '=', 'produtos.id')
+            ->where('produto_localizacaos.localizacao_id', $local_id);
+        })
+        ->when(!$local_id, function ($query) use ($locais) {
+            return $query->join('produto_localizacaos', 'produto_localizacaos.produto_id', '=', 'produtos.id')
+            ->whereIn('produto_localizacaos.localizacao_id', $locais);
+        })
+        ->count('produtos.id');
 
         $somaCompras = Nfe::
         where('empresa_id', $empresa_id)
@@ -97,6 +128,12 @@ class GraficoController extends Controller
         })
         ->when($periodo == 365, function ($query) {
             return $query->whereYear('created_at', date('Y'));
+        })
+        ->when($local_id, function ($query) use ($local_id) {
+            return $query->where('local_id', $local_id);
+        })
+        ->when(!$local_id, function ($query) use ($locais) {
+            return $query->whereIn('local_id', $locais);
         })
         ->where('tpNF', 0)
         ->sum('total');
@@ -116,6 +153,12 @@ class GraficoController extends Controller
         ->when($periodo == 365, function ($query) {
             return $query->whereYear('data_vencimento', date('Y'));
         })
+        ->when($local_id, function ($query) use ($local_id) {
+            return $query->where('local_id', $local_id);
+        })
+        ->when(!$local_id, function ($query) use ($locais) {
+            return $query->whereIn('local_id', $locais);
+        })
         ->sum('valor_integral');
 
         $somaContaPagar = ContaPagar::
@@ -133,6 +176,12 @@ class GraficoController extends Controller
         ->when($periodo == 365, function ($query) {
             return $query->whereYear('data_vencimento', date('Y'));
         })
+        ->when($local_id, function ($query) use ($local_id) {
+            return $query->where('local_id', $local_id);
+        })
+        ->when(!$local_id, function ($query) use ($locais) {
+            return $query->whereIn('local_id', $locais);
+        })
         ->sum('valor_integral');
 
         $data = [
@@ -147,6 +196,56 @@ class GraficoController extends Controller
         return response()->json($data, 200);
     }
 
+    public function graficoVendasMes(Request $request)
+    {
+
+        $diaHoje = date('d');
+        $mes = date('m');
+        $data = [];
+        for ($i = 1; $i <= $diaHoje; $i++) {
+            $totalNfe = Nfe::where('empresa_id', $request->empresa_id)
+            ->where('estado', '!=', 'cancelado')
+            ->whereMonth('created_at', date('m'))
+            ->whereDay('created_at', ($i < 10 ? "0$i" : $i))
+            ->where('tpNF', 1)
+            ->sum('total');
+
+            $totalNfce = Nfce::where('empresa_id', $request->empresa_id)
+            ->where('estado', '!=', 'cancelado')
+            ->whereMonth('created_at', date('m'))
+            ->whereDay('created_at', ($i < 10 ? "0$i" : $i))
+            ->sum('total');
+
+            array_push($data, [
+                'dia' => ($i < 10 ? "0$i" : $i) . "/$mes",
+                'valor' => $totalNfe + $totalNfce
+            ]);
+        }
+        return response()->json($data, 200);
+    }
+
+    public function graficoComprasMes(Request $request)
+    {
+
+        $diaHoje = date('d');
+        $mes = date('m');
+        $data = [];
+        for ($i = 1; $i <= $diaHoje; $i++) {
+            $totalNfe = Nfe::where('empresa_id', $request->empresa_id)
+            ->where('estado', '!=', 'cancelado')
+            ->whereMonth('created_at', date('m'))
+            ->whereDay('created_at', ($i < 10 ? "0$i" : $i))
+            ->where('tpNF', 0)
+            ->sum('total');
+
+            array_push($data, [
+                'dia' => ($i < 10 ? "0$i" : $i) . "/$mes",
+                'valor' => $totalNfe
+            ]);
+        }
+        return response()->json($data, 200);
+    }
+
     public function graficoMes(Request $request)
     {
         $diaHoje = date('d');
@@ -154,20 +253,20 @@ class GraficoController extends Controller
         $data = [];
         for ($i = 1; $i <= $diaHoje; $i++) {
             $totalNfe = Nfe::where('empresa_id', $request->empresa_id)
-                ->where(function ($q) {
-                    $q->where('estado', 'aprovado')->orWhere('estado', 'cancelado');
-                })
-                ->whereMonth('created_at', date('m'))
-                ->whereDay('created_at', ($i < 10 ? "0$i" : $i))
-                ->sum('total');
+            ->where(function ($q) {
+                $q->where('estado', 'aprovado')->orWhere('estado', 'cancelado');
+            })
+            ->whereMonth('created_at', date('m'))
+            ->whereDay('created_at', ($i < 10 ? "0$i" : $i))
+            ->sum('total');
 
             $totalNfce = Nfce::where('empresa_id', $request->empresa_id)
-                ->where(function ($q) {
-                    $q->where('estado', 'aprovado')->orWhere('estado', 'cancelado');
-                })
-                ->whereMonth('created_at', date('m'))
-                ->whereDay('created_at', ($i < 10 ? "0$i" : $i))
-                ->sum('total');
+            ->where(function ($q) {
+                $q->where('estado', 'aprovado')->orWhere('estado', 'cancelado');
+            })
+            ->whereMonth('created_at', date('m'))
+            ->whereDay('created_at', ($i < 10 ? "0$i" : $i))
+            ->sum('total');
 
             array_push($data, [
                 'dia' => ($i < 10 ? "0$i" : $i) . "/$mes",
@@ -184,20 +283,20 @@ class GraficoController extends Controller
         $data = [];
         for ($i = 1; $i <= $diaHoje; $i++) {
             $totalNfe = Nfe::where('empresa_id', $request->empresa_id)
-                ->where(function ($q) {
-                    $q->where('estado', 'aprovado')->orWhere('estado', 'cancelado');
-                })
-                ->whereMonth('created_at', date('m'))
-                ->whereDay('created_at', ($i < 10 ? "0$i" : $i))
-                ->count('id');
+            ->where(function ($q) {
+                $q->where('estado', 'aprovado')->orWhere('estado', 'cancelado');
+            })
+            ->whereMonth('created_at', date('m'))
+            ->whereDay('created_at', ($i < 10 ? "0$i" : $i))
+            ->count('id');
 
             $totalNfce = Nfce::where('empresa_id', $request->empresa_id)
-                ->where(function ($q) {
-                    $q->where('estado', 'aprovado')->orWhere('estado', 'cancelado');
-                })
-                ->whereMonth('created_at', date('m'))
-                ->whereDay('created_at', ($i < 10 ? "0$i" : $i))
-                ->count('id');
+            ->where(function ($q) {
+                $q->where('estado', 'aprovado')->orWhere('estado', 'cancelado');
+            })
+            ->whereMonth('created_at', date('m'))
+            ->whereDay('created_at', ($i < 10 ? "0$i" : $i))
+            ->count('id');
 
             array_push($data, [
                 'dia' => ($i < 10 ? "0$i" : $i) . "/$mes",
@@ -214,20 +313,20 @@ class GraficoController extends Controller
         $data = [];
         for ($i = 0; $i < 4; $i++) {
             $totalNfe = Nfe::where('empresa_id', $request->empresa_id)
-                ->where(function ($q) {
-                    $q->where('estado', 'aprovado')->orWhere('estado', 'cancelado');
-                })
-                ->whereMonth('created_at', $mes)
-                ->whereYear('created_at', $ano)
-                ->sum('total');
+            ->where(function ($q) {
+                $q->where('estado', 'aprovado')->orWhere('estado', 'cancelado');
+            })
+            ->whereMonth('created_at', $mes)
+            ->whereYear('created_at', $ano)
+            ->sum('total');
 
             $totalNfce = Nfce::where('empresa_id', $request->empresa_id)
-                ->where(function ($q) {
-                    $q->where('estado', 'aprovado')->orWhere('estado', 'cancelado');
-                })
-                ->whereMonth('created_at', $mes)
-                ->whereYear('created_at', $ano)
-                ->sum('total');
+            ->where(function ($q) {
+                $q->where('estado', 'aprovado')->orWhere('estado', 'cancelado');
+            })
+            ->whereMonth('created_at', $mes)
+            ->whereYear('created_at', $ano)
+            ->sum('total');
 
             array_push($data, [
                 'dia' => $this->getMes($mes - 1) . "/$ano",
@@ -260,25 +359,25 @@ class GraficoController extends Controller
         $data = [];
         for ($i = 0; $i < 4; $i++) {
             $receber = ContaReceber::where('empresa_id', $request->empresa_id)
-                ->whereMonth('created_at', $mes)
-                ->whereYear('created_at', $ano)
-                ->sum('valor_integral');
+            ->whereMonth('created_at', $mes)
+            ->whereYear('created_at', $ano)
+            ->sum('valor_integral');
 
             $pendente = ContaReceber::where('empresa_id', $request->empresa_id)
-                ->where(function ($q) {
-                    $q->where('status', false);
-                })
-                ->whereMonth('created_at', $mes)
-                ->whereYear('created_at', $ano)
-                ->sum('valor_integral');
+            ->where(function ($q) {
+                $q->where('status', false);
+            })
+            ->whereMonth('created_at', $mes)
+            ->whereYear('created_at', $ano)
+            ->sum('valor_integral');
 
             $quitado = ContaReceber::where('empresa_id', $request->empresa_id)
-                ->where(function ($q) {
-                    $q->where('status', true);
-                })
-                ->whereMonth('created_at', $mes)
-                ->whereYear('created_at', $ano)
-                ->sum('valor_integral');
+            ->where(function ($q) {
+                $q->where('status', true);
+            })
+            ->whereMonth('created_at', $mes)
+            ->whereYear('created_at', $ano)
+            ->sum('valor_integral');
 
             array_push($data, [
                 'dia' => $this->getMes($mes - 1) . "/$ano",
@@ -304,25 +403,25 @@ class GraficoController extends Controller
         $data = [];
         for ($i = 0; $i < 4; $i++) {
             $pagar = ContaPagar::where('empresa_id', $request->empresa_id)
-                ->whereMonth('created_at', $mes)
-                ->whereYear('created_at', $ano)
-                ->sum('valor_integral');
+            ->whereMonth('created_at', $mes)
+            ->whereYear('created_at', $ano)
+            ->sum('valor_integral');
 
             $pendentes = ContaPagar::where('empresa_id', $request->empresa_id)
-                ->where(function ($q) {
-                    $q->where('status', false);
-                })
-                ->whereMonth('created_at', $mes)
-                ->whereYear('created_at', $ano)
-                ->sum('valor_integral');
+            ->where(function ($q) {
+                $q->where('status', false);
+            })
+            ->whereMonth('created_at', $mes)
+            ->whereYear('created_at', $ano)
+            ->sum('valor_integral');
 
             $quitadas = ContaPagar::where('empresa_id', $request->empresa_id)
-                ->where(function ($q) {
-                    $q->where('status', true);
-                })
-                ->whereMonth('created_at', $mes)
-                ->whereYear('created_at', $ano)
-                ->sum('valor_integral');
+            ->where(function ($q) {
+                $q->where('status', true);
+            })
+            ->whereMonth('created_at', $mes)
+            ->whereYear('created_at', $ano)
+            ->sum('valor_integral');
 
             array_push($data, [
                 'dia' => $this->getMes($mes - 1) . "/$ano",
@@ -348,12 +447,12 @@ class GraficoController extends Controller
         $data = [];
         for ($i = 0; $i < 4; $i++) {
             $totalNfe = Cte::where('empresa_id', $request->empresa_id)
-                ->where(function ($q) {
-                    $q->where('estado', 'aprovado')->orWhere('estado', 'cancelado');
-                })
-                ->whereMonth('created_at', $mes)
-                ->whereYear('created_at', $ano)
-                ->count('id');
+            ->where(function ($q) {
+                $q->where('estado', 'aprovado')->orWhere('estado', 'cancelado');
+            })
+            ->whereMonth('created_at', $mes)
+            ->whereYear('created_at', $ano)
+            ->count('id');
 
             array_push($data, [
                 'dia' => $this->getMes($mes - 1) . "/$ano",
@@ -377,12 +476,12 @@ class GraficoController extends Controller
         $data = [];
         for ($i = 0; $i < 4; $i++) {
             $totalNfe = Mdfe::where('empresa_id', $request->empresa_id)
-                ->where(function ($q) {
-                    $q->where('estado_emissao', 'aprovado')->orWhere('estado_emissao', 'cancelado');
-                })
-                ->whereMonth('created_at', $mes)
-                ->whereYear('created_at', $ano)
-                ->count('id');
+            ->where(function ($q) {
+                $q->where('estado_emissao', 'aprovado')->orWhere('estado_emissao', 'cancelado');
+            })
+            ->whereMonth('created_at', $mes)
+            ->whereYear('created_at', $ano)
+            ->count('id');
 
             array_push($data, [
                 'dia' => $this->getMes($mes - 1) . "/$ano",

@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('pedido_id')->constrained('pedidos');
             $table->foreignId('produto_id')->constrained('produtos');
+            $table->foreignId('funcionario_id')->nullable()->constrained('funcionarios');
 
             $table->string('observacao', 255)->nullable();
             $table->enum('estado', ['novo', 'pendente', 'preparando', 'finalizado'])->default('novo');
@@ -30,6 +31,7 @@ return new class extends Migration
             // alter table produtos add column tempo_preparo integer default null;
             // alter table produtos add column ponto_carne varchar(30) default null;
             // alter table item_pedidos add column tamanho_id integer default null;
+            // alter table item_pedidos add column funcionario_id integer default null;
             
             $table->timestamps();
         });

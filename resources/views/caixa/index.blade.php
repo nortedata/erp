@@ -13,6 +13,10 @@
                 <div class="card-body mt-1">
                     <div class="bg-light-subtle border-top border-bottom border-light">
                         <div class="row text-center">
+
+                            @if(__countLocalAtivo() > 1)
+                            <h5 class="mt-2">Local: <strong class="text-danger">{{ $item->localizacao ? $item->localizacao->descricao : '' }}</strong></h5>
+                            @endif
                             <div class="col">
                                 <p class="text-muted mt-3"><i class="ri-shield-user-fill"></i> Usuário</p>
                                 <h3 class="fw-normal mb-3">
@@ -31,7 +35,23 @@
                                     <span>{{ __moeda($item->valor_abertura) }}</span>
                                 </h3>
                             </div>
+                            @if($item->contaEmpresa)
+                            <div class="col">
+                                <p class="text-muted mt-3"><i class="ri-money-dollar-circle-line"></i> Conta</p>
+                                <h3 class="fw-normal mb-3">
+                                    <span>{{ $item->contaEmpresa->nome }}</span>
+                                </h3>
+                            </div>
+                            @endif
                         </div>
+
+                        @if($item->observacao)
+                        <div class="row">
+                            <div class="col-12 m-3 text-primary">
+                                {{ $item->observacao }}
+                            </div>
+                        </div>
+                        @endif
                     </div>
                 </div>
                 @php
@@ -61,11 +81,20 @@
                     @endphp
                     @endif
                     @endforeach
-                    <div class="text-">
-                        <h3>Total de vendas: <strong class="text-success">{{ __moeda($soma) }}</strong></h3>
+                    <div class="row text-center mt-4">
+                        <div class="col-md-4 card">
+                            <h3>Total de vendas: <strong class="text-danger">{{ __moeda($soma) }}</strong></h3>
+                        </div>
+                        <div class="col-md-4 card">
+                            <h3>Venda de produtos: <strong class="text-danger">{{ __moeda($soma-$somaServicos) }}</strong></h3>
+                        </div>
+
+                        <div class="col-md-4 card">
+                            <h3>Venda de serviços: <strong class="text-danger">{{ __moeda($somaServicos) }}</strong></h3>
+                        </div>
                     </div>
                 </div>
-                <h3 class="text-center mt-3">Movimentações de Vendas</h3>
+                <h3 class="text-center mt-3">Movimentações do caixa</h3>
                 <div class="col-md-12 mt-4 table-responsive">
                     <div class="table-responsive-sm">
                         <table class="table table-centered">
@@ -77,18 +106,36 @@
                                 </tr>
                             </thead>
                             <tbody>
+                                @php $somaLista = 0; @endphp
                                 @forelse ($vendas as $i)
                                 <tr>
-                                    <td>{{ $i->tipo == 'Nfe' ? 'Pedido' : 'PDV' }}</td>
+                                    <td>{{ $i->tipo }}</td>
                                     <td>{{ __data_pt($i->created_at, 1) }}</td>
+                                    @if($i->tipo != 'OS')
                                     <td>{{ __moeda($i->total) }}</td>
+                                    @else
+                                    <td>{{ __moeda($i->valor) }}</td>
+                                    @endif
                                 </tr>
+                                @php
+                                if($i->tipo != 'OS'){
+                                    $somaLista += $i->total;
+                                }else{
+                                    $somaLista += $i->valor;
+                                }
+                                @endphp
                                 @empty
                                 <tr>
                                     <td colspan="3" class="text-center">Nenhum registro</td>
                                 </tr>
                                 @endforelse
                             </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="2">Total</td>
+                                    <td>R$ {{ __moeda($somaLista) }}</td>
+                                </tr>
+                            </tfoot>
                         </table>
                     </div>
                 </div>
@@ -153,35 +200,103 @@
                 <div class="row mt-3">
                     <div class="col-12 col-xl-6">
                         <div class="card card-custom gutter-b bg-light-info">
+                            <div class="card-header">
+                                <h4 class="card-title">Suprimentos</h4>
+                            </div>
                             <div class="card-body">
-                                <h2 class="card-title">Suprimentos:</h2>
-                                @if(sizeof($suprimentos) > 0)
-                                @foreach($suprimentos as $s)
-                                <h4>Valor: R$ {{ __moeda($s->valor) }}</h4>
-                                @php
-                                $somaSuprimento += $s->valor;
-                                @endphp
-                                @endforeach
-                                @else
-                                <h4>R$ 0,00</h4>
-                                @endif
+                                <table class="table">
+                                    <thead class="table-info">
+                                        <tr>
+                                            <th>Data</th>
+                                            <th>Valor</th>
+                                            <th>Observação</th>
+                                            <th>Conta</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @forelse($suprimentos as $s)
+                                        <tr>
+                                            <td>{{ __data_pt($s->created_at) }}</td>
+                                            <td>{{ __moeda($s->valor) }}</td>
+                                            <td>
+                                                {{ $s->observacao }}
+                                            </td>
+                                            <td>
+                                                @if($s->contaEmpresa)
+                                                {{ $s->contaEmpresa->nome }}
+                                                @endif
+                                            </td>
+
+                                            <td>
+                                                <a target="_blank" href="{{ route('suprimento.print', [$s->id]) }}" class="btn btn-dark btn-sm">
+                                                    <i class="ri-printer-line"></i>
+                                                </a>
+                                            </td>
+
+                                            @php
+                                            $somaSuprimento += $s->valor;
+                                            @endphp
+                                        </tr>
+                                        @empty
+                                        <tr>
+                                            <td colspan="5">Nenhum registro</td>
+                                        </tr>
+                                        @endforelse
+                                        
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
                     <div class="col-12 col-xl-6">
                         <div class="card card-custom gutter-b bg-light-danger">
+
+                            <div class="card-header">
+                                <h4 class="card-title">Sangrias</h4>
+                            </div>
                             <div class="card-body">
-                                <h2 class="card-title">Sangrias:</h2>
-                                @if(sizeof($sangrias) > 0)
-                                @foreach($sangrias as $s)
-                                <h4>Valor: R$ {{ __moeda($s->valor) }}</h4>
-                                @php
-                                $somaSangria += $s->valor;
-                                @endphp
-                                @endforeach
-                                @else
-                                <h4>R$ 0,00</h4>
-                                @endif
+                                <table class="table">
+                                    <thead class="table-danger">
+                                        <tr>
+                                            <th>Data</th>
+                                            <th>Valor</th>
+                                            <th>Observação</th>
+                                            <th>Conta</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @forelse($sangrias as $s)
+                                        <tr>
+                                            <td>{{ __data_pt($s->created_at) }}</td>
+                                            <td>{{ __moeda($s->valor) }}</td>
+                                            <td>
+                                                {{ $s->observacao }}
+                                            </td>
+                                            <td>
+                                                @if($s->contaEmpresa)
+                                                {{ $s->contaEmpresa->nome }}
+                                                @endif
+                                            </td>
+                                            <td>
+                                                <a target="_blank" href="{{ route('sangria.print', [$s->id]) }}" class="btn btn-dark btn-sm">
+                                                    <i class="ri-printer-line"></i>
+                                                </a>
+                                            </td>
+
+                                            @php
+                                            $somaSangria += $s->valor;
+                                            @endphp
+                                        </tr>
+                                        @empty
+                                        <tr>
+                                            <td colspan="5">Nenhum registro</td>
+                                        </tr>
+                                        @endforelse
+                                        
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
@@ -207,10 +322,18 @@
                 <h3>Caixa sem movimentação!</h3>
                 @else
 
+                @if(sizeof($contasEmpresa) == 0)
                 <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#fechamento_caixa">
                     <i class="ri-add-circle-fill"></i>
                     Fechar Caixa
                 </button>
+                @else
+                <a class="btn btn-danger" href="{{ route('caixa.fechar-conta', [$item->id]) }}">
+                    <i class="ri-add-circle-fill"></i>
+                    Fechar Caixa
+                </a>
+                @endif
+
                 @endif
             </div>
             @endif

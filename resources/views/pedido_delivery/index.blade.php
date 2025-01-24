@@ -19,7 +19,7 @@
                 <hr>
                 <button class="btn btn-success px-3" type="button" data-bs-toggle="modal" data-bs-target="#modal-comanda">
                     <i class="ri-add-circle-fill"></i>
-                    Novo pedido de Delivery
+                    Novo Pedido de Delivery
                 </button>
 
                 <hr class="mt-3">
@@ -38,6 +38,13 @@
                             ->attrs(['class' => 'form-select'])
                             !!}
                         </div>
+                        @if(__isProdutoServicoDelivery(request()->empresa_id))
+                        <div class="col-md-2">
+                            {!!Form::select('tipo', 'Tipo', ['' => 'Todos', 'delivery' => 'Somente Delivery', 'agendamento' => 'Somente Agendamento'])
+                            ->attrs(['class' => 'form-select'])
+                            !!}
+                        </div>
+                        @endif
                         <div class="col-md-3 text-left">
                             <br>
                             <button class="btn btn-primary" type="submit"> <i class="ri-search-line"></i>Pesquisar</button>
@@ -51,11 +58,12 @@
                     <a class="col-12 col-lg-4" href="{{ route('pedidos-delivery.show', [$item->id]) }}">
                         <div class="card">
 
-                            <div class="card-body" style="height: 230px">
+                            <div class="card-body" style="height: 260px">
                                 <h3 class="card-title">ID: <strong>#{{ $item->id }}</strong></h3>
 
                                 <h4>Total: <strong>R$ {{ __moeda($item->valor_total) }}</strong></h4>
                                 <h4>Cliente: <strong>{{ $item->cliente->razao_social }}</strong></h4>
+                                <h4>Data: <strong>{{ __data_pt($item->created_at) }}</strong></h4>
                                 <h4>Total de itens: <strong>{{ sizeof($item->itens) }}</strong></h4>
                                 @if($item->endereco)
                                 <h4>Endereço: <strong class="text-primary">{{ $item->endereco->info }}</strong></h4>
@@ -64,6 +72,10 @@
                                 @endif
 
                                 {!! $item->_estado() !!}
+
+                                @if($item->inicio_agendamento)
+                                <h4 class="text-danger">Pedido com agendamento</h4>
+                                @endif
 
                             </div>
                         </div>
@@ -95,12 +107,12 @@
                         </div>
 
                         <div class="col-md-3">
-                            {!!Form::text('cliente_nome', 'Cliente nome')
+                            {!!Form::text('cliente_nome', 'Cliente nome')->required()
                             !!}
                         </div>
 
                         <div class="col-md-3">
-                            {!!Form::text('cliente_fone', 'Cliente telefone')
+                            {!!Form::text('cliente_fone', 'Cliente telefone')->required()
                             ->attrs(['class' => 'fone'])
                             !!}
                         </div>

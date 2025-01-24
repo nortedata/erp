@@ -38,6 +38,11 @@ return new class extends Migration
             $table->string('proprietario_ie', 13);
             $table->string('proprietario_uf', 2);
             $table->integer('proprietario_tp');
+            $table->integer('funcionario_id')->nullable();
+            $table->boolean('status')->default(1);
+
+            // alter table veiculos add column funcionario_id integer default null;
+            // alter table veiculos add column status boolean default 1;
             
             $table->timestamps();
         });

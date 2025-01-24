@@ -38,6 +38,11 @@ return new class extends Migration
             $table->string('uid', 30)->nullable();
             $table->string('senha', 200)->nullable();
             $table->decimal('valor_cashback', 10,2)->default(0);
+            $table->decimal('valor_credito', 10,2)->default(0);
+            $table->string('nuvem_shop_id', 20)->nullable();
+            $table->decimal('limite_credito', 10,2)->nullable();
+
+            $table->integer('lista_preco_id')->nullable();
 
             // alter table clientes add column status boolean default 1;
             // alter table clientes add column uid varchar(30) default null;
@@ -46,6 +51,11 @@ return new class extends Migration
             // alter table clientes modify column cpf_cnpj varchar(20) default null;
             // alter table clientes add column token integer default null;
             // alter table clientes add column valor_cashback decimal(10,2) default 0;
+            // alter table clientes add column valor_credito decimal(10,2) default 0;
+            // alter table clientes add column nuvem_shop_id varchar(20) default null;
+            // alter table clientes add column limite_credito decimal(10,2) default null;
+
+            // alter table clientes add column lista_preco_id integer default null;
             
             $table->timestamps();
         });

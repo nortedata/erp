@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use CloudDfe\SdkPHP\Nfse;
 use App\Models\Empresa;
 use App\Models\NotaServico;
+use App\Models\ConfigGeral;
 
 class NotaServicoController extends Controller
 {
@@ -36,7 +37,13 @@ class NotaServicoController extends Controller
             $doc = preg_replace('/[^0-9]/', '', $item->documento);
             $im = preg_replace('/[^0-9]/', '', $item->im);
             $ie = preg_replace('/[^0-9]/', '', $item->ie);
+            $config = ConfigGeral::where('empresa_id', $item->empresa_id)
+            ->first();
 
+            $regimeTributacao = null;
+            if($config != null){
+                $regimeTributacao = $config->regime_nfse;
+            }
             $payload = [
                 "numero" => $novoNumeroNFse,
                 "serie" => $empresa->numero_serie_nfse,
@@ -44,7 +51,7 @@ class NotaServicoController extends Controller
                 "status" => "1",
                 "data_emissao" => date("Y-m-d\TH:i:sP"),
                 "data_competencia" => date("Y-m-d\TH:i:sP"),
-
+                "regime_tributacao" => $regimeTributacao,
                 "tomador" => [
                     "cnpj" => strlen($doc) == 14 ? $doc : null,
                     "cpf" => strlen($doc) == 11 ? $doc : null,
@@ -69,6 +76,7 @@ class NotaServicoController extends Controller
                     "valor_servicos" => $servico->valor_servico,
                     "valor_pis" => $servico->aliquota_pis,
                     "valor_aliquota" => $servico->aliquota_iss,
+                    "codigo_cnae" => $servico->codigo_cnae,
                     "itens" => [
                         [
                             "codigo" => $servico->codigo_servico,
@@ -78,6 +86,7 @@ class NotaServicoController extends Controller
                             "valor_servicos" => $servico->valor_servico,
                             "valor_pis" => $servico->aliquota_pis,
                             "valor_aliquota" => $servico->aliquota_iss,
+                            "codigo_cnae" => $servico->codigo_cnae,
                         ]
                     ]
                 ]

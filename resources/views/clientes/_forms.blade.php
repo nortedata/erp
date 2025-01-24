@@ -24,7 +24,7 @@
         !!}
     </div>
     <div class="col-md-2">
-        {!!Form::select('consumidor_final', 'Consumidor Final', [0 => 'Não', 1 => 'Sim'])->attrs(['class' => 'form-select'])->required()
+        {!!Form::select('consumidor_final', 'Consumidor Final', [0 => 'Não', 1 => 'Sim'])->attrs(['class' => 'form-select'])
         !!}
     </div>
     <div class="col-md-2">
@@ -33,7 +33,7 @@
         !!}
     </div>
     <div class="col-md-2">
-        {!!Form::select('status', 'Ativo', [ 1 => 'Sim', 0 => 'Não'])->attrs(['class' => 'form-select'])->required()
+        {!!Form::select('status', 'Ativo', [ 1 => 'Sim', 0 => 'Não'])->attrs(['class' => 'form-select'])
         !!}
     </div>
     <div class="col-md-4">
@@ -72,6 +72,28 @@
         {!!Form::text('complemento', 'Complemento')->attrs(['class' => ''])
         !!}
     </div>
+
+    <div class="col-md-2">
+        {!!Form::text('valor_credito', 'Valor crédito')->attrs(['class' => 'moeda'])
+        ->value(isset($item) ? __moeda($item->valor_credito) : '')
+        !!}
+    </div>
+
+    <div class="col-md-2">
+        {!!Form::text('limite_credito', 'Limite de crédito')->attrs(['class' => 'moeda tooltipp'])
+        ->value(isset($item) ? __moeda($item->limite_credito) : '')
+        !!}
+        <div class="text-tooltip d-none">
+            Definir um valor de limite para vendas do cliente a prazo.
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        {!!Form::select('lista_preco_id', 'Lista de preço', ['' => ''] + $listasPreco->pluck('nome', 'id')->all())
+        ->attrs(['class' => 'form-select'])
+        !!}
+    </div>
+
     <hr class="mt-4">
     <div class="col-12" style="text-align: right;">
         <button type="submit" class="btn btn-success px-5" id="btn-store">Salvar</button>

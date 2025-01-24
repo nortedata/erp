@@ -18,7 +18,7 @@
                                 <tr>
                                     <th>Nome</th>
                                     <th>Max. sabores</th>
-                                    <th>Qtd. pedaços</th>
+                                    <th>Qtd. fatias</th>
                                     <th>Status</th>
                                     <th width="10%">Ações</th>
                                 </tr>

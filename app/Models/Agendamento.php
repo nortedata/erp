@@ -11,15 +11,19 @@ class Agendamento extends Model
 
     protected $fillable = [
         'funcionario_id', 'cliente_id', 'data', 'inicio', 'termino', 'observacao', 'total',
-        'desconto', 'acrescimo', 'status', 'empresa_id', 'prioridade'
+        'desconto', 'acrescimo', 'status', 'empresa_id', 'prioridade', 'pedido_delivery_id'
     ];
 
     public function itens(){
-        return $this->hasMany(ItemAgendamento::class, 'agendamento_id', 'id');
+        return $this->hasMany(ItemAgendamento::class, 'agendamento_id', 'id')->with('servico');
     }
 
     public function cliente(){
         return $this->belongsTo(Cliente::class, 'cliente_id');
+    }
+
+    public function pedidoDelivery(){
+        return $this->belongsTo(PedidoDelivery::class, 'pedido_delivery_id');
     }
 
     public function funcionario(){

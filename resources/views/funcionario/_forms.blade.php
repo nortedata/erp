@@ -37,7 +37,7 @@
         !!}
         @endisset
     </div>
-    <div class="col-md-4">
+    <div class="col-md-2">
         {!!Form::select('usuario_id', 'Usuário', ['' => 'Selecione'] + $usuario->pluck('name', 'id')->all())->attrs(['class' => 'form-select'])->required()
         !!}
     </div>
@@ -50,6 +50,17 @@
     <div class="col-md-2">
         {!!Form::tel('salario', 'Salário')->attrs(['class' => 'moeda'])
         ->value(isset($item) ? __moeda($item->salario) : '')
+        !!}
+    </div>
+
+    <div class="col-md-2">
+        {!!Form::text('codigo', 'Código')
+        !!}
+    </div>
+
+    <div class="col-md-2">
+        {!!Form::select('status', 'Status', [1 => 'Ativo', 0 => 'Desativado'])
+        ->attrs(['class' => 'form-select'])
         !!}
     </div>
 

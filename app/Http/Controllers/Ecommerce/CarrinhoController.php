@@ -79,10 +79,23 @@ class CarrinhoController extends Controller
         $config = EcommerceConfig::findOrfail($request->loja_id);
         $produto = Produto::findOrfail($request->produto_id);
 
+        $quantidade = __convert_value_bd($request->quantidade);
+
+        if($produto->gerenciar_estoque){
+            if(!$produto->estoque){
+                session()->flash("flash_error", 'Produto sem estoque');
+                return redirect()->back();
+            }
+
+            if($quantidade > $produto->estoque->quantidade){
+                session()->flash("flash_error", 'Estoque insuficinete, quantidade máxima de ' . number_format($produto->estoque->quantidade, 0) . ' ' . $produto->unidade .  ' para este item!');
+                return redirect()->back();
+            }
+        }
+
         $carrinho = Carrinho::where('session_cart', $session_cart)
         ->first();
 
-        $quantidade = __convert_value_bd($request->quantidade);
 
         $produtoVariacao = null;
         if(isset($request->variacao_id)){
@@ -164,7 +177,15 @@ class CarrinhoController extends Controller
     public function atualizaQuantidade(Request $request, $id){
         $item = ItemCarrinho::findOrfail($id);
         try {
+
             $item->quantidade = (float)$request->quantidade;
+            if($item->produto->gerenciar_estoque){
+
+                if($item->quantidade > $item->produto->estoque->quantidade){
+                    session()->flash("flash_error", 'Estoque insuficinete, quantidade máxima de ' . number_format($item->produto->estoque->quantidade, 0) . ' ' . $item->produto->unidade .  ' para este item!');
+                    return redirect()->back();
+                }
+            }
             $item->sub_total = $item->valor_unitario * (float)$request->quantidade;
             $item->save();
             $this->_atualizaValorCarrinho($item->carrinho_id);

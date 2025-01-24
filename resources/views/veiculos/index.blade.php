@@ -5,10 +5,12 @@
         <div class="card">
             <div class="card-body">
                 <div class="col-md-2">
+                    @can('veiculos_create')
                     <a href="{{ route('veiculos.create') }}" class="btn btn-success">
                         <i class="ri-add-circle-fill"></i>
                         Novo Veículo
                     </a>
+                    @endcan
                 </div>
                 <hr class="mt-3">
                 <div class="col-lg-12">
@@ -38,6 +40,7 @@
                                     <th>Renavam</th>
                                     <th>Proprietário</th>
                                     <th>CPF/CNPJ</th>
+                                    <th>Status</th>
                                     <th width="10%">Ações</th>
                                 </tr>
                             </thead>
@@ -50,15 +53,26 @@
                                     <td>{{ $item->proprietario_nome }}</td>
                                     <td>{{ $item->proprietario_documento }}</td>
                                     <td>
+                                        @if($item->status)
+                                        <i class="ri-checkbox-circle-fill text-success"></i>
+                                        @else
+                                        <i class="ri-close-circle-fill text-danger"></i>
+                                        @endif
+                                    </td>
+                                    <td>
                                         <form action="{{ route('veiculos.destroy', $item->id) }}" method="post" id="form-{{$item->id}}">
                                             @method('delete')
+                                            @can('veiculos_edit')
                                             <a class="btn btn-warning btn-sm" href="{{ route('veiculos.edit', [$item->id]) }}">
                                                 <i class="ri-edit-line"></i>
                                             </a>
+                                            @endcan
                                             @csrf
+                                            @can('veiculos_delete')
                                             <button type="button" class="btn btn-delete btn-sm btn-danger">
                                                 <i class="ri-delete-bin-line"></i>
                                             </button>
+                                            @endcan
                                         </form>
                                     </td>
                                 </tr>

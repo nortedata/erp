@@ -7,15 +7,23 @@ use App\Models\Fornecedor;
 use App\Models\Nfe;
 use App\Models\ItemNfe;
 use App\Models\Produto;
+use App\Models\ManifestoDfe;
+use App\Models\ProdutoFornecedor;
 use App\Models\Cidade;
+use App\Models\ModeloEtiqueta;
+use App\Models\RelacaoDadosFornecedor;
 use App\Models\ContaPagar;
 use App\Models\NaturezaOperacao;
 use App\Models\Transportadora;
 use App\Models\Empresa;
+use App\Models\Contigencia;
 use App\Models\FaturaNfe;
 use App\Models\Cotacao;
+use App\Models\ConfigGeral;
+use App\Models\ProdutoUnico;
 use App\Utils\EstoqueUtil;
 use Illuminate\Support\Facades\DB;
+use App\Models\ProdutoLocalizacao;
 
 class CompraController extends Controller
 {
@@ -28,6 +36,10 @@ class CompraController extends Controller
     public function __construct(EstoqueUtil $util)
     {
         $this->util = $util;
+        $this->middleware('permission:compras_create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:compras_edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:compras_view', ['only' => ['show', 'index']]);
+        $this->middleware('permission:compras_delete', ['only' => ['destroy']]);
     }
 
     private function setNumeroSequencial(){
@@ -48,14 +60,44 @@ class CompraController extends Controller
         }
     }
 
+    private function getContigencia($empresa_id){
+        $active = Contigencia::
+        where('empresa_id', $empresa_id)
+        ->where('status', 1)
+        ->where('documento', 'NFe')
+        ->first();
+        return $active;
+    }
+
+    private function corrigeNumeros($empresa_id){
+        $empresa = Empresa::findOrFail($empresa_id);
+        if($empresa->ambiente == 1){
+            $numero = $empresa->numero_ultima_nfe_producao;
+        }else{
+            $numero = $empresa->numero_ultima_nfe_homologacao;
+        }
+        
+        if($numero){
+            Nfe::where('estado', 'novo')
+            ->where('empresa_id', $empresa_id)
+            ->update(['numero' => $numero+1]);
+        }
+    }
+
     public function index(Request $request)
     {
+        $locais = __getLocaisAtivoUsuario();
+        $locais = $locais->pluck(['id']);
+        $this->corrigeNumeros($request->empresa_id);
+
         $fornecedores = Fornecedor::where('empresa_id', request()->empresa_id)->get();
 
         $start_date = $request->get('start_date');
         $end_date = $request->get('end_date');
         $fornecedor_id = $request->get('fornecedor_id');
         $estado = $request->get('estado');
+        $local_id = $request->get('local_id');
+
         $this->setNumeroSequencial();
 
         $data = Nfe::where('empresa_id', request()->empresa_id)
@@ -72,9 +114,17 @@ class CompraController extends Controller
         ->when($estado != "", function ($query) use ($estado) {
             return $query->where('estado', $estado);
         })
+        ->when($local_id, function ($query) use ($local_id) {
+            return $query->where('local_id', $local_id);
+        })
+        ->when(!$local_id, function ($query) use ($locais) {
+            return $query->whereIn('local_id', $locais);
+        })
         ->orderBy('created_at', 'desc')
         ->paginate(env("PAGINACAO"));
-        return view('compras.index', compact('data', 'fornecedores'));
+
+        $contigencia = $this->getContigencia($request->empresa_id);
+        return view('compras.index', compact('data', 'fornecedores', 'contigencia'));
     }
 
     /**
@@ -103,7 +153,10 @@ class CompraController extends Controller
             session()->flash("flash_warning", "Primeiro cadastre um natureza de operação!");
             return redirect()->route('natureza-operacao.create');
         }
+        $caixa = __isCaixaAberto();
         $empresa = Empresa::findOrFail(request()->empresa_id);
+        $empresa = __objetoParaEmissao($empresa, $caixa->local_id);
+        
         $numeroNfe = Nfe::lastNumero($empresa);
 
         $cotacao = null;
@@ -113,8 +166,8 @@ class CompraController extends Controller
 
         $isCompra = 1;
         return view(
-            'nfe.create',
-            compact('produtos', 'transportadoras', 'cidades', 'naturezas', 'numeroNfe', 'isCompra', 'cotacao', 'empresa')
+            'nfe.create', compact('produtos', 'transportadoras', 'cidades', 'naturezas', 'numeroNfe', 'isCompra', 
+                'cotacao', 'empresa', 'caixa')
         );
     }
 
@@ -157,6 +210,10 @@ class CompraController extends Controller
 
     public function xml()
     {
+        if (!__isCaixaAberto()) {
+            session()->flash("flash_warning", "Abrir caixa antes de continuar!");
+            return redirect()->route('caixa.create');
+        }
         return view('compras.xml');
     }
 
@@ -222,6 +279,10 @@ class CompraController extends Controller
                     $request->empresa_id
                 );
 
+                // if($produto == null){
+                //     dd($item->prod->xProd);
+                // }
+
                 $vIpi = 0;
                 $vICMSST = 0;
                 if (isset($item->imposto->IPI)) {
@@ -257,11 +318,10 @@ class CompraController extends Controller
                 $prod->unidade = (string)$item->prod->uCom;
                 $prod->valor_unitario = number_format((float)$item->prod->vUnCom + $vIpi + $vICMSST, 2, '.', '');
                 $prod->quantidade = (float)$item->prod->qCom;
-                $prod->sub_total = (float)$item->prod->vProd;
+                $prod->sub_total = $prod->valor_unitario*$prod->quantidade;
                 $prod->codigo_barras = (string)$item->prod->cEAN;
                 $prod->valor_venda = $produto == null ? 0 : $produto->valor_venda;
                 $prod->valor_compra = $produto == null ? 0 : $produto->valor_compra;
-
 
                 $arr = (array_values((array)$item->imposto->ICMS));
                 $cst = (string)($arr[0]->CST ? $arr[0]->CST : $arr[0]->CSOSN);
@@ -277,13 +337,15 @@ class CompraController extends Controller
                 $prod->perc_pis = (float)$arr[0]->pPIS ?? 0;
 
                 $arr = (array_values((array)$item->imposto->COFINS));
-                $prod->cst_cofins = $arr[0]->CST;
+                $prod->cst_cofins = (string)$arr[0]->CST;
                 $pCOFINS = $arr[0]->COFINS ?? 0;
                 if ($pCOFINS == 0) {
                     $pCOFINS = $arr[0]->pCOFINS ?? 0;
                 }
                 $prod->perc_cofins = $arr[0]->pPIS ?? 0;
 
+                $prod = $this->relacaoDadosFornecedor($prod);
+                // dd($prod);
                 $arr = (array_values((array)$item->imposto->IPI));
                 if (isset($arr[1])) {
 
@@ -333,29 +395,34 @@ class CompraController extends Controller
             }
 
             $fatura = [];
+            $tPag = null;
+
+            if (!empty($xml->NFe->infNFe->pag->detPag)) {
+                $tPag = (string) $xml->NFe->infNFe->pag->detPag->tPag;
+            }
+
             if (!empty($xml->NFe->infNFe->cobr->dup)) {
                 foreach ($xml->NFe->infNFe->cobr->dup as $dup) {
                     $titulo = $dup->nDup;
                     $vencimento = $dup->dVenc;
-                    $vencimento = explode('-', $vencimento);
-                    $vencimento = $vencimento[2] . "/" . $vencimento[1] . "/" . $vencimento[0];
                     $valor_parcela = number_format((float) $dup->vDup, 2, ".", "");
                     $parcela = [
                         'numero' => (int)$titulo,
                         'vencimento' => $vencimento,
                         'valor_parcela' => $valor_parcela,
-                        'rand' => rand(0, 10000)
+                        'rand' => rand(0, 10000),
+                        'tipo_pagamento' => $tPag
                     ];
                     array_push($fatura, $parcela);
                 }
             } else {
-                $vencimento = explode('-', substr($xml->NFe->infNFe->ide->dhEmi[0], 0, 10));
-                $vencimento = $vencimento[2] . "/" . $vencimento[1] . "/" . $vencimento[0];
+                $vencimento = substr($xml->NFe->infNFe->ide->dhEmi[0], 0, 10);
                 $parcela = [
                     'numero' => 1,
                     'vencimento' => $vencimento,
                     'valor_parcela' => (float)$xml->NFe->infNFe->total->ICMSTot->vProd,
-                    'rand' => rand(0, 10000)
+                    'rand' => rand(0, 10000),
+                    'tipo_pagamento' => $tPag
                 ];
                 array_push($fatura, $parcela);
             }
@@ -370,7 +437,18 @@ class CompraController extends Controller
                 return redirect()->route('natureza-operacao.create');
             }
 
-            return view('compras.import_xml', compact('dadosXml', 'transportadoras', 'cidades', 'naturezas', 'fornecedor'));
+            $caixa = __isCaixaAberto();
+
+            $lucroPadraoProduto = 0;
+            $configGeral = ConfigGeral::where('empresa_id', request()->empresa_id)->first();
+            if($configGeral != null){
+                $lucroPadraoProduto = $configGeral->percentual_lucro_produto;
+            }
+
+            $isCompra = 1;
+
+            return view('compras.import_xml', compact('dadosXml', 'transportadoras', 'cidades', 'naturezas', 'fornecedor', 'caixa', 
+                'lucroPadraoProduto', 'isCompra'));
         } else {
             session()->flash('flash_error', 'XML inválido!');
             return redirect()->back();
@@ -386,6 +464,35 @@ class CompraController extends Controller
         } else {
             return '2' . substr($cfop, 1, 4);
         }
+    }
+
+    private function relacaoDadosFornecedor($prod){
+        // dd($prod);
+        $item = relacaoDadosFornecedor::where('cst_csosn_entrada', $prod->cst_csosn)
+        ->where('cfop_entrada', $prod->cfop)
+        ->where('empresa_id', request()->empresa_id)
+        ->first();
+        if($item == null){
+            $item = relacaoDadosFornecedor::where('cst_csosn_entrada', $prod->cst_csosn)
+            ->where('empresa_id', request()->empresa_id)
+            ->first();
+        }
+
+        if($item == null){
+            $item = relacaoDadosFornecedor::where('cfop_entrada', $prod->cfop)
+            ->where('empresa_id', request()->empresa_id)
+            ->first();
+        }
+
+        if($item != null){
+            if($item->cst_csosn_saida){
+                $prod->cst_csosn = $item->cst_csosn_saida;
+            }
+            if($item->cfop_saida){
+                $prod->cfop = $item->cfop_saida;
+            }
+        }
+        return $prod;
     }
 
     private function cadastraFornecedor($dataFornecedor)
@@ -404,11 +511,10 @@ class CompraController extends Controller
     {
         try {
 
-            DB::transaction(function () use ($request) {
+            $nfe = DB::transaction(function () use ($request) {
 
                 $fornecedor_id = isset($request->fornecedor_id) ? $request->fornecedor_id : null;
-                $empresa = Empresa::findOrFail($request->empresa_id);
-
+                
                 if (isset($request->fornecedor_id)) {
                     if ($request->fornecedor_id == null) {
                         $fornecedor_id = $this->cadastrarFornecedor($request);
@@ -416,6 +522,7 @@ class CompraController extends Controller
                         $this->atualizaFornecedor($request);
                     }
                 }
+
                 $transportadora_id = $request->transportadora_id;
                 if ($request->transportadora_id == null) {
                     $transportadora_id = $this->cadastrarTransportadora($request);
@@ -426,6 +533,7 @@ class CompraController extends Controller
 
                 $caixa = __isCaixaAberto();
 
+                $tipoPagamento = $request->tipo_pagamento;
                 $request->merge([
                     'emissor_nome' => $config->nome,
                     'emissor_cpf_cnpj' => $config->cpf_cnpj,
@@ -433,7 +541,7 @@ class CompraController extends Controller
                     'chave' => '',
                     'fornecedor_id' => $fornecedor_id,
                     'transportadora_id' => $transportadora_id,
-                    'numero_serie' => $empresa->numero_serie_nfe,
+                    'numero_serie' => $config->numero_serie_nfe ? $config->numero_serie_nfe : 1,
                     'numero' => $request->numero_nfe,
                     'chave_importada' => $request->chave_importada,
                     'estado' => 'novo',
@@ -443,22 +551,31 @@ class CompraController extends Controller
                     'valor_produtos' => __convert_value_bd($request->valor_produtos),
                     'valor_frete' => $request->valor_frete ? __convert_value_bd($request->valor_frete) : 0,
                     'caixa_id' => $caixa ? $caixa->id : null,
+                    'local_id' => $caixa->local_id,
                     'tipo_pagamento' => isset($request->tipo_pagamento[0]) ? $request->tipo_pagamento[0] : null,
+                    'user_id' => \Auth::user()->id
                 ]);
                 // dd($request->tipo_pagamento[]);
                 $nfe = Nfe::create($request->all());
                 for ($i = 0; $i < sizeof($request->produto_id); $i++) {
                     if ($request->produto_id[$i] == 0) {
                         //cadastrar produto
-                        $product = $this->cadastrarProduto($request, $i);
+                        $product = $this->cadastrarProduto($request, $i, $caixa->local_id);
                     } else {
                         $product = Produto::findOrFail($request->produto_id[$i]);
+                        $product->referencia_xml = $request->cProd[$i];
+                        $product->save();
                     }
 
+                    $quantidade = __convert_value_bd($request->quantidade[$i]);
+                    $quantidade = $quantidade * ((float)$request->conversao_estoque[$i] == 0 ? 1 : (float)$request->conversao_estoque[$i]);
+
+                    $valorUnitario = __convert_value_bd($request->valor_unitario[$i]);
+                    $valorUnitario = $valorUnitario / ((float)$request->conversao_estoque[$i] == 0 ? 1 : (float)$request->conversao_estoque[$i]);
                     ItemNfe::create([
                         'nfe_id' => $nfe->id,
                         'produto_id' => $product->id,
-                        'quantidade' => __convert_value_bd($request->quantidade[$i]),
+                        'quantidade' => $quantidade,
                         'valor_unitario' => __convert_value_bd($request->valor_unitario[$i]),
                         'sub_total' => __convert_value_bd($request->sub_total[$i]),
                         'perc_icms' => __convert_value_bd($request->perc_icms[$i]),
@@ -475,21 +592,38 @@ class CompraController extends Controller
                         'codigo_beneficio_fiscal' => $request->codigo_beneficio_fiscal[$i]
                     ]);
 
+                    ProdutoFornecedor::updateOrCreate([
+                        'produto_id' => $product->id,
+                        'fornecedor_id' => $fornecedor_id
+                    ]);
+
+                    $product->valor_compra = $valorUnitario;
+                    $product->save();
+
                     if ($product->gerenciar_estoque) {
-                        $this->util->incrementaEstoque($product->id, __convert_value_bd($request->quantidade[$i]));
+                        $this->util->incrementaEstoque($product->id, $quantidade, null);
                     }
                 }
-                if($request->tipo_pagamento){
-                    for ($i = 0; $i < sizeof($request->tipo_pagamento); $i++) {
-                        if ($request->tipo_pagamento[$i]) {
+
+                if(isset($request->chave_dfe)){
+                    $dfe = ManifestoDfe::where('chave', $request->chave_dfe)->first();
+                    if($dfe){
+                        $dfe->compra_id = $nfe->id;
+                        $dfe->save();
+                    }
+                }
+
+                if($tipoPagamento){
+
+                    for ($i = 0; $i < sizeof($tipoPagamento); $i++) {
+                        if ($tipoPagamento[$i]) {
                             FaturaNfe::create([
                                 'nfe_id' => $nfe->id,
-                                'tipo_pagamento' => $request->tipo_pagamento[$i],
+                                'tipo_pagamento' => $tipoPagamento[$i],
                                 'data_vencimento' => $request->data_vencimento[$i],
                                 'valor' => __convert_value_bd($request->valor_fatura[$i])
                             ]);
                         }
-
 
                         if ($request->gerar_conta_pagar) {
                             ContaPagar::create([
@@ -497,26 +631,32 @@ class CompraController extends Controller
                                 'nfe_id' => $nfe->id,
                                 'fornecedor_id' => $fornecedor_id,
                                 'valor_integral' => __convert_value_bd($request->valor_fatura[$i]),
-                                'tipo_pagamento' => $request->tipo_pagamento[$i],
+                                'tipo_pagamento' => $tipoPagamento[$i],
                                 'data_vencimento' => $request->data_vencimento[$i],
+                                'local_id' => $caixa->local_id,
                             ]);
                         }
                     }
                 }
+                return $nfe;
             });
+$descricaoLog = $nfe->fornecedor->info . " R$ " . __moeda($nfe->total);
+__createLog($request->empresa_id, 'Importação XML', 'cadastrar', $descricaoLog);
+
 session()->flash("flash_success", "Importação cadastrada!");
 } catch (\Exception $e) {
-    echo $e->getMessage() . '<br>' . $e->getLine();
-    die;
+    // echo $e->getMessage() . '<br>' . $e->getLine();
+    // die;
+    __createLog(request()->empresa_id, 'Importação XML', 'erro', $e->getMessage());
     session()->flash("flash_error", 'Algo deu errado ' . $e->getMessage());
 }
 
 return redirect()->route('compras.index');
 }
 
-private function cadastrarProduto($request, $i)
+private function cadastrarProduto($request, $i, $local_id)
 {
-        // dd($request);
+        // dd($request->all());
     $cfop = $request->cfop[$i];
     $cfopOutroEstado = '';
     $cfopEstado = '';
@@ -529,13 +669,15 @@ private function cadastrarProduto($request, $i)
         'empresa_id' => $request->empresa_id,
         'nome' => $request->nome_produto[$i],
         'ncm' => $request->ncm[$i],
+        'codigo_barras' => $request->codigo_barras[$i],
         'gerenciar_estoque' => $request->gerenciar_estoque,
         'unidade' => $request->unidade[$i],
-        'valor_unitario' => __convert_value_bd($request->valor_unitario[$i]),
+        'valor_unitario' => __convert_value_bd($request->valor_venda[$i]),
         'perc_red_bc' => __convert_value_bd($request->perc_red_bc[$i]),
         'cfop_estadual' => $cfopEstado,
+        'cest' => $request->cest[$i],
         'cfop_outro_estado' => $cfopOutroEstado,
-        'valor_compra' => $request->valor_compra ? __convert_value_bd($request->valor_compra) : 0,
+        'valor_compra' => __convert_value_bd($request->valor_unitario[$i]),
 
         'perc_red_bc' => __convert_value_bd($request->perc_red_bc[$i]),
         'cst_csosn' => $request->cst_csosn[$i],
@@ -547,7 +689,12 @@ private function cadastrarProduto($request, $i)
         'perc_pis' => __convert_value_bd($request->perc_pis[$i]),
         'perc_cofins' => __convert_value_bd($request->perc_cofins[$i]),
         'perc_ipi' => __convert_value_bd($request->perc_ipi[$i]),
+        'referencia_xml' => $request->cProd[$i]
+    ]);
 
+    ProdutoLocalizacao::updateOrCreate([
+        'produto_id' => $p->id, 
+        'localizacao_id' => $local_id
     ]);
     return $p;
 }
@@ -559,6 +706,31 @@ private function cadastrarTransportadora($request)
             'empresa_id' => $request->empresa_id,
             'razao_social' => $request->razao_social_transp,
             'nome_fantasia' => $request->nome_fantasia_transp,
+            'cpf_cnpj' => $request->cpf_cnpj_transp,
+            'ie' => $request->ie_transp,
+            'antt' => $request->antt,
+            'email' => $request->email,
+            'telefone' => $request->telefone,
+            'cidade_id' => $request->cidade_id,
+            'rua' => $request->rua_transp,
+            'cep' => $request->cep_transp,
+            'numero' => $request->numero_transp,
+            'bairro' => $request->bairro_transp,
+            'complemento' => $request->complemento_transp
+        ]);
+        return $transportadora->id;
+    }
+    return null;
+}
+
+private function atualizaTransportadora($request)
+{
+    if ($request->razao_social_transp) {
+        $transportadora = Transportadora::findOrFail($request->transportadora_id);
+        $transportadora->update([
+            'empresa_id' => $request->empresa_id,
+            'razao_social' => $request->razao_social_transp,
+            'nome_fantasia' => $request->nome_fantasia_transp ?? '',
             'cpf_cnpj' => $request->cpf_cnpj_transp,
             'ie' => $request->ie_transp,
             'antt' => $request->antt,
@@ -623,8 +795,127 @@ public function setarInfoValidade(Request $request)
     return redirect()->route('compras.index');
 }
 
+public function setCodigoUnico($id)
+{
+    $compra = Nfe::findOrFail($id);
+    $produtos = [];
+    foreach ($compra->itens as $i) {
+        if ($i->produto->tipo_unico) {
+            for ($x=0; $x<$i->quantidade; $x++) {
+                array_push($produtos, $i);
+            }
+        }
+    }
+    return view('compras.set_codigo_unico', compact('produtos', 'compra'));
+}
+
+public function setarCodigoUnico(Request $request)
+{
+    for ($i = 0; $i < sizeof($request->produto_id); $i++) {
+
+        ProdutoUnico::create([
+            'nfe_id' => $request->nfe_id,
+            'nfce_id' => null,
+            'produto_id' => $request->produto_id[$i],
+            'codigo' => $request->codigo[$i],
+            'observacao' => $request->observacao[$i] ?? '',
+            'tipo' => 'entrada',
+            'em_estoque' => 1
+        ]);
+    }
+    session()->flash('flash_success', 'Dados definidos com sucesso!');
+    return redirect()->route('compras.index');
+}
+
 public function show($id){
     $data = Nfe::findOrFail($id);
+    __validaObjetoEmpresa($data);
+
     return view('nfe.show', compact('data'));
 }
+
+public function etiqueta($id){
+    $item = Nfe::findOrFail($id);
+    __validaObjetoEmpresa($item);
+    
+    $modelos = ModeloEtiqueta::where('empresa_id', $item->empresa_id)->get();
+    return view('compras.etiqueta', compact('item', 'modelos'));
+
+}
+
+public function etiquetaStore(Request $request, $id){
+    if (!is_dir(public_path('barcode'))) {
+        mkdir(public_path('barcode'), 0777, true);
+    }
+    $files = glob(public_path("barcode/*")); 
+
+    foreach($files as $file){ 
+        if(is_file($file)) {
+            unlink($file); 
+        }
+    }
+    $selecionados = [];
+    for($i=0; $i<sizeof($request->produto); $i++){
+        $selecionados[] = $request->produto[$i];
+    }
+
+    $item = Nfe::findOrFail($id);
+    $data = [];
+    $cont = 0;
+    foreach($item->itens as $i){
+        if(in_array($i->produto_id, $selecionados)){
+            $nome = $i->produto->nome;
+            $codigo = $i->produto->codigo_barras;
+            $valor = $i->valor_unitario;
+            $unidade = $i->produto->unidade;
+
+            if($codigo == "" || $codigo == "SEM GTIN" || $codigo == "sem gtin"){
+                session()->flash('flash_error', "Produto $nome sem código de barras definido");
+                return redirect()->back();
+            }
+
+            $rand = rand(1000, 9999);
+            $obj = [
+                'nome_empresa' => $request->nome_empresa ? true : false,
+                'nome_produto' => $request->nome_produto ? true : false,
+                'valor_produto' => $request->valor_produto ? true : false,
+                'cod_produto' => $request->codigo_produto ? true : false,
+                'tipo' => $request->tipo,
+                'codigo_barras_numerico' => $request->codigo_barras_numerico ? true : false,
+                'nome' => $nome,
+                'codigo' => $item->id . ($item->referencia != '' ? ' | REF'.$item->referencia : ''),
+                'valor' => $valor,
+                'unidade' => $unidade,
+                'rand' => $rand,
+                'empresa' => $item->empresa->nome
+            ];
+
+            $generatorPNG = new \Picqer\Barcode\BarcodeGeneratorPNG();
+
+            $bar_code = $generatorPNG->getBarcode($codigo, $generatorPNG::TYPE_EAN_13);
+
+            file_put_contents(public_path("barcode")."/$rand.png", $bar_code);
+            $qtd = (int)$i->quantidade;
+            for($i=0; $i<$qtd; $i++){
+                array_push($data, $obj);
+            }
+        }
+    }
+
+
+    $quantidade_por_linhas = $request->etiquestas_por_linha;
+    $quantidade = $request->quantidade_etiquetas;
+    $altura = $request->altura;
+    $largura = $request->largura;
+    $distancia_topo = $request->distancia_etiquetas_topo;
+    $distancia_lateral = $request->distancia_etiquetas_lateral;
+    $tamanho_fonte = $request->tamanho_fonte;
+    $tamanho_codigo = $request->tamanho_codigo_barras;
+        // dd($data);
+    return view('compras.etiqueta_print', compact('altura', 'largura', 'rand', 'codigo', 'quantidade', 'distancia_topo',
+        'distancia_lateral', 'quantidade_por_linhas', 'tamanho_fonte', 'tamanho_codigo', 'data'));
+
+
+}
+
 }

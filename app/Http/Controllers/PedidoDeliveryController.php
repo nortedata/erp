@@ -7,11 +7,15 @@ use App\Models\PedidoDelivery;
 use App\Models\TamanhoPizza;
 use App\Models\Empresa;
 use App\Models\MarketPlaceConfig;
+use App\Models\ConfigGeral;
+use App\Models\Adicional;
+use App\Models\Nfce;
 use App\Models\ItemAdicionalDelivery;
 use App\Models\ItemPedidoDelivery;
 use App\Models\ItemPizzaPedidoDelivery;
 use App\Models\Produto;
 use App\Models\Cliente;
+use App\Models\Marca;
 use App\Models\Motoboy;
 use App\Models\BairroDelivery;
 use App\Models\EnderecoDelivery;
@@ -32,6 +36,7 @@ class PedidoDeliveryController extends Controller
 
     public function index(Request $request){
         $estado = $request->estado;
+        $tipo = $request->tipo;
         $cliente_delivery_id = $request->cliente_delivery_id;
         $cliente = null;
 
@@ -43,6 +48,13 @@ class PedidoDeliveryController extends Controller
         })
         ->when(!empty($estado), function ($query) use ($estado) {
             return $query->where('estado', $estado);
+        })
+        ->when(!empty($tipo), function ($query) use ($tipo) {
+            if($tipo == 'delivery'){
+                return $query->where('inicio_agendamento', null);
+            }else{
+                return $query->where('inicio_agendamento', '!=', null);
+            }
         })
         ->paginate(env("PAGINACAO"));
 
@@ -69,7 +81,6 @@ class PedidoDeliveryController extends Controller
         }else{
             session()->flash("flash_success", "Pedido aprovado!");
             $mensagem = "Olá, aqui é da $config->nome seu pedido foi aprovado :)";
-
         }
 
         $this->sendMessageWhatsApp($item, $mensagem);
@@ -89,17 +100,59 @@ class PedidoDeliveryController extends Controller
             ->first();
             $item->estado = $request->estado;
             if($item->pedido_lido == 0){
-                $mensagem = "Olá, aqui é da $config->nome seu pedido foi aprovado :)";
+                $mensagem = "Olá, aqui é da $config->nome, seu pedido #$item->id foi aprovado :)";
+                $this->sendMessageWhatsApp($item, $mensagem);
+            }else{
+                if($request->estado == 'cancelado'){
+                    session()->flash("flash_error", "Pedido cancelado!");
+                    $mensagem = "Olá, aqui é da $config->nome, seu pedido #$item->id foi cancelado :(";
+                }else{
+                    session()->flash("flash_success", "Pedido aprovado!");
+                    $mensagem = "Olá, aqui é da $config->nome, seu pedido #$item->id foi aprovado :)";
+                }
                 $this->sendMessageWhatsApp($item, $mensagem);
             }
             $item->pedido_lido = 1;
             $item->save();
             session()->flash("flash_success", "Estado alterado!");
 
+            
         } catch (\Exception $e) {
             session()->flash("flash_error", 'Algo deu errado ' . $e->getMessage());
         }
         return redirect()->back();
+    }
+
+    public function store(Request $request){
+        try{
+            $cliente = null;
+            if($request->cliente_id == null){
+                $cliente = Cliente::create([
+                    'empresa_id' => $request->empresa_id,
+                    'razao_social' => $request->cliente_nome,
+                    'telefone' => $request->cliente_fone,
+                ]);
+            }else{
+                $cliente = Cliente::findOrFail($request->cliente_id);
+            }
+            $pedido = PedidoDelivery::create([
+                'empresa_id' => $request->empresa_id,
+                'cliente_id' => $cliente->id,
+                'valor_total' => 0,
+                'pedido_lido' => 1,
+                'tipo_pagamento' => '',
+                'observacao' => '',
+                'telefone' => $request->cliente_fone ?? '',
+                'estado' => 'novo',
+                'horario_cricao' => date('H:i')
+            ]);
+            session()->flash("flash_success", "Pedido criado!");
+            return redirect()->route('pedidos-delivery.show', [$pedido->id]);
+        } catch (\Exception $e) {
+            session()->flash("flash_error", 'Algo deu errado ' . $e->getMessage());
+            return redirect()->back();
+        }
+
     }
 
     public function storeItem(Request $request, $id){
@@ -108,6 +161,8 @@ class PedidoDeliveryController extends Controller
 
                 $adicionais = $request->adicionais;
                 $adicionais = explode(",", $adicionais);
+
+                // dd($adicionais);
 
                 $pedido = PedidoDelivery::findOrfail($id);
 
@@ -120,7 +175,6 @@ class PedidoDeliveryController extends Controller
                     'sub_total' => __convert_value_bd($request->sub_total),
                     'estado' => $request->estado,
                     'tamanho_id' => $request->tamanho_id
-
                 ];
                 $itemPedido = ItemPedidoDelivery::create($data);
 
@@ -306,10 +360,165 @@ class PedidoDeliveryController extends Controller
 
         $itens = $pedido->itens;
         $isDelivery = 1;
+        $caixa = __isCaixaAberto();
 
-        return view('front_box.create', 
-            compact('categorias', 'abertura', 'funcionarios', 'pedido', 'itens', 'isDelivery'));
+        $config = ConfigGeral::where('empresa_id', request()->empresa_id)->first();
+        $tiposPagamento = Nfce::tiposPagamento();
+        if($config != null){
+            $config->tipos_pagamento_pdv = $config != null && $config->tipos_pagamento_pdv ? json_decode($config->tipos_pagamento_pdv) : [];
+            $temp = [];
+            if(sizeof($config->tipos_pagamento_pdv) > 0){
+                foreach($tiposPagamento as $key => $t){
+                    if(in_array($t, $config->tipos_pagamento_pdv)){
+                        $temp[$key] = $t;
+                    }
+                }
+                $tiposPagamento = $temp;
+            }
+        }
 
+        $isVendaSuspensa = 0;
+
+        $view = 'front_box.create';
+        $produtos = [];
+        $marcas = [];
+
+        if($config != null && $config->modelo == 'compact'){
+            $view = 'front_box.create2';
+            $categorias = CategoriaProduto::where('empresa_id', request()->empresa_id)
+            ->where('categoria_id', null)
+            ->orderBy('nome', 'asc')
+            ->paginate(4);
+
+            $marcas = Marca::where('empresa_id', request()->empresa_id)
+            ->orderBy('nome', 'asc')
+            ->paginate(4);
+
+            $produtos = Produto::select('produtos.*', \DB::raw('sum(quantidade) as quantidade'))
+            ->where('empresa_id', request()->empresa_id)
+            ->where('produtos.status', 1)
+            ->where('status', 1)
+            ->leftJoin('item_nfces', 'item_nfces.produto_id', '=', 'produtos.id')
+            ->groupBy('produtos.id')
+            ->orderBy('quantidade', 'desc')
+            ->paginate(12);
+        }
+
+        return view($view, 
+            compact('categorias', 'abertura', 'funcionarios', 'pedido', 'itens', 'isDelivery', 'caixa', 
+                'config', 'tiposPagamento', 'isVendaSuspensa', 'marcas', 'produtos'));
+
+    }
+
+    public function enviarMensagemWpp($id){
+        $pedido = PedidoDelivery::findOrfail($id);
+        $texto = $this->montaTextoPedido($pedido);
+        $telefone = "55".preg_replace('/[^0-9]/', '', $pedido->cliente->telefone);
+        $retorno = $this->util->sendMessage($telefone, $texto, $pedido->empresa_id);
+
+        $config = MarketPlaceConfig::where('empresa_id', $pedido->empresa_id)
+        ->first();
+        $telefone = "55".preg_replace('/[^0-9]/', '', $config->telefone);
+        $retorno = $this->util->sendMessage($telefone, $texto, $pedido->empresa_id);
+        try{
+            $retorno = json_decode($retorno);
+            if(!$retorno->success){
+                session()->flash("flash_error", $retorno->message);
+            }else{
+                session()->flash("flash_success", "Mensagem enviada!");
+            }
+        }catch(\Exception $e){
+            session()->flash("flash_error", 'Algo deu errado '. $e->getMessage());
+        }
+        return redirect()->back();
+    }
+
+    private function montaTextoPedido($pedido){
+        $texto = "Olá, ". $pedido->cliente->razao_social . ", já recebemos seu pedido, muito obrigado!\n\n";
+
+        $texto .= "PEDIDO #$pedido->id\n\n";
+        if(sizeof($pedido->itensProdutos) > 0){
+            $texto .= "PRODUTOS\n";
+            foreach($pedido->itens as $i){
+                $texto .= number_format($i->quantidade, 0) . "X ";
+                if($i->produto->referencia){
+                    $texto .= "#REF-" . $i->produto->referencia;
+                    if($i->tamanho){
+                        foreach($i->pizzas as $pizza){
+                            $texto .= " 1/" . sizeof($i->pizzas) . " " . $pizza->sabor->nome;
+                        }
+                        $texto .= " - tamanho" . $i->tamanho->nome;
+
+                    }else{
+                        $texto .= " " . $i->produto->nome;
+                    }
+
+                    if(sizeof($i->adicionais) > 0){
+                        $texto .= "\n adicionais: ";
+                        foreach($i->adicionais as $key => $a){
+                            $texto .= $a->adicional->nome . ($key+1 < sizeof($i->adicionais) ? ", " : "");
+                        }
+                    }
+
+                    $texto .= " R$ " . __moeda($i->valor_unitario);
+                    $texto .= " = R$ " . __moeda($i->sub_total);
+                    $texto .= "\n";
+                }
+            }
+        }
+
+        if(sizeof($pedido->itensServico) > 0){
+            $texto .= "SERVIÇOS\n";
+            foreach($pedido->itens as $i){
+                if($i->servico){
+                    $texto .= number_format($i->quantidade, 0) . "X ";
+
+                    $texto .= " " . $i->servico->nome;
+                    $texto .= " R$ " . __moeda($i->valor_unitario);
+                    $texto .= " = R$ " . __moeda($i->sub_total);
+                    $texto .= "\n";
+
+                }
+            }
+        }
+
+        if($pedido->endereco){
+            $texto .= "\nEndereço de entrega: " . $pedido->endereco->info;
+        }else{
+            $texto .= "\nRETIRADA EM BALCÃO";
+        }
+
+        $texto .= "\n\nForma de pagamento: " . $pedido->tipo_pagamento;
+        if($pedido->troco_para > 0){
+            $texto .= " - troco para: " . __moeda($pedido->troco_para);
+        }
+
+        $texto .= "\nSubtotal: " . __moeda($pedido->itens->sum('sub_total'));
+        $texto .= "\nDesconto: " . __moeda($pedido->valor_desconto);
+        $texto .= "\nValor entraga: " . __moeda($pedido->valor_entrega);
+        $texto .= "\nTotal: " . __moeda($pedido->valor_total);
+
+        return $texto;
+    }
+
+    public function destroyItem($id){
+        $item = ItemPedidoDelivery::findOrFail($id);
+        try {
+            $pedido = $item->pedido;
+            $item->adicionais()->delete();
+            $item->pizzas()->delete();
+            $item->delete();
+
+            if($item->agendamento){
+                $item->agendamento()->delete();
+            }
+            $pedido->sumTotal();
+            
+            session()->flash("flash_success", "Item removido!");
+        } catch (\Exception $e) {
+            session()->flash("flash_error", 'Algo deu errado '. $e->getMessage());
+        }
+        return redirect()->back();
     }
 
 }

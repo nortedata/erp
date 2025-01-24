@@ -5,10 +5,12 @@
         <div class="card">
             <div class="card-body">
                 <div class="col-md-12">
+                    @can('categoria_servico_create')
                     <a href="{{ route('categoria-servico.create') }}" class="btn btn-success">
                         <i class="ri-add-circle-fill"></i>
                         Nova Categoria de Serviço
                     </a>
+                    @endcan
                 </div>
                 <hr class="mt-3">
                 <div class="col-lg-12">
@@ -16,8 +18,8 @@
                     ->get()
                     !!}
                     <div class="row mt-3">
-                        <div class="col-md-5">
-                            {!!Form::text('', 'Pesquisar por nome')
+                        <div class="col-md-3">
+                            {!!Form::text('nome', 'Pesquisar por nome')
                             !!}
                         </div>
                         <div class="col-md-3 text-left ">
@@ -33,34 +35,54 @@
                         <table class="table table-striped table-centered mb-0">
                             <thead class="table-dark">
                                 <tr>
+                                    @can('categoria_servico_delete')
                                     <th>
                                         <div class="form-check form-checkbox-danger mb-2">
                                             <input class="form-check-input" type="checkbox" id="select-all-checkbox">
                                         </div>
                                     </th>
+                                    @endcan
                                     <th>Nome</th>
+                                    @if(__isActivePlan(Auth::user()->empresa, 'Delivery'))
+                                    <th>MarketPlace</th>
+                                    @endif
                                     <th width="10%">Ações</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @forelse($data as $item)
                                 <tr>
+                                    @can('categoria_servico_delete')
                                     <td>
                                         <div class="form-check form-checkbox-danger mb-2">
                                             <input class="form-check-input check-delete" type="checkbox" name="item_delete[]" value="{{ $item->id }}">
                                         </div>
                                     </td>
+                                    @endcan
                                     <td>{{ $item->nome }}</td>
+                                    @if(__isActivePlan(Auth::user()->empresa, 'Delivery'))
+                                    <td>
+                                        @if($item->marketplace)
+                                        <i class="ri-checkbox-circle-fill text-success"></i>
+                                        @else
+                                        <i class="ri-close-circle-fill text-danger"></i>
+                                        @endif
+                                    </td>
+                                    @endif
                                     <td>
                                         <form action="{{ route('categoria-servico.destroy', $item->id) }}" method="post" id="form-{{$item->id}}">
                                             @method('delete')
+                                            @can('categoria_servico_edit')
                                             <a class="btn btn-warning btn-sm" href="{{ route('categoria-servico.edit', [$item->id]) }}">
                                                 <i class="ri-pencil-fill"></i>
                                             </a>
+                                            @endcan
                                             @csrf
+                                            @can('categoria_servico_delete')
                                             <button type="button" class="btn btn-delete btn-sm btn-danger">
                                                 <i class="ri-delete-bin-line"></i>
                                             </button>
+                                            @endcan
                                         </form>
                                     </td>
                                 </tr>
@@ -72,6 +94,7 @@
                             </tbody>
                         </table>
                         <br>
+                        @can('categoria_servico_delete')
                         <form action="{{ route('categoria-servico.destroy-select') }}" method="post" id="form-delete-select">
                             @method('delete')
                             @csrf
@@ -80,6 +103,7 @@
                                 <i class="ri-close-circle-line"></i> Remover selecionados
                             </button>
                         </form>
+                        @endcan
                     </div>
                 </div>
                 {!! $data->appends(request()->all())->links() !!}

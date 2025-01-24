@@ -5,10 +5,12 @@
         <div class="card">
             <div class="card-body">
                 <div class="col-md-2">
+                    @can('cte_os_create')
                     <a href="{{ route('cte-os.create') }}" class="btn btn-success">
                         <i class="ri-add-circle-fill"></i>
                         Nova CTe Os
                     </a>
+                    @endcan
                 </div>
                 <hr class="mt-3">
                 <div class="col-lg-12">
@@ -35,6 +37,14 @@
                             ->attrs(['class' => 'form-select'])
                             !!}
                         </div>
+
+                        @if(__countLocalAtivo() > 1)
+                        <div class="col-md-2">
+                            {!!Form::select('local_id', 'Local', ['' => 'Selecione'] + __getLocaisAtivoUsuario()->pluck('descricao', 'id')->all())
+                            ->attrs(['class' => 'select2'])
+                            !!}
+                        </div>
+                        @endif
                         <div class="col-md-2">
                             <br>
 
@@ -51,6 +61,9 @@
                                 <tr>
                                     <th>Emitente</th>
                                     <th>Tomador</th>
+                                    @if(__countLocalAtivo() > 1)
+                                    <th>Local</th>
+                                    @endif
                                     <th>Valor serviço</th>
                                     <th>Valor a receber</th>
                                     <th>Estado</th>
@@ -66,6 +79,9 @@
                                 <tr>
                                     <td>{{ $item->emitente ? $item->emitente->razao_social : "--" }}</td>
                                     <td>{{ $item->tomador_cli ? $item->tomador_cli->razao_social : "--" }}</td>
+                                    @if(__countLocalAtivo() > 1)
+                                    <td class="text-danger">{{ $item->localizacao ? $item->localizacao->descricao : '' }}</td>
+                                    @endif
                                     <td>{{ __moeda($item->valor_transporte) }}</td>
                                     <td>{{ __moeda($item->valor_receber) }}</td>
                                     <td>{!! $item->estadoEmissao() !!}</td>
@@ -97,7 +113,7 @@
                                                 <i class="ri-download-2-fill"></i>
                                             </a>
 
-                                            <button title="Cancelar CTe" type="button" class="btn btn-danger btn-sm" onclick="cancelar('{{$item->id}}', '{{$item->numero}}')">
+                                            <button title="Cancelar CTeOs" type="button" class="btn btn-danger btn-sm" onclick="cancelar('{{$item->id}}', '{{$item->numero}}')">
                                                 <i class="ri-close-circle-line"></i>
                                             </button>
                                             {{-- <button title="Corrigir CTe" type="button" class="btn btn-warning btn-sm" onclick="corrigir('{{$item->id}}', '{{$item->numero}}')">
@@ -112,15 +128,20 @@
                                             @endif
                                             @if($item->estado_emissao == 'novo' || $item->estado_emissao == 'rejeitado')
 
+                                            @can('cte_os_edit')
                                             <a class="btn btn-warning btn-sm" href="{{ route('cte-os.edit', $item->id) }}">
                                                 <i class="ri-edit-line"></i>
                                             </a>
+                                            @endcan
 
                                             <a target="_blank" title="XML temporário" class="btn btn-light btn-sm" href="{{ route('cte-os.xml-temp', $item->id) }}">
                                                 <i class="ri-file-line"></i>
                                             </a>
-                                            <button type="button" class="btn btn-danger btn-sm btn-delete"><i class="ri-delete-bin-line"></i></button>
 
+                                            @can('cte_os_delete')
+                                            <button type="button" class="btn btn-danger btn-sm btn-delete"><i class="ri-delete-bin-line"></i></button>
+                                            @endcan
+                                            
                                             <button title="Transmitir CTe" type="button" class="btn btn-success btn-sm" onclick="transmitir('{{$item->id}}')">
                                                 <i class="ri-send-plane-fill"></i>
                                             </button>
@@ -139,7 +160,7 @@
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="10" class="text-center">Nada encontrado</td>
+                                    <td colspan="11" class="text-center">Nada encontrado</td>
                                 </tr>
                                 @endforelse
                             </tbody>

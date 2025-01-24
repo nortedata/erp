@@ -13,6 +13,7 @@
     <div class="card-body">
         {!!Form::open()
         ->post()
+        ->id('form-produto')
         ->route('produtos.store')
         ->multipart()
         !!}
@@ -22,5 +23,8 @@
         {!!Form::close()!!}
     </div>
 </div>
+
+@include('modals._marca')
+@include('modals._categoria_produto')
 
 @endsection

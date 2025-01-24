@@ -32,7 +32,7 @@ class HomeController extends Controller
 
     public function index()
     {
-        
+
         $totalEmitidoMes = 0;
         $plano = PlanoEmpresa::where('empresa_id', request()->empresa_id)
         ->orderBy('data_expiracao', 'desc')
@@ -57,6 +57,7 @@ class HomeController extends Controller
         ->where(function($q) {
             $q->where('estado', 'aprovado')->orWhere('estado', 'cancelado');
         })
+        ->where('tpNF', 1)
         ->whereMonth('created_at', date('m'))
         ->sum('total');
 
@@ -73,6 +74,7 @@ class HomeController extends Controller
         ->where(function($q) {
             $q->where('estado', 'aprovado')->orWhere('estado', 'cancelado');
         })
+        ->where('tpNF', 1)
         ->whereMonth('created_at', date('m'))
         ->count('id');
 
@@ -102,22 +104,243 @@ class HomeController extends Controller
             return redirect()->route('config.index');
         }
 
+        $totalVendasMes = 0;
+        $mesAtual = date('m');
+        $mes = $this->meses()[$mesAtual-1];
+
+        $somaVendasMesesAnteriores = $this->somaVendasMesesAnteriores();
+        $totalVendasMes = $this->somaVendasMes();
+
+        $totalComprasMes = $this->somaComprasMes();
+        $somaComprasMesesAnteriores = $this->somaComprasMesesAnteriores();
+
         return view('home', 
-            compact('empresa', 'totalEmitidoMes', 'totalNfeCount', 'totalNfceCount', 'msgPlano', 'totalCteCount', 'totalMdfeCount'));
+            compact('empresa', 'totalEmitidoMes', 'totalNfeCount', 'totalNfceCount', 'msgPlano', 'totalCteCount', 
+                'totalMdfeCount', 'totalVendasMes', 'mes', 'somaVendasMesesAnteriores', 'totalComprasMes',
+                'somaComprasMesesAnteriores'));
     }
 
-    public function nfe()
+    private function somaComprasMes(){
+        $totalCompra = Nfe::where('empresa_id', request()->empresa_id)
+        ->where('estado', '!=', 'cancelado')
+        ->whereMonth('created_at', date('m'))
+        ->where('tpNF', 0)
+        ->sum('total');
+
+        return $totalCompra;
+    }
+
+    private function somaVendasMes(){
+        $totalNfe = Nfe::where('empresa_id', request()->empresa_id)
+        ->where('estado', '!=', 'cancelado')
+        ->whereMonth('created_at', date('m'))
+        ->where('tpNF', 1)
+        ->sum('total');
+
+        $totalNfce = Nfce::where('empresa_id', request()->empresa_id)
+        ->where('estado', '!=', 'cancelado')
+        ->whereMonth('created_at', date('m'))
+        ->sum('total');
+
+        return $totalNfce + $totalNfe;
+    }
+
+    private function somaComprasMesesAnteriores(){
+        $data = [];
+        $meses = 3;
+        $mesAtual = date('m')-2;
+
+        $cont = 0;
+        $i = 0;
+        while($cont < $meses){
+            if(isset($this->meses()[$mesAtual])){
+                $mes = $this->meses()[$mesAtual];
+            }else{
+                $mes = 'Dezembro';
+                $mesAtual = 11;
+            }
+
+            $totalNfe = Nfe::where('empresa_id', request()->empresa_id)
+            ->where('estado', '!=', 'cancelado')
+            ->whereMonth('created_at', $mesAtual+1)
+            ->where('tpNF', 0)
+            ->sum('total');
+
+            $mesAtual--;
+            $cont++;
+            $data[$mes] = $totalNfe;
+        }
+
+        return $data;
+    }
+
+    private function somaVendasMesesAnteriores(){
+        $data = [];
+        $meses = 3;
+        $mesAtual = date('m')-2;
+
+        $cont = 0;
+        $i = 0;
+        while($cont < $meses){
+            if(isset($this->meses()[$mesAtual])){
+                $mes = $this->meses()[$mesAtual];
+            }else{
+                $mes = 'Dezembro';
+                $mesAtual = 11;
+            }
+
+            $totalNfe = Nfe::where('empresa_id', request()->empresa_id)
+            ->where('estado', '!=', 'cancelado')
+            ->whereMonth('created_at', $mesAtual+1)
+            ->sum('total');
+
+            $totalNfce = Nfce::where('empresa_id', request()->empresa_id)
+            ->where('estado', '!=', 'cancelado')
+            ->whereMonth('created_at', $mesAtual+1)
+            ->sum('total');
+
+            $mesAtual--;
+            $cont++;
+            $data[$mes] = $totalNfce + $totalNfe;
+        }
+
+        return $data;
+    }
+
+    private function meses(){
+        return [
+            'Janeiro',
+            'Fevereiro',
+            'Março',
+            'Abril',
+            'Maio',
+            'Junho',
+            'Julho',
+            'Agosto',
+            'Setembro',
+            'Outubro',
+            'Novembro',
+            'Dezembro',
+        ];
+    }
+
+    public function nfe(Request $request)
     {
-        $empresas = Empresa::orderBy('nome', 'asc')->get();
+        $empresa_id = $request->empresa;
+        $start_date = $request->start_date;
+        $end_date = $request->end_date;
+        $estado = $request->estado;
+
         $data = NFe::orderBy("id", "desc")
+        ->when(!empty($start_date), function ($query) use ($start_date) {
+            return $query->whereDate('data_emissao', '>=', $start_date);
+        })
+        ->when(!empty($end_date), function ($query) use ($end_date) {
+            return $query->whereDate('data_emissao', '<=', $end_date);
+        })
+        ->when(!empty($empresa_id), function ($query) use ($empresa_id) {
+            return $query->where('empresa_id', $empresa_id);
+        })
+        ->when(!empty($estado), function ($query) use ($estado) {
+            return $query->where('estado', $estado);
+        })
         ->paginate(30);
-        return view('nfe.all', compact('data', 'empresas'));
+
+        $empresa = null;
+        if($empresa_id){
+            $empresa = Empresa::findOrFail($empresa_id);
+        }
+
+        return view('nfe.all', compact('data', 'empresa'));
     }
 
-    public function nfce()
+    public function nfce(Request $request)
     {
+        $empresa_id = $request->empresa;
+        $start_date = $request->start_date;
+        $end_date = $request->end_date;
+        $estado = $request->estado;
+
         $data = Nfce::orderBy("id", "desc")
+        ->when(!empty($start_date), function ($query) use ($start_date) {
+            return $query->whereDate('data_emissao', '>=', $start_date);
+        })
+        ->when(!empty($end_date), function ($query) use ($end_date) {
+            return $query->whereDate('data_emissao', '<=', $end_date);
+        })
+        ->when(!empty($empresa_id), function ($query) use ($empresa_id) {
+            return $query->where('empresa_id', $empresa_id);
+        })
+        ->when(!empty($estado), function ($query) use ($estado) {
+            return $query->where('estado', $estado);
+        })
         ->paginate(30);
-        return view('nfce.all', compact('data'));
+
+        $empresa = null;
+        if($empresa_id){
+            $empresa = Empresa::findOrFail($empresa_id);
+        }
+
+        return view('nfce.all', compact('data', 'empresa'));
+    }
+
+    public function cte(Request $request)
+    {
+        $empresa_id = $request->empresa;
+        $start_date = $request->start_date;
+        $end_date = $request->end_date;
+        $estado = $request->estado;
+
+        $data = Cte::orderBy("id", "desc")
+        ->when(!empty($start_date), function ($query) use ($start_date) {
+            return $query->whereDate('created_at', '>=', $start_date);
+        })
+        ->when(!empty($end_date), function ($query) use ($end_date) {
+            return $query->whereDate('created_at', '<=', $end_date);
+        })
+        ->when(!empty($empresa_id), function ($query) use ($empresa_id) {
+            return $query->where('empresa_id', $empresa_id);
+        })
+        ->when(!empty($estado), function ($query) use ($estado) {
+            return $query->where('estado', $estado);
+        })
+        ->paginate(30);
+
+        $empresa = null;
+        if($empresa_id){
+            $empresa = Empresa::findOrFail($empresa_id);
+        }
+        
+        return view('cte.all', compact('data', 'empresa'));
+    }
+
+    public function mdfe(Request $request)
+    {
+        $empresa_id = $request->empresa;
+        $start_date = $request->start_date;
+        $end_date = $request->end_date;
+        $estado = $request->estado;
+
+        $data = Mdfe::orderBy("id", "desc")
+        ->when(!empty($start_date), function ($query) use ($start_date) {
+            return $query->whereDate('created_at', '>=', $start_date);
+        })
+        ->when(!empty($end_date), function ($query) use ($end_date) {
+            return $query->whereDate('created_at', '<=', $end_date);
+        })
+        ->when(!empty($empresa_id), function ($query) use ($empresa_id) {
+            return $query->where('empresa_id', $empresa_id);
+        })
+        ->when(!empty($estado), function ($query) use ($estado) {
+            return $query->where('estado', $estado);
+        })
+        ->paginate(30);
+
+        $empresa = null;
+        if($empresa_id){
+            $empresa = Empresa::findOrFail($empresa_id);
+        }
+        
+        return view('mdfe.all', compact('data', 'empresa'));
     }
 }

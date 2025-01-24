@@ -13,7 +13,7 @@
         @if($config != null && $config->mercadopago_public_key != "")
         @foreach($planos as $item)
         <div class="col-lg-3 col-12">
-            <div class="card" style="height: 29rem;">
+            <div class="card" style="height: 33rem;">
                 <div class="m-1">
                     <img class="card-img-top" src="{{ $item->img }}" alt="Card image cap">
                 </div>
@@ -22,8 +22,13 @@
                     <p class="card-text">
                         {{ $item->descricao }}
                     </p>
-                    <h6 class="text-danger">R$ {{ __moeda($item->valor) }}</h6>
-                    <h6 class="text-primary">{{ $item->intervalo_dias }} dias</h6>
+                    @if($item->valor_implantacao > 0)
+                    <h6>Valor de implantação <strong class="text-dark">R$ {{ __moeda($item->valor_implantacao) }}</strong></h6>
+                    <h6>Valor do plano<strong class="text-danger"> R$ {{ __moeda($item->valor - $item->valor_implantacao) }}</strong></h6>
+                    @endif
+                    
+                    <h5>Valor total<strong class="text-primary"> R$ {{ __moeda($item->valor) }}</strong></h5>
+                    <h6 class="text-success">{{ $item->intervalo_dias }} dias</h6>
                     
                 </div>
                 <div class="card-footer">
@@ -53,6 +58,7 @@
                 <div class="row">
                     <p class="text-danger">* Preencha o formulário abaixo com seus dados para gerar o QrCode.</p>
                     <input type="hidden" name="plano_id" id="plano_id">
+                    <input type="hidden" name="plano_valor" id="plano_valor">
 
                     <div class="col-lg-3 col-6">
                         {!!Form::text('nome', 'Nome')
@@ -109,8 +115,9 @@
     })
     function selectPlano(id, valor, nome){
 
-        $('.plano_nome').text(nome + " R$ " + valor.replace(".", ","))
+        $('.plano_nome').text(nome + " R$ " + convertFloatToMoeda(valor))
         $('#plano_id').val(id)
+        $('#plano_valor').val(valor)
     }
 
     $('.btn-gerar').click(() => {

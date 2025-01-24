@@ -12,9 +12,7 @@ class ValidaEmpresa
 {
 	public function handle($request, Closure $next)
 	{	
-		
 		$request->merge(['empresa_id' => auth::user()->empresa ? auth::user()->empresa->empresa_id : null]);
-		
 		return $next($request);
 	}
 }

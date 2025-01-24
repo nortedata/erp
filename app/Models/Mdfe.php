@@ -17,18 +17,23 @@ class Mdfe extends Model
 		'chave', 'protocolo', 'empresa_id', 'produto_pred_nome', 'produto_pred_ncm',
 		'produto_pred_cod_barras', 'cep_carrega', 'cep_descarrega', 'tp_carga',
 		'latitude_carregamento', 'longitude_carregamento', 'latitude_descarregamento',
-		'longitude_descarregamento', 
+		'longitude_descarregamento', 'local_id', 'tipo_modal'
 	];
 
 	
-    public function empresa()
-    {
-        return $this->belongsTo(Empresa::class, 'empresa_id');
-    }
+	public function empresa()
+	{
+		return $this->belongsTo(Empresa::class, 'empresa_id');
+	}
 	
 	public function veiculoTracao()
 	{
 		return $this->belongsTo(Veiculo::class, 'veiculo_tracao_id');
+	}
+
+	public function localizacao()
+	{
+		return $this->belongsTo(Localizacao::class, 'local_id');
 	}
 
 	public function veiculoReboque()
@@ -72,13 +77,13 @@ class Mdfe extends Model
 	}
 
 	public static function lastNumero($empresa)
-    {
-        if($empresa->ambiente == 2){
-            return $empresa->numero_ultima_mdfe_homologacao+1;
-        }else{
-            return $empresa->numero_ultima_mdfe_producao+1;
-        }
-    }
+	{
+		if($empresa->ambiente == 2){
+			return $empresa->numero_ultima_mdfe_homologacao+1;
+		}else{
+			return $empresa->numero_ultima_mdfe_producao+1;
+		}
+	}
 	
 
 	public static function cUF()
@@ -141,6 +146,15 @@ class Mdfe extends Model
 			'09' => 'Perigosa (carga frigorificada)',
 			'10' => 'Perigosa (conteinerizada)',
 			'11' => 'Perigosa (carga geral)'
+		];
+	}
+
+	public static function tiposModal(){
+		return [
+			'1' => '1 - Rodoviário',
+			'2' => '2 - Aéreo',
+			'3' => '3 - Aquaviário',
+			'4' => '4 - Ferroviário'
 		];
 	}
 

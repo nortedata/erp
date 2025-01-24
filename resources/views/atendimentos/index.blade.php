@@ -6,12 +6,14 @@
     <div class="row">
         <div class="card">
             <div class="card-body">
-                <h4>Dias da semana</h4>
+                <h4>Dias de atendimento</h4>
                 <hr>
+                @can('atendimentos_create')
                 <a class="btn btn-success px-3" href="{{ route('atendimentos.create') }}">
                     <i class="ri-add-circle-fill"></i>
                     Cadastrar
                 </a>
+                @endcan
 
                 <div class="col-lg-12">
                     {!!Form::open()->fill(request()->all())
@@ -52,11 +54,15 @@
                                     <form action="{{ route('atendimentos.destroy', $item->id) }}" method="post" id="form-{{$item->id}}">
                                         @csrf
                                         @method('delete')
-                                        
+                                        @can('atendimentos_edit')
                                         <a class="btn btn-warning btn-sm" href="{{ route('atendimentos.edit', [$item->id]) }}">
                                             <i class="ri-pencil-fill"></i>
                                         </a>
+                                        @endcan
+                                        
+                                        @can('atendimentos_delete')
                                         <button type="submit" title="Deletar" class="btn btn-danger btn-sm btn-delete"><i class="ri-delete-bin-2-line"></i></button>
+                                        @endcan
                                     </form>
                                 </td>
                             </tr>

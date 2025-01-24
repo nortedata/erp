@@ -10,11 +10,16 @@ class ItemPedidoDelivery extends Model
     use HasFactory;
 
     protected $fillable = [
-        'pedido_id', 'produto_id', 'status', 'quantidade', 'observacao', 'tamanho_id', 'valor_unitario', 'sub_total'
+        'pedido_id', 'produto_id', 'status', 'quantidade', 'observacao', 'tamanho_id', 'valor_unitario', 'sub_total',
+        'estado', 'servico_id'
     ];
 
     public function produto(){
         return $this->belongsTo(Produto::class, 'produto_id')->with(['categoria']);
+    }
+
+    public function servico(){
+        return $this->belongsTo(Servico::class, 'servico_id')->with(['categoria']);
     }
 
     public function tamanho(){

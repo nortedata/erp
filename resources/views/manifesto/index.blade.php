@@ -4,9 +4,10 @@
     <div class="row">
         <div class="card">
             <div class="card-body">
+
                 <div class="row">
-                    <div class="col-md-2">
-                        <a href="{{ route('manifesto.novaConsulta') }}" class="btn btn-dark" style="float: right;">
+                    <div class="col-md-12">
+                        <a href="{{ route('manifesto.novaConsulta') }}" class="btn btn-dark">
                             <i class="ri-refresh-line"></i>
                             Nova Consulta de Documentos
                         </a>
@@ -72,16 +73,16 @@
                                     <td>{{ $item->estado() }}</td>
                                     <td>
                                         @if($item->tipo == 1 || $item->tipo == 2)
-                                        <a href="{{ route('manifesto.download', [$item->id]) }}" class="btn btn-success btn-sm m-1">Completa</a>
-                                        <a target="_blank" href="{{ route('manifesto.danfe', [$item->id]) }}" class="btn btn-primary btn-sm">Imprimir</a>
+                                        <a href="{{ route('manifesto.download', [$item->id]) }}" class="btn btn-success btn-sm w-100">Completa</a>
+                                        <a target="_blank" href="{{ route('manifesto.danfe', [$item->id]) }}" class="btn btn-primary btn-sm w-100 mt-1">Imprimir</a>
 
                                         @elseif($item->tipo == 3)
-                                        <a class="btn btn-danger">Desconhecida</a>
+                                        <a class="btn btn-danger w-100">Desconhecida</a>
                                         @elseif($item->tipo == 4)
-                                        <a class="btn btn-warning">Não realizada</a>
+                                        <a class="btn btn-warning w-100">Não realizada</a>
                                         @endif
                                         @if($item->tipo != 2)
-                                        <a class="btn btn-info btn-sm m-1" onclick="setChave('{{$item->chave}}')" data-toggle="modal" data-target="#modal-evento">Manifestar</a>
+                                        <a class="btn btn-info btn-sm w-100 mt-1" onclick="setChave('{{$item->chave}}')" data-toggle="modal" data-target="#modal-evento">Manifestar</a>
                                         @endif
                                     </td>
                                 </tr>

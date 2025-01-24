@@ -56,7 +56,8 @@ $(document).on("click", ".btn-store", function () {
 			swal("Alerta", "Informe o vencimento", "warning")
 			return;
 		}
-
+		$('.td-delete').remove()
 		$('#form-comissao').submit()
 	}
 });
+

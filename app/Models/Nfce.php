@@ -15,7 +15,7 @@ class Nfce extends Model
         'ambiente', 'uf', 'desconto', 'acrescimo', 'natureza_id', 'observacao', 'cliente_id',
         'api', 'caixa_id', 'dinheiro_recebido', 'troco', 'tipo_pagamento', 'bandeira_cartao',
         'cnpj_cartao', 'cAut_cartao', 'gerar_conta_receber', 'valor_cashback', 'lista_id',
-        'numero_sequencial'
+        'numero_sequencial', 'funcionario_id', 'local_id', 'user_id'
     ];
 
     public function cliente()
@@ -23,9 +23,24 @@ class Nfce extends Model
         return $this->belongsTo(Cliente::class, 'cliente_id');
     }
 
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function funcionario()
+    {
+        return $this->belongsTo(Funcionario::class, 'funcionario_id');
+    }
+
     public function listaPreco()
     {
         return $this->belongsTo(ListaPreco::class, 'lista_id');
+    }
+
+    public function localizacao()
+    {
+        return $this->belongsTo(Localizacao::class, 'local_id');
     }
 
     public function empresa()
@@ -40,7 +55,17 @@ class Nfce extends Model
 
     public function itens()
     {
-        return $this->hasMany(ItemNfce::class, 'nfce_id');
+        return $this->hasMany(ItemNfce::class, 'nfce_id')->with('produto');
+    }
+
+    public function trocas()
+    {
+        return $this->hasMany(Troca::class, 'nfce_id');
+    }
+
+    public function itensServico()
+    {
+        return $this->hasMany(ItemServicoNfce::class, 'nfce_id')->with('servico');
     }
 
     public function fatura()
@@ -55,8 +80,8 @@ class Nfce extends Model
 
     public function vendedor()
     {
-        $usuario = Funcionario::find($this->usuario_id);
-        if ($usuario != null) return $usuario->nome;
+        $funcionario = Funcionario::find($this->funcionario_id);
+        if ($funcionario != null) return $funcionario->nome;
         else return '--';
     }
 
@@ -88,6 +113,10 @@ class Nfce extends Model
             '17' => 'Pagamento Instantâneo (PIX)',
             '90' => 'Sem Pagamento',
             // '99' => 'Outros',
+
+            '30' => 'Cartão de Crédito TEF',
+            '31' => 'Cartão de Débito TEF',
+            '32' => 'PIX TEF',
         ];
     }
 

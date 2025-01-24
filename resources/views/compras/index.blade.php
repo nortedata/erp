@@ -5,10 +5,12 @@
         <div class="card">
             <div class="card-body">
                 <div class="col-md-2">
+                    @can('compras_create')
                     <a href="{{ route('compras.create') }}" class="btn btn-success">
                         <i class="ri-add-circle-fill"></i>
                         Nova Compra
                     </a>
+                    @endcan
                 </div>
                 <hr class="mt-3">
                 <div class="col-lg-12">
@@ -39,7 +41,14 @@
                             ->attrs(['class' => 'form-select'])
                             !!}
                         </div>
-                        <div class="col-lg-4 col-12">
+                        @if(__countLocalAtivo() > 1)
+                        <div class="col-md-2">
+                            {!!Form::select('local_id', 'Local', ['' => 'Selecione'] + __getLocaisAtivoUsuario()->pluck('descricao', 'id')->all())
+                            ->attrs(['class' => 'select2'])
+                            !!}
+                        </div>
+                        @endif
+                        <div class="col-md-4 col-xl-2 col-12">
                             <br>
 
                             <button class="btn btn-primary" type="submit"> <i class="ri-search-line"></i>Pesquisar</button>
@@ -48,15 +57,32 @@
                     </div>
                     {!!Form::close()!!}
                 </div>
+                @if($contigencia != null)
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h4 class="text-danger">Contigência ativada</h4>
+                                <p class="text-danger">Tipo: <strong>{{$contigencia->tipo}}</strong></p>
+                                <p class="text-danger">Data de ínicio: <strong>{{ __data_pt($contigencia->created_at) }}</strong></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endif
                 <div class="col-md-12 mt-3">
-                    <div class="table-responsive-sm">
+                    <div class="table-responsive">
                         <table class="table table-striped table-centered mb-0">
                             <thead class="table-dark">
                                 <tr>
                                     <th>#</th>
                                     <th>Fornecedor</th>
+                                    @if(__countLocalAtivo() > 1)
+                                    <th>Local</th>
+                                    @endif
                                     <th>CPF/CNPJ</th>
                                     <th>Número</th>
+                                    <th>XML Importado</th>
                                     <th>Valor</th>
                                     <th>Estado</th>
                                     <th>Ambiente</th>
@@ -71,8 +97,18 @@
                                 <tr>
                                     <td>{{ $item->numero_sequencial }}</td>
                                     <td>{{ $item->fornecedor ? $item->fornecedor->razao_social : "--" }}</td>
+                                    @if(__countLocalAtivo() > 1)
+                                    <td class="text-danger">{{ $item->localizacao->descricao }}</td>
+                                    @endif
                                     <td>{{ $item->fornecedor ? $item->fornecedor->cpf_cnpj : "--" }}</td>
                                     <td>{{ $item->numero ? $item->numero : '' }}</td>
+                                    <td>
+                                        @if($item->chave_importada)
+                                        <i class="ri-checkbox-circle-fill text-success"></i>
+                                        @else
+                                        <i class="ri-close-circle-fill text-danger"></i>
+                                        @endif
+                                    </td>
                                     <td>{{ number_format($item->total, 2, ',', '.') }}</td>
                                     <td width="150">
                                         @if($item->estado == 'aprovado')
@@ -101,8 +137,8 @@
                                         <span class="text-primary">Entrada</span>
                                         @endif
                                     </td>
-                                    <td width="300">
-                                        <form action="{{ route('nfe.destroy', $item->id) }}" method="post" id="form-{{$item->id}}">
+                                    <td>
+                                        <form action="{{ route('nfe.destroy', $item->id) }}" method="post" id="form-{{$item->id}}" style="width: 300px;">
                                             @method('delete')
                                             @csrf
                                             @if($item->estado == 'cancelado')
@@ -115,12 +151,15 @@
                                                 <i class="ri-printer-line"></i>
                                             </a>
 
+                                            @can('nfe_transmitir')
                                             <button title="Cancelar NFe" type="button" class="btn btn-danger btn-sm" onclick="cancelar('{{$item->id}}', '{{$item->numero}}')">
                                                 <i class="ri-close-circle-line"></i>
                                             </button>
                                             <button title="Corrigir NFe" type="button" class="btn btn-warning btn-sm" onclick="corrigir('{{$item->id}}', '{{$item->numero}}')">
                                                 <i class="ri-file-warning-line"></i>
                                             </button>
+                                            @endcan
+
                                             @endif
 
                                             @if($item->estado == 'aprovado' || $item->estado == 'rejeitado')
@@ -131,19 +170,26 @@
                                             @if($item->estado == 'novo' || $item->estado == 'rejeitado')
 
                                             @if($item->chave_importada == '')
+                                            @can('compras_edit')
                                             <a class="btn btn-warning btn-sm" href="{{ route('nfe.edit', $item->id) }}">
                                                 <i class="ri-edit-line"></i>
                                             </a>
+                                            @endcan
                                             @endif
 
                                             <a target="_blank" title="XML temporário" class="btn btn-light btn-sm" href="{{ route('nfe.xml-temp', $item->id) }}">
                                                 <i class="ri-file-line"></i>
                                             </a>
+                                            @can('compras_delete')
                                             <button type="button" class="btn btn-danger btn-sm btn-delete"><i class="ri-delete-bin-line"></i></button>
+                                            @endcan
 
+                                            @can('nfe_transmitir')
                                             <button title="Transmitir NFe" type="button" class="btn btn-success btn-sm" onclick="transmitir('{{$item->id}}')">
                                                 <i class="ri-send-plane-fill"></i>
                                             </button>
+                                            @endcan
+                                            
                                             @endif
 
                                             @if($item->estado == 'aprovado' || $item->estado == 'cancelado')
@@ -155,12 +201,20 @@
                                             @if($item->isItemValidade())
                                                 <a href="{{ route('compras.info-validade', $item->id) }}" title="Editar Validade" type="button" class="btn btn-info btn-sm"><i class="ri-pencil-line"></i></a>
                                             @endif
+
+                                            <a class="btn btn-info btn-sm" title="Imprimir Pedido" target="_blank" href="{{ route('nfe.imprimirVenda', [$item->id]) }}">
+                                                <i class="ri-printer-line"></i>
+                                            </a>
+
+                                            <a class="btn btn-light btn-sm" title="Gerar etiqueta" target="_blank" href="{{ route('compras.etiqueta', [$item->id]) }}">
+                                                <i class="ri-barcode-box-line"></i>
+                                            </a>
                                         </form>
                                     </td>
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="10" class="text-center">Nada encontrado</td>
+                                    <td colspan="11" class="text-center">Nada encontrado</td>
                                 </tr>
                                 @endforelse
                             </tbody>

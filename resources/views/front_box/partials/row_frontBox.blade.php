@@ -13,11 +13,11 @@
         <div class="form-group mb-2" style="width: 200px">
             <div class="input-group">
                 <div class="input-group-prepend">
-                    <button id="btn-subtrai" class="btn btn-danger" type="button">-</button>
+                    <button id="btn-subtrai" class="btn btn-danger btn-qtd" type="button">-</button>
                 </div>
-                <input type="tel" readonly class="form-control qtd qtd_row" name="quantidade[]" value="{{ $qtd }}">
+                <input type="tel" readonly class="form-control qtd_row qtd" name="quantidade[]" value="{{ $qtd }}">
                 <div class="input-group-append">
-                    <button class="btn btn-success" id="btn-incrementa" type="button">+</button>
+                    <button class="btn btn-success btn-qtd" id="btn-incrementa" type="button">+</button>
                 </div>
             </div>
         </div>

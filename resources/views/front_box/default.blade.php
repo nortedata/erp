@@ -22,6 +22,7 @@
         <link href="/assets/css/icons.min.css" rel="stylesheet" type="text/css" />
         <link rel="stylesheet" type="text/css" href="/assets/css/toastr.min.css">
         <link rel="stylesheet" type="text/css" href="/css/style.css">
+        <link rel='stylesheet' href='/css/bootstrap-duallistbox.min.css'/>
 
         @yield('css')
 
@@ -73,13 +74,14 @@
         <script src="/js/uploadImagem.js"></script>
         <script type="text/javascript" src="/js/jquery.mask.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/js/bootstrap.bundle.min.js"></script>
+        <script src='/js/jquery.bootstrap-duallistbox.min.js'></script>
 
         <script src="/assets/js/app.js"></script>
         <script type="text/javascript" src="/js/main.js"></script>
 
         <script src='https://cdnjs.cloudflare.com/ajax/libs/sweetalert/2.1.2/sweetalert.min.js'></script>   
-
-
+        <script src="/assets/vendor/flatpickr/flatpickr.min.js"></script>
+        <script src="/assets/js/pages/demo.flatpickr.js"></script>
         @yield('js')
 
         <script type="text/javascript">

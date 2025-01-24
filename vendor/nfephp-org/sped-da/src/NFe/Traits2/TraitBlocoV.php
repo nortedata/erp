@@ -34,7 +34,7 @@ trait TraitBlocoV
                 'valor' => $valor
             ];
         }
-        $aFont = ['font'=> $this->fontePadrao, 'size' => 7, 'style' => ''];
+        $aFont = ['font' => 'arial', 'size' => 10, 'style' => 'B'];
         $texto = "FORMA PAGAMENTO";
         $this->pdf->textBox($this->margem, $y, $this->wPrint, 4, $texto, $aFont, 'T', 'L', false, '', false);
         $texto = "VALOR PAGO R$";
@@ -60,11 +60,14 @@ trait TraitBlocoV
             $z += $y2;
         }
 
-        $texto = "Troco R$";
-        $this->pdf->textBox($this->margem, $z, $this->wPrint, 3, $texto, $aFont, 'T', 'L', false, '', false);
-        $texto =  !empty($this->vTroco) ? number_format((float) $this->vTroco, 2, ',', '.') : '0,00';
-        $y1 = $this->pdf->textBox($this->margem, $z, $this->wPrint, 3, $texto, $aFont, 'T', 'R', false, '', false);
-        $z += $y2;
+        if(!$this->isPreVenda && $this->troca == null){
+            $texto = "Troco R$";
+
+            $this->pdf->textBox($this->margem, $z, $this->wPrint, 3, $texto, $aFont, 'T', 'L', false, '', false);
+            $texto = number_format((float) $venda->troco, 2, ',', '.');
+            $y1 = $this->pdf->textBox($this->margem, $z, $this->wPrint, 3, $texto, $aFont, 'T', 'R', false, '', false);
+            $z += $y2;
+        }
 
         $texto = "Data";
         $this->pdf->textBox($this->margem, $z, $this->wPrint, 3, $texto, $aFont, 'T', 'L', false, '', false);
@@ -74,8 +77,14 @@ trait TraitBlocoV
 
         $z += $y2;
         $texto = "Código da venda";
+        if($this->isPreVenda){
+            $texto = "Código";
+        }
         $this->pdf->textBox($this->margem, $z, $this->wPrint, 3, $texto, $aFont, 'T', 'L', false, '', false);
-        $texto = $venda->id;
+        $texto = $venda->numero_sequencial;
+        if($this->isPreVenda){
+            $texto = $this->venda->codigo;
+        }
         $y1 = $this->pdf->textBox($this->margem, $z, $this->wPrint, 3, $texto, $aFont, 'T', 'R', false, '', false);
         $y += 2;
 
@@ -85,16 +94,16 @@ trait TraitBlocoV
             $this->pdf->textBox($this->margem, $z, $this->wPrint, 3, $texto, $aFont, 'T', 'L', false, '', false);
             $texto = $this->venda->vendedor();
             $y1 = $this->pdf->textBox($this->margem, $z, $this->wPrint, 3, $texto, $aFont, 'T', 'R', false, '', false);
-            $y += 2;
+            $y += 30;
         }
 
-        if($this->venda->comissaoAssessor){
+        if($this->venda->cliente){
             $z += $y2;
-            $texto = "Vendedor";
+            $texto = $this->venda->cliente->info;
             $this->pdf->textBox($this->margem, $z, $this->wPrint, 3, $texto, $aFont, 'T', 'L', false, '', false);
-            $texto = "Assessor " . $this->venda->comissaoAssessor->assessor->razao_social;
-            $y1 = $this->pdf->textBox($this->margem, $z, $this->wPrint, 3, $texto, $aFont, 'T', 'R', false, '', false);
-            $y += 2;
+            // $texto = $this->venda->cliente->razao_social;
+            // $y1 = $this->pdf->textBox($this->margem, $z, $this->wPrint, 3, $texto, $aFont, 'T', 'R', false, '', false);
+            // $y += 2;
         }
 
         $this->pdf->dashedHLine($this->margem, $this->bloco5H+$y+$linePlus, $this->wPrint, 0.1, 30);

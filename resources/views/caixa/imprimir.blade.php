@@ -35,15 +35,15 @@
         }
 
         .logoBanner img {
-			float: left;
-			max-width: 70px;
-		}
+         float: left;
+         max-width: 70px;
+     }
 
-        *{
-            font-family: "Lucida Console", "Courier New", monospace;
-        }
+     *{
+        font-family: "Lucida Console", "Courier New", monospace;
+    }
 
-    </style>
+</style>
 </head>
 <header>
 	<div class="headReport" style="display:flex; justify-content:  padding-top:1rem">
@@ -85,7 +85,7 @@
     <table>
         <tr>
             <td class="" style="width: 500px;">
-                Razão social: <strong>{{$config->nome_fantasia}}</strong>
+                Razão social: <strong>{{ $config->nome_fantasia }}</strong>
             </td>
             <td class="" style="width: 197px;">
                 Documento: <strong>{{ str_replace(" ", "", $config->cpf_cnpj) }}</strong>
@@ -96,7 +96,7 @@
     <table>
         <tr>
             <td class="" style="width: 233px;">
-                Total de vendas: <strong>{{number_format($item->valor_fechamento, 2, ',', '.')}}</strong>
+                Total de vendas: <strong>{{ number_format($item->valor_fechamento, 2, ',', '.') }}</strong>
             </td>
             <td class="" style="width: 233px;">
                 Data de abertura: <strong>{{ \Carbon\Carbon::parse($item->created_at)->format('d/m/Y H:i') }}</strong>
@@ -134,7 +134,7 @@
     <table style="margin-top: 20px">
         <thead>
             <tr>
-                <td>CLIENTE</td>
+                <td width="180">CLIENTE</td>
                 <td>DATA</td>
                 <td>TIPO DE PAGAMENTO</td>
                 <td>ESTADO</td>
@@ -152,7 +152,7 @@
 
             @foreach($vendas as $v)
             <tr>
-                <td class="b-top">{{ $v->cliente->razao_social ?? 'NAO IDENTIFCADO' }}</td>
+                <td class="b-top">{{ $v->cliente->razao_social ?? 'NÃO IDENTIFCADO' }}</td>
                 <td class="b-top">{{ \Carbon\Carbon::parse($v->created_at)->format('d/m/Y H:i:s')}}</td>
                 <td class="b-top">
                     @if($v->tipo_pagamento == '99')
@@ -161,7 +161,7 @@
                     {{ $v->tipo_pagamento ? $v->getTipoPagamento($v->tipo_pagamento) : 'Pag Múltiplo'}}
                     @endif
                 </td>
-                <td class="b-top">{{ $v->estado }}</td>
+                <td class="b-top">{{ $v->tipo != 'OS' ? $v->estado : '' }}</td>
 
                 @if($v->estado == 'aprovado')
                 @if($v->tipo == 'Nfe')
@@ -177,13 +177,22 @@
                 <td class="b-top">--</td>
                 @endif
 
-                <td class="b-top">{{ $v->tipo == 'Nfe' ? 'Pedido' : 'PDV' }}</td>
+                <td class="b-top">{{ $v->tipo }}</td>
+                @if($v->tipo != 'OS')
                 <td class="b-top">{{ __moeda($v->total) }}</td>
+                @else
+                <td class="b-top">{{ __moeda($v->valor) }}</td>
+                @endif
+
                 <td class="b-top">{{ __moeda($v->desconto) }}</td>
             </tr>
 
             @php
-            $soma += $v->total;
+            if($v->tipo != 'OS'){
+                $soma += $v->total;
+            }else{
+                $soma += $v->valor;
+            }
             @endphp
 
             @endforeach
@@ -193,7 +202,7 @@
     <table>
         <tr>
             <td class="b-top" style="width: 700px;">
-                Soma de vendas: <strong style="font-size: 17px">R$ {{number_format($soma, 2, ',', '.')}}</strong>
+                Soma: <strong style="font-size: 17px">R$ {{number_format($soma, 2, ',', '.')}}</strong>
             </td>
         </tr>
     </table>
@@ -298,10 +307,32 @@
             <td class="b-bottom" style="width: 233px;">
                 Contagem da gaveta: <strong>R$ {{number_format($item->valor_dinheiro, 2, ',', '.')}}</strong>
             </td>
-            {{-- <td class="b-bottom" style="width: 233px;">
-                Diferença: <strong>R$ {{number_format($abertura->valor_dinheiro_caixa - $valorEmDinheiro, 2, ',', '.')}}</strong>
-            </td> --}}
+            <td class="b-bottom" style="width: 233px;">
+                Soma de serviços: <strong>R$ {{number_format($somaServicos, 2, ',', '.')}}</strong>
+            </td>
         </tr>
+    </table>
+
+    <h4>Produtos vendidos</h4>
+    <table style="margin-top: -20px">
+        <thead>
+            <tr>
+                <td width="180">PRODUTO</td>
+                <td width="100">QUANTIDADE</td>
+                <td width="120">VALOR DE VENDA</td>
+                <td width="120">VALOR DE COMPRA</td>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach($produtos as $p)
+            <tr>
+                <td class="b-top">{{ $p['nome'] }}</td>
+                <td class="b-top">{{ $p['quantidade'] }}</td>
+                <td class="b-top">{{ __moeda($p['valor_venda']) }}</td>
+                <td class="b-top">{{ __moeda($p['valor_compra']) }}</td>
+            </tr>
+            @endforeach
+        </tbody>
     </table>
 
     <br><br>

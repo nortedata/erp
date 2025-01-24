@@ -7,12 +7,11 @@
         {!!Form::open()
         ->post()
         ->route('interrupcoes.store')
-        ->multipart()
         !!}
         <div class="row">
             <div class="card">
                 <div class="card-body">
-                    <h4>Novo intervalo</h4>
+                    <h4>Nova Interrupção</h4>
                     <hr>
                     @include('interrupcoes._forms')
                 </div>

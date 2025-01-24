@@ -49,7 +49,10 @@ return new class extends Migration
             $table->boolean('rascunho')->default(false);
 
             $table->boolean('status')->default(true);
+            $table->integer('local_id')->nullable();
+            
             // alter table pre_vendas add column lista_id integer default null;
+            // alter table pre_vendas add column local_id integer default null;
 
             $table->timestamps();
         });

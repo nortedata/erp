@@ -227,6 +227,26 @@ $('body').on('blur', '.valor_unit', function () {
     value_unit = convertMoedaToFloat(value_unit)
     let qtd = convertMoedaToFloat($qtd.val())
     $sub.val(convertFloatToMoeda(qtd * value_unit))
+
+    setTimeout(() => {
+        calcTotal()
+        limpaFatura()
+    }, 20)
+})
+
+$('body').on('blur', '.qtd', function () {
+    $value_unit = $(this).closest('td').next().find('input');
+    $sub = $(this).closest('td').next().next().find('input');
+    let qtd = $(this).val();
+    qtd = convertMoedaToFloat(qtd)
+    let value_unit = convertMoedaToFloat($value_unit.val())
+    $sub.val(convertFloatToMoeda(qtd * value_unit))
+
+    setTimeout(() => {
+        calcTotal()
+        limpaFatura()
+
+    }, 20)
 })
 
 $('.btn-add-tr').on("click", function () {
@@ -364,6 +384,7 @@ $(function () {
 
 var total_fatura = 0
 function calcTotalFatura() {
+
     var total = 0
     $(".valor_fatura").each(function () {
         total += convertMoedaToFloat($(this).val())
@@ -405,7 +426,7 @@ $('.btn-salvar-nfe').click(() => {
 
 function addClassRequired() {
     let infMsg = ""
-    $("body").find('input, select').each(function () {
+    $("body #form-nfce").find('input, select').each(function () {
         if ($(this).prop('required')) {
             if ($(this).val() == "") {
                 try{

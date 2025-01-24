@@ -62,6 +62,12 @@
         }
     },
     "scripts": {
+        "precommit": [
+            "@stan",
+            "@phpcbf",
+            "@phpcs",
+            "@test"
+        ],
         "test": "vendor/bin/phpunit -c phpunit.xml.dist",
         "test-with-coverage": "vendor/bin/phpunit -c phpunit.xml.dist --coverage-clover=coverage.xml",
         "phpcbf": "vendor/bin/phpcbf src/",
@@ -70,7 +76,7 @@
     },
     "extra": {
         "branch-alias": {
-            "v5.0": "5.0-dev"
+            "v5.1": "5.1-dev"
         }
     },
     "minimum-stability": "stable"

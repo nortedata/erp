@@ -57,10 +57,17 @@
                 <div class="card mt-1">
                     <div class="row m-3">
                         <div class="col-md-5">
-                            {!!Form::select('cliente_id', 'Cliente')
-                            ->attrs(['class' => 'select2 cliente_id'])
-                            ->value(isset($item) ? $item->cliente_id : '')
-                            !!}
+                            <label>Cliente</label>
+                            <div class="input-group flex-nowrap">
+                                <select id="inp-cliente_id" name="cliente_id">
+                                    @if(isset($item) && $item->cliente)
+                                    <option value="{{ $item->cliente_id }}">{{ $item->cliente->razao_social }}</option>
+                                    @endif
+                                </select>
+                                <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#modal_novo_cliente" type="button">
+                                    <i class="ri-add-circle-fill"></i>
+                                </button>
+                            </div>
                         </div>
                         <hr class="mt-3">
                         <div class="row d-cliente">
@@ -151,7 +158,7 @@
                                     <tr>
                                         <th>Produto</th>
                                         <th>Quantidade</th>
-                                        <th>Valor Unt</th>
+                                        <th>Valor Unit.</th>
                                         <th>Subtotal</th>
                                         <th>%ICMS</th>
                                         <th>%PIS</th>
@@ -194,23 +201,23 @@
                                         <td width="80">
                                             <input value="{{ $prod->perc_icms }}" class="form-control" type="tel" name="perc_icms[]" id="inp-perc_icms">
                                         </td>
-                                        <td width="80">
+                                        <td width="100">
                                             <input value="{{ $prod->perc_pis }}" class="form-control" type="tel" name="perc_pis[]" id="inp-perc_pis">
                                         </td>
-                                        <td width="80">
+                                        <td width="100">
                                             <input value="{{ $prod->perc_cofins }}" class="form-control" type="tel" name="perc_cofins[]" id="inp-perc_cofins">
                                         </td>
-                                        <td width="80">
+                                        <td width="100">
                                             <input value="{{ $prod->perc_ipi }}" class="form-control" type="tel" name="perc_ipi[]" id="inp-perc_ipi">
                                         </td>
-                                        <td width="80">
+                                        <td width="100">
                                             <input value="{{ $prod->perc_red_bc }}" class="form-control percentual ignore" type="tel" name="perc_red_bc[]" id="inp-perc_red_bc">
                                         </td>
-                                        <td width="80">
+                                        <td width="120">
                                             <input value="{{ $prod->cfop }}" class="form-control ignore" type="tel" name="cfop[]" id="inp-cfop_estadual">
                                         </td>
-                                        <td width="100">
-                                            <input value="{{ $prod->ncm }}" class="form-control ignore" type="tel" name="ncm[]" id="inp-ncm">
+                                        <td width="150">
+                                            <input value="{{ $prod->ncm }}" class="form-control ignore" type="tel" name="ncm[]" id="inp-ncm2">
                                         </td>
                                         <td width="120">
                                             <input value="{{ $prod->codigo_beneficio_fiscal }}" class="form-control codigo_beneficio_fiscal ignore" type="text" name="codigo_beneficio_fiscal[]">
@@ -262,28 +269,28 @@
                                         <td width="80">
                                             <input class="form-control qtd" type="tel" name="quantidade[]" id="inp-quantidade">
                                         </td>
-                                        <td width="100">
+                                        <td width="120">
                                             <input class="form-control moeda valor_unit" type="tel" name="valor_unitario[]" id="inp-valor_unitario">
                                         </td>
                                         <td width="150">
                                             <input class="form-control moeda sub_total" type="tel" name="sub_total[]" id="inp-subtotal">
                                         </td>
-                                        <td width="80">
+                                        <td width="120">
                                             <input class="form-control" type="tel" name="perc_icms[]" id="inp-perc_icms">
                                         </td>
-                                        <td width="80">
+                                        <td width="120">
                                             <input class="form-control" type="tel" name="perc_pis[]" id="inp-perc_pis">
                                         </td>
-                                        <td width="80">
+                                        <td width="120">
                                             <input class="form-control" type="tel" name="perc_cofins[]" id="inp-perc_cofins">
                                         </td>
-                                        <td width="80">
+                                        <td width="120">
                                             <input class="form-control" type="tel" name="perc_ipi[]" id="inp-perc_ipi">
                                         </td>
-                                        <td width="80">
+                                        <td width="120">
                                             <input class="form-control percentual ignore" type="tel" name="perc_red_bc[]" id="inp-perc_red_bc">
                                         </td>
-                                        <td width="80">
+                                        <td width="120">
                                             <input class="form-control ignore" type="tel" name="cfop[]" id="inp-cfop_estadual">
                                         </td>
                                         <td width="150">
@@ -352,7 +359,7 @@
                         <div class="col-md-3">
                             {!!Form::select('natureza_id', 'Natureza de Operação', ['' => 'Selecione'] + $naturezas->pluck('descricao', 'id')->all())
                             ->attrs(['class' => 'form-select'])
-                            ->value(isset($item) ? $item->natureza_id : '')
+                            ->value(isset($item) ? $item->natureza_id : (isset($naturezaPadrao) && $naturezaPadrao != null ? $naturezaPadrao->id : '') )
                             ->required()
                             !!}
                         </div>

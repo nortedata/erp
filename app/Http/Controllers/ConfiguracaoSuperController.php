@@ -17,6 +17,12 @@ class ConfiguracaoSuperController extends Controller
     {
         $this->__validate($request);
         $item = ConfiguracaoSuper::first();
+        $request->merge([
+            'timeout_nfe' => $request->timeout_nfe ?? 8,
+            'timeout_nfce' => $request->timeout_nfce ?? 8,
+            'timeout_cte' => $request->timeout_cte ?? 8,
+            'timeout_mdfe' => $request->timeout_mdfe ?? 8,
+        ]);
         try {
             if ($item == null) {
                 ConfiguracaoSuper::create($request->all());

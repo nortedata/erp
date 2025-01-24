@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Empresa;
+use App\Models\UsuarioEmpresa;
 use App\Models\ContadorEmpresa;
 
 class EmpresaController extends Controller
@@ -35,5 +36,11 @@ class EmpresaController extends Controller
         ->get();
 
         return response()->json($data, 200);
+    }
+
+    public function findUser(Request $request){
+        $usuarioEmpresa = UsuarioEmpresa::where('empresa_id', $request->empresa_id)
+        ->first();
+        return response()->json($usuarioEmpresa->usuario, 200); 
     }
 }

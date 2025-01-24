@@ -20,6 +20,8 @@ return new class extends Migration
             $table->foreignId('cliente_id')->nullable()->constrained('clientes');
 
             $table->string('descricao', 200)->nullable();
+            $table->string('arquivo', 25)->nullable();
+            
             $table->decimal('valor_integral', 16, 7);
             $table->decimal('valor_recebido', 16, 7)->nullable();
             $table->date('data_vencimento');
@@ -30,10 +32,14 @@ return new class extends Migration
             $table->string('tipo_pagamento', 2)->nullable();
 
             $table->foreignId('caixa_id')->nullable()->constrained('caixas');
+            $table->integer('local_id')->nullable();
 
             $table->timestamps();
 
             // alter table conta_recebers add column caixa_id bigint(20) default null;
+            // alter table conta_recebers add column local_id integer default null;
+            // alter table conta_recebers add column arquivo varchar(25) default null;
+
         });
     }
 

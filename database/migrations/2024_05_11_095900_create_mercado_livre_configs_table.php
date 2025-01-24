@@ -18,10 +18,15 @@ return new class extends Migration
             $table->string('client_id', 30);
             $table->string('client_secret', 100);
             $table->string('access_token', 255)->nullable();
+            $table->string('refresh_token', 255)->nullable();
             $table->string('user_id', 25)->nullable();
             $table->string('code', 100)->nullable();
             $table->string('url', 120);
+            $table->bigInteger('token_expira');
             $table->timestamps();
+
+            // alter table mercado_livre_configs add column refresh_token varchar(255) default null;
+            // alter table mercado_livre_configs add column token_expira bigint default null;
         });
     }
 

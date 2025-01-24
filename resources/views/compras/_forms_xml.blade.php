@@ -1,8 +1,11 @@
+
 <div class="row">
     <div class="col-md-12">
         @isset($isCompra)
         <input type="hidden" id="is_compra" name="is_compra" value="1">
         @endif
+
+        <input type="hidden" id="is_xml" value="1">
         <ul class="nav nav-tabs nav-primary" role="tablist">
             <li class="nav-item" role="presentation">
                 <a class="nav-link active" data-bs-toggle="tab" href="#fornecedor" role="tab" aria-selected="true">
@@ -54,6 +57,10 @@
             </li>
         </ul>
         <hr>
+
+        @isset($dadosXml)
+        <input type="hidden" name="chave_dfe" value="{{ $dadosXml['chave'] }}">
+        @endif
         <div class="tab-content">
             <div class="tab-pane fade show active" id="fornecedor" role="tabpanel">
                 <div class="card">
@@ -154,13 +161,20 @@
                             !!}
                         </div>
                         <div class="table-responsive">
-                            <table class="table table-dynamic table-produtos" style="width: 2800px">
+                            <table class="table table-dynamic table-produtos">
                                 <thead>
                                     <tr>
-                                        <th>Produto</th>
+                                        <th class="sticky-col first-col">Produto</th>
+                                        <th>Unidade</th>
                                         <th>Quantidade</th>
-                                        <th>Valor Unit.</th>
+                                        <th>Valor de compra</th>
                                         <th>Subtotal</th>
+                                        <th>Valor de venda</th>
+                                        <th>Conversão para estoque
+                                            <button type="button" tabindex="0" class="btn btn-success btn-sm" data-bs-toggle="popover" data-bs-trigger="focus" data-bs-content="Utilize se for vender em unidade diferente de compra, exemplo caixa com 12 e vender em unidade" title="Conversão para estoque e valor">
+                                                <i class="ri-file-info-fill"></i>
+                                            </button>
+                                        </th>
                                         <th>%ICMS</th>
                                         <th>%PIS</th>
                                         <th>%COFINS</th>
@@ -180,80 +194,90 @@
 
                                     @foreach ($dadosXml['itens'] as $prod)
                                     <tr class="dynamic-form">
-                                        <td width="250">
-                                            <input type="hidden" name="cadastrar_produto[]" value="{{ $prod->id == 0 ? 1 : 0 }}"> 
-                                            <input type="hidden" name="nome_produto[]" value="{{ $prod->xProd }}">
-                                            <input type="hidden" name="unidade[]" value="{{ $prod->unidade }}">
-                                            <select class="form-control select2 produto_id" name="produto_id[]" id="inp-produto_id">
 
+                                        <td class="sticky-col first-col">
+                                            <input class="cadastrar_produto" type="hidden" name="cadastrar_produto[]" value="{{ $prod->id == 0 ? 1 : 0 }}"> 
+                                            <input type="hidden" name="nome_produto[]" value="{{ $prod->xProd }}">
+                                            <input type="hidden" name="codigo_barras[]" value="{{ $prod->codigo_barras }}">
+                                            <input type="hidden" name="cProd[]" value="{{ $prod->codigo }}">
+                                            <input type="hidden" name="cest[]" value="{{ $prod->cest }}">
+                                            <select class="form-select produto_id" name="produto_id[]">
                                                 <option value="{{ $prod->id }}">
                                                     {{ $prod->xProd }}
                                                 </option>
-
-
                                             </select>
                                             @if($prod->id == 0)
                                             <span class="text-danger">*Produto será cadastrado no sistema</span>
                                             @endif
+                                            <div style="width: 400px"></div>
                                         </td>
-                                        <td width="80">
-                                            <input value="{{ __moeda($prod->quantidade) }}" class="form-control qtd" type="tel" name="quantidade[]" id="inp-quantidade">
+                                        <td>
+                                            <input readonly style="width: 120px" value="{{ $prod->unidade }}" class="form-control" type="text" name="unidade[]">
+                                        </td> 
+                                        <td>
+                                            <input readonly style="width: 120px" value="{{ __moedaInput($prod->quantidade) }}" class="form-control qtd" type="tel" name="quantidade[]" id="inp-quantidade">
                                         </td>
-                                        <td width="100">
-                                            <input value="{{ __moeda($prod->valor_unitario) }}" class="form-control moeda valor_unit" type="tel" name="valor_unitario[]" id="inp-valor_unitario">
+                                        <td>
+                                            <input readonly style="width: 120px" value="{{ __moedaInput($prod->valor_unitario) }}" class="form-control moeda valor_unit" type="tel" name="valor_unitario[]" id="inp-valor_unitario">
                                         </td>
-                                        <td width="80">
-                                            <input value="{{ __moeda($prod->sub_total) }}" class="form-control moeda sub_total" type="tel" name="sub_total[]" id="inp-subtotal">
+                                        <td>
+                                            <input readonly style="width: 120px" value="{{ __moedaInput($prod->sub_total) }}" class="form-control moeda sub_total" type="tel" name="sub_total[]" id="inp-subtotal">
                                         </td>
-                                        <td width="80">
-                                            <input value="{{ $prod->perc_icms }}" class="form-control percentual" type="tel" name="perc_icms[]" id="inp-perc_icms">
+                                        <td>
+                                            <input style="width: 120px" value="{{ __moedaInput($prod->valor_unitario + ($prod->valor_unitario * $lucroPadraoProduto)/100) }}" class="form-control moeda valor_unit" type="tel" name="valor_venda[]" id="inp-valor_unitario">
                                         </td>
-                                        <td width="80">
-                                            <input value="{{ $prod->perc_pis }}" class="form-control percentual" type="tel" name="perc_pis[]" id="inp-perc_pis">
+                                        <td>
+                                            <input required style="width: 150px" value="1" class="form-control" data-mask="000" type="tel" name="conversao_estoque[]">
                                         </td>
-                                        <td width="80">
-                                            <input value="{{ $prod->perc_cofins }}" class="form-control percentual" type="tel" name="perc_cofins[]" id="inp-perc_cofins">
+                                        <td>
+                                            <input style="width: 120px" value="{{ $prod->perc_icms }}" class="form-control percentual" type="tel" name="perc_icms[]" id="inp-perc_icms">
                                         </td>
-                                        <td width="80">
-                                            <input value="{{ $prod->perc_ipi }}" class="form-control percentual" type="tel" name="perc_ipi[]" id="inp-perc_ipi">
+                                        <td>
+                                            <input style="width: 120px" value="{{ $prod->perc_pis }}" class="form-control percentual" type="tel" name="perc_pis[]" id="inp-perc_pis">
                                         </td>
-                                        <td width="80">
-                                            <input value="{{ $prod->perc_red_bc }}" class="form-control percentual ignore" type="tel" name="perc_red_bc[]" id="inp-perc_red_bc">
-                                        </td>
-                                        <td width="80">
-                                            <input value="{{ $prod->cfop }}" class="form-control cfop" type="tel" name="cfop[]" id="inp-cfop_estadual">
-                                        </td>
-
-                                        <td width="120">
-                                            <input value="{{ $prod->ncm }}" class="form-control ncm" type="tel" name="ncm[]" id="inp-ncm">
+                                        <td>
+                                            <input style="width: 120px" value="{{ $prod->perc_cofins }}" class="form-control percentual" type="tel" name="perc_cofins[]" id="inp-perc_cofins">
                                         </td>
                                         <td width="120">
-                                            <input value="{{ $prod->codigo_beneficio_fiscal }}" class="form-control codigo_beneficio_fiscal" type="text" name="codigo_beneficio_fiscal[]">
+                                            <input style="width: 120px" value="{{ $prod->perc_ipi }}" class="form-control percentual" type="tel" name="perc_ipi[]" id="inp-perc_ipi">
+                                        </td>
+                                        <td>
+                                            <input style="width: 120px" value="{{ $prod->perc_red_bc }}" class="form-control percentual ignore" type="tel" name="perc_red_bc[]" id="inp-perc_red_bc">
+                                        </td>
+                                        <td>
+                                            <input style="width: 120px" value="{{ $prod->cfop }}" class="form-control cfop" type="tel" name="cfop[]" id="inp-cfop_estadual">
                                         </td>
 
-                                        <td width="250">
-                                            <select name="cst_csosn[]" class="form-control select2">
+                                        <td>
+                                            <input style="width: 120px" value="{{ $prod->ncm }}" class="form-control ncm" type="tel" name="ncm[]" id="inp-ncm2">
+                                        </td>
+                                        <td>
+                                            <input style="width: 120px" value="{{ $prod->codigo_beneficio_fiscal }}" class="form-control codigo_beneficio_fiscal" type="text" name="codigo_beneficio_fiscal[]">
+                                        </td>
+
+                                        <td>
+                                            <select style="width: 400px" name="cst_csosn[]" class="form-select">
                                                 @foreach(App\Models\Produto::listaCSTCSOSN() as $key => $c)
                                                 <option @if($prod->cst_csosn == $key) selected @endif value="{{$key}}">{{$c}}</option>
                                                 @endforeach
                                             </select>
                                         </td>
-                                        <td width="250">
-                                            <select name="cst_pis[]" class="form-control select2">
+                                        <td>
+                                            <select style="width: 300px" name="cst_pis[]" class="form-select">
                                                 @foreach(App\Models\Produto::listaCST_PIS_COFINS() as $key => $c)
                                                 <option @if($prod->cst_pis == $key) selected @endif value="{{$key}}">{{$c}}</option>
                                                 @endforeach
                                             </select>
                                         </td>
-                                        <td width="250">
-                                            <select name="cst_cofins[]" class="form-control select2">
+                                        <td>
+                                            <select style="width: 300px" name="cst_cofins[]" class="form-select">
                                                 @foreach(App\Models\Produto::listaCST_PIS_COFINS() as $key => $c)
                                                 <option @if($prod->cst_cofins == $key) selected @endif value="{{$key}}">{{$c}}</option>
                                                 @endforeach
                                             </select>
                                         </td>
-                                        <td width="250">
-                                            <select name="cst_ipi[]" class="form-control select2">
+                                        <td>
+                                            <select style="width: 300px" name="cst_ipi[]" class="form-select">
                                                 @foreach(App\Models\Produto::listaCST_IPI() as $key => $c)
                                                 <option @if($prod->cst_ipi == $key) selected @endif value="{{$key}}">{{$c}}</option>
                                                 @endforeach
@@ -289,7 +313,7 @@
                 <div class="card">
                     <div class="row m-3">
                         <div class="col-md-5">
-                            {!!Form::select('transportadora_id', 'Transportadora',['' => 'Selecine..'] + $transportadoras->pluck('razao_social', 'id')->all())
+                            {!!Form::select('transportadora_id', 'Transportadora',['' => 'Selecione..'] + $transportadoras->pluck('razao_social', 'id')->all())
                             ->attrs(['class' => 'select2 transportadora_id'])
                             !!}
                         </div>
@@ -527,6 +551,33 @@
                                         </td>
                                     </tr>
                                     @endforeach
+
+                                    @elseif(isset($dadosXml) && isset($dadosXml['fatura']))
+
+                                    @foreach ($dadosXml['fatura'] as $f)
+                                    <tr class="dynamic-form">
+                                        <td width="300">
+                                            <select name="tipo_pagamento[]" class="form-control tipo_pagamento select2">
+                                                <option value="">Selecione..</option>
+                                                @foreach(App\Models\Nfe::tiposPagamento() as $key => $c)
+                                                <option @if($f['tipo_pagamento'] == $key) selected @endif value="{{$key}}">{{$c}}</option>
+                                                @endforeach
+                                            </select>
+                                        </td>
+                                        <td width="150">
+                                            <input value="{{ $f['vencimento'] }}" type="date" class="form-control" name="data_vencimento[]" id="">
+                                        </td>
+                                        <td width="150">
+                                            <input value="{{ __moeda($f['valor_parcela']) }}" type="tel" class="form-control moeda valor_fatura" name="valor_fatura[]" id="valor">
+                                        </td>
+                                        <td width="30">
+                                            <button class="btn btn-danger btn-remove-tr">
+                                                <i class="ri-delete-bin-line"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    @endforeach
+
                                     @else
                                     <tr class="dynamic-form">
                                         <td width="300">
@@ -541,7 +592,7 @@
                                             <input type="date" class="form-control date_atual" name="data_vencimento[]" id="" value="">
                                         </td>
                                         <td width="150">
-                                            <input type="tel" class="form-control moeda valor_faturas" name="valor_faturas[]" id="valor">
+                                            <input type="tel" class="form-control moeda valor_faturas" name="valor_fatura[]" id="valor">
                                         </td>
                                         <td width="30">
                                             <button class="btn btn-danger btn-remove-tr">

@@ -28,10 +28,21 @@ return new class extends Migration
             $table->decimal('acrescimo', 10, 2)->nullable();
             $table->decimal('valor_comissao', 10, 2)->default(0);
 
-            $table->boolean('status')->default(false);
+            $table->boolean('status')->default(0);
             $table->enum('prioridade', ['baixa', 'media', 'alta'])->default('baixa');
+            $table->integer('nfce_id')->nullable();
+            $table->integer('pedido_delivery_id')->nullable();
+
+            $table->boolean('msg_wpp_manha_horario')->default(0);
+            $table->boolean('msg_wpp_alerta_horario')->default(0);
+
 
             // alter table agendamentos add column prioridade enum('baixa', 'media', 'alta') default 'baixa';
+            // alter table agendamentos add column nfce_id integer default null;
+            // alter table agendamentos add column pedido_delivery_id integer default null;
+
+            // alter table agendamentos add column msg_wpp_manha_horario boolean default 0;
+            // alter table agendamentos add column msg_wpp_alerta_horario boolean default 0;
 
             $table->timestamps();
         });

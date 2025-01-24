@@ -4,14 +4,31 @@ namespace App\Http\Controllers;
 
 use App\Models\Cliente;
 use App\Models\Cidade;
+use App\Models\Nfe;
+use App\Models\Nfce;
+use App\Models\ItemNfe;
+use App\Models\ItemNfce;
+use App\Models\ContaReceber;
+use App\Models\ListaPrecoUsuario;
 use Illuminate\Http\Request;
 use App\Imports\ProdutoImport;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ClienteController extends Controller
 {
+
+    public function __construct()
+    {
+        $this->middleware('permission:clientes_create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:clientes_edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:clientes_view', ['only' => ['show', 'index']]);
+        $this->middleware('permission:clientes_delete', ['only' => ['destroy']]);
+    }
+
     public function index(Request $request)
     {
+        $start_date = $request->get('start_date');
+        $end_date = $request->get('end_date');
         $data = Cliente::where('empresa_id', request()->empresa_id)
         ->when(!empty($request->razao_social), function ($q) use ($request) {
             return  $q->where(function ($quer) use ($request) {
@@ -23,19 +40,36 @@ class ClienteController extends Controller
                 return $quer->where('cpf_cnpj', 'LIKE', "%$request->cpf_cnpj%");
             });
         })
+        ->when(!empty($start_date), function ($query) use ($start_date) {
+            return $query->whereDate('created_at', '>=', $start_date);
+        })
+        ->when(!empty($end_date), function ($query) use ($end_date) {
+            return $query->whereDate('created_at', '<=', $end_date);
+        })
         ->paginate(env("PAGINACAO"));
+        
         return view('clientes.index', compact('data'));
     }
 
     public function create()
     {
-        return view('clientes.create');
+        $listasPreco = ListaPrecoUsuario::select('lista_precos.*')
+        ->join('lista_precos', 'lista_precos.id', '=', 'lista_preco_usuarios.lista_preco_id')
+        ->where('lista_preco_usuarios.usuario_id', get_id_user())
+        ->get();
+        return view('clientes.create', compact('listasPreco'));
     }
 
     public function edit($id)
     {
         $item = Cliente::findOrFail($id);
-        return view('clientes.edit', compact('item'));
+        __validaObjetoEmpresa($item);
+
+        $listasPreco = ListaPrecoUsuario::select('lista_precos.*')
+        ->join('lista_precos', 'lista_precos.id', '=', 'lista_preco_usuarios.lista_preco_id')
+        ->where('lista_preco_usuarios.usuario_id', get_id_user())
+        ->get();
+        return view('clientes.edit', compact('item', 'listasPreco'));
     }
 
     public function store(Request $request)
@@ -44,11 +78,15 @@ class ClienteController extends Controller
         try {
             $request->merge([
                 'ie' => $request->ie ?? '',
-                'valor_cashback' => $request->valor_cashback ? __convert_value_bd($request->valor_cashback) : 0
+                'nome_fantasia' => $request->nome_fantasia ?? '',
+                'valor_cashback' => $request->valor_cashback ? __convert_value_bd($request->valor_cashback) : 0,
+                'valor_credito' => $request->valor_credito ? __convert_value_bd($request->valor_credito) : 0
             ]);
             Cliente::create($request->all());
+            __createLog($request->empresa_id, 'Cliente', 'cadastrar', $request->razao_social);
             session()->flash("flash_success", "Cliente cadastrado!");
         } catch (\Exception $e) {
+            __createLog($request->empresa_id, 'Cliente', 'erro', $e->getMessage());
             session()->flash("flash_error", "Algo deu errado: " . $e->getMessage());
         }
         return redirect()->route('clientes.index');
@@ -61,11 +99,14 @@ class ClienteController extends Controller
         try {
             $request->merge([
                 'ie' => $request->ie ?? '',
-                'valor_cashback' => $request->valor_cashback ? __convert_value_bd($request->valor_cashback) : 0
+                'valor_cashback' => $request->valor_cashback ? __convert_value_bd($request->valor_cashback) : 0,
+                'valor_credito' => $request->valor_credito ? __convert_value_bd($request->valor_credito) : 0
             ]);
             $item->fill($request->all())->save();
+            __createLog($request->empresa_id, 'Cliente', 'editar', $request->razao_social);
             session()->flash("flash_success", "Cliente atualizado!");
         } catch (\Exception $e) {
+            __createLog($request->empresa_id, 'Cliente', 'erro', $e->getMessage());
             session()->flash("flash_error", "Algo deu errado: " . $e->getMessage());
         }
         return redirect()->route('clientes.index');
@@ -99,13 +140,103 @@ class ClienteController extends Controller
         $this->validate($request, $rules, $messages);
     }
 
+    public function historico($id)
+    {
+        $item = Cliente::findOrFail($id);
+        __validaObjetoEmpresa($item);
+
+        $nves = Nfe::where('cliente_id', $id)->get();
+        $nfces = Nfce::where('cliente_id', $id)->get();
+
+        $data = [];
+        foreach($nves as $n){
+            $n->tipo = 'nfe';
+            array_push($data, $n);
+        }
+
+        foreach($nfces as $n){
+            $n->tipo = 'nfce';
+            array_push($data, $n);
+        }
+
+        usort($data, function($a, $b){
+            return $a->created_at < $b->created_at ? 1 : -1;
+        });
+
+        $produtos = $this->getProdutos($id);
+        $faturas = $this->getFaturas($id);
+
+        return view('clientes.historico', compact('item', 'data', 'produtos', 'faturas'));
+    }
+
+    private function getProdutos($id){
+
+        $data = [];
+        $dataIds = [];
+
+        $itens = ItemNfe::select('item_nves.*')
+        ->join('nves', 'nves.id', '=', 'item_nves.nfe_id')
+        ->where('nves.cliente_id', $id)
+        ->get();
+
+        foreach($itens as $i){
+            if(!in_array($i->produto_id, $dataIds)){
+                $data[] = $i;
+                $dataIds[] = $i->produto_id;
+            }else{
+                for($j=0; $j<sizeof($data); $j++){
+                    if($data[$j]['produto_id'] == $i->produto_id){
+                        $data[$j]['quantidade'] += $i->quantidade;
+                    }
+                }
+            }
+        }
+
+        $itens = ItemNfce::select('item_nfces.*')
+        ->join('nfces', 'nfces.id', '=', 'item_nfces.nfce_id')
+        ->where('nfces.cliente_id', $id)
+        ->get();
+
+        foreach($itens as $i){
+            if(!in_array($i->produto_id, $dataIds)){
+                $data[] = $i;
+                $dataIds[] = $i->produto_id;
+            }else{
+                for($j=0; $j<sizeof($data); $j++){
+                    if($data[$j]['produto_id'] == $i->produto_id){
+                        $data[$j]['quantidade'] += $i->quantidade;
+                    }
+                }
+            }
+        }
+        // dd($data);
+        return $data;
+    }
+
+    private function getFaturas($id){
+        return ContaReceber::where('cliente_id', $id)
+        ->orderBy('id', 'desc')
+        ->get();
+    }
+
     public function destroy($id)
     {
         $item = Cliente::findOrFail($id);
+
+        if(sizeof($item->vendas) > 0){
+            session()->flash("flash_warning", "Não é possível remover um cliente com vendas!");
+            return redirect()->back();
+        }
+        __validaObjetoEmpresa($item);
+        
         try {
+            $descricaoLog = $item->razao_social;
+
             $item->delete();
+            __createLog(request()->empresa_id, 'Cliente', 'excluir', $descricaoLog);
             session()->flash("flash_success", "Cliente removido!");
         } catch (\Exception $e) {
+            __createLog(request()->empresa_id, 'Cliente', 'erro', $e->getMessage());
             session()->flash("flash_error", "Algo deu Errado: " . $e->getMessage());
         }
         return redirect()->back();
@@ -131,7 +262,7 @@ class ClienteController extends Controller
                 foreach($rows as $row){
                     foreach($row as $key => $r){
 
-                        if($r[0] != 'RAZÃO SOCIAL'){
+                        if($r[0] != 'RAZÃO SOCIAL' && isset($r[0])){
                             try{
                                 $data = $this->preparaObjeto($r, $request->empresa_id);
                                 $item = Cliente::create($data);
@@ -191,49 +322,50 @@ class ClienteController extends Controller
     }
 
     private function validaArquivo($rows){
-        $cont = 0;
+        $cont = 1;
         $msgErro = "";
         foreach($rows as $row){
             foreach($row as $key => $r){
+                if(isset($r[0])){
+                    $razaoSocial = $r[0];
+                    $cpfCnpj = $r[2];
+                    $rua = $r[4];
+                    $numero = $r[5];
+                    $bairro = $r[6];
+                    $cidade = $r[7];
+                    $uf = $r[8];
+                    $cep = $r[11];
 
-                $razaoSocial = $r[0];
-                $cpfCnpj = $r[2];
-                $rua = $r[4];
-                $numero = $r[5];
-                $bairro = $r[6];
-                $cidade = $r[7];
-                $uf = $r[8];
-                $cep = $r[11];
-                
-                if(strlen($razaoSocial) == 0){
-                    $msgErro .= "Coluna razão social em branco na linha: $cont | "; 
-                }
+                    if(strlen($razaoSocial) == 0){
+                        $msgErro .= "Coluna razão social em branco na linha: $cont | "; 
+                    }
 
-                if(strlen($cpfCnpj) == 0){
-                    $msgErro .= "Coluna CPF/CNPJ em branco na linha: $cont | "; 
-                }
+                    if(strlen($cpfCnpj) == 0){
+                        $msgErro .= "Coluna CPF/CNPJ em branco na linha: $cont | "; 
+                    }
 
-                if(strlen($rua) == 0){
-                    $msgErro .= "Coluna rua em branco na linha: $cont | "; 
-                }
+                    if(strlen($rua) == 0){
+                        $msgErro .= "Coluna rua em branco na linha: $cont | "; 
+                    }
 
-                if(strlen($numero) == 0){
-                    $msgErro .= "Coluna numero em branco na linha: $cont | "; 
+                    if(strlen($numero) == 0){
+                        $msgErro .= "Coluna numero em branco na linha: $cont | "; 
+                    }
+                    if(strlen($bairro) == 0){
+                        $msgErro .= "Coluna bairro em branco na linha: $cont | "; 
+                    }
+                    if(strlen($cidade) == 0){
+                        $msgErro .= "Coluna cidade em branco na linha: $cont | "; 
+                    }
+                    if(strlen($cep) == 0){
+                        $msgErro .= "Coluna CEP em branco na linha: $cont | "; 
+                    }
+
+                    if($msgErro != ""){
+                        return $msgErro;
+                    }
+                    $cont++;
                 }
-                if(strlen($bairro) == 0){
-                    $msgErro .= "Coluna bairro em branco na linha: $cont | "; 
-                }
-                if(strlen($cidade) == 0){
-                    $msgErro .= "Coluna cidade em branco na linha: $cont | "; 
-                }
-                if(strlen($cep) == 0){
-                    $msgErro .= "Coluna CEP em branco na linha: $cont | "; 
-                }
-                
-                if($msgErro != ""){
-                    return $msgErro;
-                }
-                $cont++;
             }
         }
 
@@ -251,11 +383,18 @@ class ClienteController extends Controller
         $removidos = 0;
         for($i=0; $i<sizeof($request->item_delete); $i++){
             $item = Cliente::findOrFail($request->item_delete[$i]);
+            if(sizeof($item->vendas) > 0){
+                session()->flash("flash_warning", "Não é possível remover um cliente com vendas!");
+                return redirect()->back();
+            }
             try {
+                $descricaoLog = $item->razao_social;
                 $item->enderecosEcommerce()->delete();
                 $item->delete();
                 $removidos++;
+                __createLog(request()->empresa_id, 'Cliente', 'excluir', $descricaoLog);
             } catch (\Exception $e) {
+                __createLog(request()->empresa_id, 'Cliente', 'erro', $e->getMessage());
                 session()->flash("flash_error", 'Algo deu errado: '. $e->getMessage());
                 return redirect()->route('clientes.index');
             }
@@ -264,4 +403,5 @@ class ClienteController extends Controller
         session()->flash("flash_success", "Total de itens removidos: $removidos!");
         return redirect()->route('clientes.index');
     }
+
 }

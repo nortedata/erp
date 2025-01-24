@@ -161,8 +161,8 @@ class CorreioUtil {
 
 			return $retorno;
 		}catch(\Exception $e){
-			echo $e->getMessage();
-			die;
+			// echo $e->getMessage();
+			// die;
 			return [];
 		}
 	}

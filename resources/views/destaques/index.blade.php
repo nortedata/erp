@@ -20,10 +20,10 @@
                             {!!Form::select('produto_id', 'Pesquisar por produto')
                             !!}
                         </div>
-                        <div class="col-md-3">
+                        <!-- <div class="col-md-3">
                             {!!Form::select('servico_id', 'Pesquisar por serviço')
                             !!}
-                        </div>
+                        </div> -->
                         <div class="col-md-3 text-left">
                             <br>
                             <button class="btn btn-primary" type="submit"> <i class="ri-search-line"></i>Pesquisar</button>
@@ -91,3 +91,4 @@
     </div>
 </div>
 @endsection
+

@@ -33,6 +33,10 @@ $(document).on("focus", ".cnpj", function () {
     $(this).mask("00.000.000/0000-00", { reverse: true })
 });
 
+$(document).on("focus", ".cpf", function () {
+    $(this).mask("000.000.000-00", { reverse: true })
+});
+
 $(document).on("focus", ".moeda", function () {
     $(this).mask("00000000,00", { reverse: true })
 });
@@ -83,7 +87,7 @@ $(function () {
     $(".cest").mask("00.000.00", { reverse: true });
     $(".placa").mask("AAA-AAAA", { reverse: true });
     $(".cfop").mask("0000", { reverse: true });
-    $(".ie").mask("0000000000", { reverse: true });
+    $(".ie").mask("0000000000000", { reverse: true });
 
     $body = $("body");
 
@@ -140,12 +144,36 @@ $(function () {
         $('.btn-tooltip3').tooltip()
     }
 
+    $("input.tooltipp4, select.tooltipp4, textarea.tooltipp4")
+    .siblings("label")
+    .append('<button type="button" class="btn btn-link btn-tooltip4 btn-sm" data-toggle="tooltip" data-placement="top" title="Tooltip on top"><i class="ri-file-info-fill"></i></button>')
+    
+    if($('.text-tooltip4')){
+        let texto = $('.text-tooltip4').html()
+
+        $('.btn-tooltip4').prop('title', texto)
+        $('.btn-tooltip4').tooltip()
+    }
+
     setTimeout(() => {
         notifications()
+        videoSuporte()
     }, 10)
     
 });
 
+function videoSuporte(){
+    let currentUrl = window.location.href
+    $.get(path_url + 'api/video-suporte', {url : currentUrl})
+    .done((success) => {
+        if(success){
+            $('.video').append(success)
+        }
+    })
+    .fail((err) => {
+        console.log(err)
+    })
+}
 
 function convertMoedaToFloat(value) {
     if (!value) {
@@ -185,6 +213,8 @@ $(".btn-delete").on("click", function (e) {
     });
 });
 
+
+
 $(".btn-confirm").on("click", function (e) {
     e.preventDefault();
     var form = $(this).parents("form").attr("id");
@@ -215,12 +245,12 @@ $(".select2").select2({
     allowClear: Boolean($(this).data("allow-clear")),
 });
 
-$("#inp-cidade_id").select2({
+$(".cidade_select2").select2({
     minimumInputLength: 2,
     language: "pt-BR",
     placeholder: "Digite para buscar a cidade",
     width: "100%",
-    theme: "bootstrap4",
+    // theme: "bootstrap4",
     ajax: {
         cache: true,
         url: path_url + "api/buscaCidades",
@@ -250,12 +280,364 @@ $("#inp-cidade_id").select2({
     },
 });
 
+$(".codigo_unico").select2({
+    minimumInputLength: 2,
+    language: "pt-BR",
+    placeholder: "Digite para buscar o código",
+    width: "100%",
+    // theme: "bootstrap4",
+    ajax: {
+        cache: true,
+        url: path_url + "api/produtos/codigo-unico",
+        dataType: "json",
+        data: function (params) {
+            console.clear();
+            var query = {
+                pesquisa: params.term,
+                empresa_id: $('#empresa_id').val()
+            };
+            return query;
+        },
+        processResults: function (response) {
+            var results = [];
+
+            $.each(response, function (i, v) {
+                var o = {};
+                o.id = v.id;
+
+                o.text = v.codigo;
+                o.value = v.id;
+                results.push(o);
+            });
+            return {
+                results: results,
+            };
+        },
+    },
+});
+
+$("#inp-cidade_id").select2({
+    minimumInputLength: 2,
+    language: "pt-BR",
+    placeholder: "Digite para buscar a cidade",
+    width: "100%",
+    // theme: "bootstrap4",
+    ajax: {
+        cache: true,
+        url: path_url + "api/buscaCidades",
+        dataType: "json",
+        data: function (params) {
+            console.clear();
+            var query = {
+                pesquisa: params.term,
+            };
+            return query;
+        },
+        processResults: function (response) {
+            var results = [];
+
+            $.each(response, function (i, v) {
+                var o = {};
+                o.id = v.id;
+
+                o.text = v.info;
+                o.value = v.id;
+                results.push(o);
+            });
+            return {
+                results: results,
+            };
+        },
+    },
+});
+
+$("#inp-medico_id").select2({
+    minimumInputLength: 2,
+    language: "pt-BR",
+    placeholder: "Digite para buscar o médico",
+    width: "100%",
+    ajax: {
+        cache: true,
+        url: path_url + "api/ordemServico/medicos",
+        dataType: "json",
+        data: function (params) {
+            let empresa_id = $('#empresa_id').val()
+            var query = {
+                pesquisa: params.term,
+                empresa_id: empresa_id
+            };
+            return query;
+        },
+        processResults: function (response) {
+            var results = [];
+
+            $.each(response, function (i, v) {
+                var o = {};
+                o.id = v.id;
+
+                o.text = v.nome;
+                o.value = v.id;
+                results.push(o);
+            });
+            return {
+                results: results,
+            };
+        },
+    },
+});
+
+$("#inp-usuario_id").select2({
+    minimumInputLength: 2,
+    language: "pt-BR",
+    placeholder: "Digite para buscar o usuário",
+    width: "100%",
+    ajax: {
+        cache: true,
+        url: path_url + "api/usuarios",
+        dataType: "json",
+        data: function (params) {
+            let empresa_id = $('#empresa_id').val()
+            var query = {
+                pesquisa: params.term,
+                empresa_id: empresa_id
+            };
+            return query;
+        },
+        processResults: function (response) {
+            var results = [];
+
+            $.each(response, function (i, v) {
+                var o = {};
+                o.id = v.id;
+
+                o.text = v.name;
+                o.value = v.id;
+                results.push(o);
+            });
+            return {
+                results: results,
+            };
+        },
+    },
+});
+
+$("#inp-convenio_id").select2({
+    minimumInputLength: 2,
+    language: "pt-BR",
+    placeholder: "Digite para buscar o convênio",
+    width: "100%",
+    ajax: {
+        cache: true,
+        url: path_url + "api/ordemServico/convenios",
+        dataType: "json",
+        data: function (params) {
+            let empresa_id = $('#empresa_id').val()
+            var query = {
+                pesquisa: params.term,
+                empresa_id: empresa_id
+            };
+            return query;
+        },
+        processResults: function (response) {
+            var results = [];
+
+            $.each(response, function (i, v) {
+                var o = {};
+                o.id = v.id;
+
+                o.text = v.nome;
+                o.value = v.id;
+                results.push(o);
+            });
+            return {
+                results: results,
+            };
+        },
+    },
+});
+
+$("#inp-tipo_armacao_id").select2({
+    minimumInputLength: 2,
+    language: "pt-BR",
+    placeholder: "Digite para buscar o tipo de armação",
+    width: "100%",
+    ajax: {
+        cache: true,
+        url: path_url + "api/ordemServico/tipos-armacao",
+        dataType: "json",
+        data: function (params) {
+            let empresa_id = $('#empresa_id').val()
+            var query = {
+                pesquisa: params.term,
+                empresa_id: empresa_id
+            };
+            return query;
+        },
+        processResults: function (response) {
+            var results = [];
+
+            $.each(response, function (i, v) {
+                var o = {};
+                o.id = v.id;
+
+                o.text = v.nome;
+                o.value = v.id;
+                results.push(o);
+            });
+            return {
+                results: results,
+            };
+        },
+    },
+});
+
+$("#inp-laboratorio_id").select2({
+    minimumInputLength: 2,
+    language: "pt-BR",
+    placeholder: "Digite para buscar o laboratório",
+    width: "100%",
+    ajax: {
+        cache: true,
+        url: path_url + "api/ordemServico/laboratorios",
+        dataType: "json",
+        data: function (params) {
+            let empresa_id = $('#empresa_id').val()
+            var query = {
+                pesquisa: params.term,
+                empresa_id: empresa_id
+            };
+            return query;
+        },
+        processResults: function (response) {
+            var results = [];
+
+            $.each(response, function (i, v) {
+                var o = {};
+                o.id = v.id;
+
+                o.text = v.nome;
+                o.value = v.id;
+                results.push(o);
+            });
+            return {
+                results: results,
+            };
+        },
+    },
+});
+
+$("#inp-plano_conta_id").select2({
+    minimumInputLength: 2,
+    language: "pt-BR",
+    placeholder: "Digite para buscar o plano",
+    width: "100%",
+    ajax: {
+        cache: true,
+        url: path_url + "api/planos-conta",
+        dataType: "json",
+        data: function (params) {
+            console.clear();
+            let empresa_id = $('#empresa_id').val()
+            var query = {
+                pesquisa: params.term,
+                empresa_id: empresa_id
+            };
+            return query;
+        },
+        processResults: function (response) {
+            var results = [];
+
+            $.each(response, function (i, v) {
+                var o = {};
+                o.id = v.id;
+
+                o.text = v.descricao;
+                o.value = v.id;
+                results.push(o);
+            });
+            return {
+                results: results,
+            };
+        },
+    },
+});
+
+$("#inp-conta_empresa_id").select2({
+    minimumInputLength: 2,
+    language: "pt-BR",
+    placeholder: "Digite para buscar a conta",
+    width: "100%",
+    ajax: {
+        cache: true,
+        url: path_url + "api/contas-empresa",
+        dataType: "json",
+        data: function (params) {
+            console.clear();
+            let empresa_id = $('#empresa_id').val()
+            var query = {
+                pesquisa: params.term,
+                empresa_id: empresa_id
+            };
+            return query;
+        },
+        processResults: function (response) {
+            var results = [];
+
+            $.each(response, function (i, v) {
+                var o = {};
+                o.id = v.id;
+
+                o.text = v.nome;
+                o.value = v.id;
+                results.push(o);
+            });
+            return {
+                results: results,
+            };
+        },
+    },
+});
+
+$("#inp-categoria_nuvem_shop").select2({
+    minimumInputLength: 2,
+    language: "pt-BR",
+    placeholder: "Digite para buscar a categoria da nuvem shop",
+    width: "100%",
+    ajax: {
+        cache: true,
+        url: path_url + "api/nuvemshop/get-categorias",
+        dataType: "json",
+        data: function (params) {
+            console.clear();
+            var query = {
+                pesquisa: params.term,
+                empresa_id: $('#empresa_id').val()
+            };
+            return query;
+        },
+        processResults: function (response) {
+            var results = [];
+
+            $.each(response, function (i, v) {
+                var o = {};
+                o.id = v._id;
+
+                o.text = v.nome;
+                o.value = v._id;
+                results.push(o);
+            });
+            return {
+                results: results,
+            };
+        },
+    },
+});
+
 $("#inp-mercado_livre_categoria").select2({
     minimumInputLength: 2,
     language: "pt-BR",
     placeholder: "Digite para buscar a categoria do anúncio",
     width: "100%",
-    theme: "bootstrap4",
     ajax: {
         cache: true,
         url: path_url + "api/mercadolivre/get-categorias",
@@ -290,7 +672,6 @@ $("#inp-ncm").select2({
     language: "pt-BR",
     placeholder: "Digite para buscar o NCM",
     width: "100%",
-    theme: "bootstrap4",
     ajax: {
         cache: true,
         url: path_url + "api/ncm",
@@ -329,7 +710,6 @@ $("#inp-empresa").select2({
     language: "pt-BR",
     placeholder: "Digite para buscar a empresa",
     width: "100%",
-    theme: "bootstrap4",
     ajax: {
         cache: true,
         url: path_url + "api/empresas/find-all",
@@ -360,11 +740,10 @@ $("#inp-empresa").select2({
 });
 
 $("#inp-servico_id").select2({
-    minimumInputLength: 2,
+    minimumInputLength: 1,
     language: "pt-BR",
     placeholder: "Digite para buscar o seviço",
     width: "100%",
-    theme: "bootstrap4",
     ajax: {
         cache: true,
         url: path_url + "api/servicos",
@@ -385,7 +764,43 @@ $("#inp-servico_id").select2({
                 var o = {};
                 o.id = v.id;
 
-                o.text = v.nome + ' R$ ' + convertFloatToMoeda(v.valor);
+                o.text = '#' + v.numero_sequencial + ' ' + v.nome + ' R$ ' + convertFloatToMoeda(v.valor);
+                o.value = v.id;
+                results.push(o);
+            });
+            return {
+                results: results,
+            };
+        },
+    },
+});
+
+$("#inp-veiculo_id").select2({
+    minimumInputLength: 2,
+    language: "pt-BR",
+    placeholder: "Digite para buscar o veículo",
+    width: "100%",
+    ajax: {
+        cache: true,
+        url: path_url + "api/veiculos",
+        dataType: "json",
+        data: function (params) {
+            let empresa_id = $('#empresa_id').val()
+            console.clear();
+            var query = {
+                pesquisa: params.term,
+                empresa_id: empresa_id
+            };
+            return query;
+        },
+        processResults: function (response) {
+            var results = [];
+
+            $.each(response, function (i, v) {
+                var o = {};
+                o.id = v.id;
+
+                o.text = v.placa + ' - ' + v.modelo;
                 o.value = v.id;
                 results.push(o);
             });
@@ -401,7 +816,6 @@ $("#inp-produto_id").select2({
     language: "pt-BR",
     placeholder: "Digite para buscar o produto",
     width: "100%",
-    theme: "bootstrap4",
     ajax: {
         cache: true,
         url: path_url + "api/produtos",
@@ -411,7 +825,8 @@ $("#inp-produto_id").select2({
             console.clear();
             var query = {
                 pesquisa: params.term,
-                empresa_id: empresa_id
+                empresa_id: empresa_id,
+                usuario_id: $('#usuario_id').val()
             };
             return query;
         },
@@ -441,7 +856,6 @@ $("#inp-produto_id").select2({
                     o.text += ' [' + v.codigo_barras  + ']';
                 }
                 o.value = v.id;
-                console.log(o)
                 results.push(o);
             });
             return {
@@ -456,7 +870,6 @@ $("#inp-produto_composto_id").select2({
     language: "pt-BR",
     placeholder: "Digite para buscar o produto composto",
     width: "100%",
-    theme: "bootstrap4",
     ajax: {
         cache: true,
         url: path_url + "api/produtos-composto",
@@ -496,7 +909,90 @@ $("#inp-produto_composto_id").select2({
                     o.text += ' [' + v.codigo_barras  + ']';
                 }
                 o.value = v.id;
-                console.log(o)
+                results.push(o);
+            });
+            return {
+                results: results,
+            };
+        },
+    },
+});
+
+$("#inp-produto_combo_id").select2({
+    minimumInputLength: 2,
+    language: "pt-BR",
+    placeholder: "Digite para adicionar o produto no combo",
+    width: "100%",
+    ajax: {
+        cache: true,
+        url: path_url + "api/produtos-combo",
+        dataType: "json",
+        data: function (params) {
+            let empresa_id = $('#empresa_id').val()
+            console.clear();
+            var query = {
+                pesquisa: params.term,
+                empresa_id: empresa_id
+            };
+            return query;
+        },
+        processResults: function (response) {
+            var results = [];
+            let compra = 0
+            
+
+            $.each(response, function (i, v) {
+                var o = {};
+                o.id = v.id;
+                if(v.codigo_variacao){
+                    o.codigo_variacao = v.codigo_variacao
+                }
+
+                o.text = v.nome
+                
+                o.text += ' R$ ' + convertFloatToMoeda(v.valor_compra);
+                if(v.codigo_barras){
+                    o.text += ' [' + v.codigo_barras  + ']';
+                }
+                o.value = v.id;
+                results.push(o);
+            });
+            return {
+                results: results,
+            };
+        },
+    },
+});
+
+$("#inp-produto_delivery_id").select2({
+    minimumInputLength: 2,
+    language: "pt-BR",
+    placeholder: "Digite para buscar o produto de delivery",
+    width: "100%",
+    ajax: {
+        cache: true,
+        url: path_url + "api/produtos/delivery",
+        dataType: "json",
+        data: function (params) {
+            let empresa_id = $('#empresa_id').val()
+            console.clear();
+            var query = {
+                pesquisa: params.term,
+                empresa_id: empresa_id
+            };
+            return query;
+        },
+        processResults: function (response) {
+            var results = [];
+            let compra = 0
+            
+
+            $.each(response, function (i, v) {
+                var o = {};
+                o.id = v.id;
+
+                o.text = v.nome
+                o.value = v.id;
                 results.push(o);
             });
             return {
@@ -511,7 +1007,6 @@ $("#inp-empresa_contador_id").select2({
     language: "pt-BR",
     placeholder: "Digite para buscar a empresa",
     width: "100%",
-    theme: "bootstrap4",
     ajax: {
         cache: true,
         url: path_url + "api/empresas",
@@ -545,7 +1040,6 @@ $("#inp-ingrediente_id").select2({
     language: "pt-BR",
     placeholder: "Digite para buscar o produto",
     width: "100%",
-    theme: "bootstrap4",
     ajax: {
         cache: true,
         url: path_url + "api/produtos",
@@ -581,7 +1075,6 @@ $("#inp-funcionario_id").select2({
     minimumInputLength: 2,
     language: "pt-BR",
     placeholder: "Digite para buscar o funcionário",
-    theme: "bootstrap4",
 
     ajax: {
         cache: true,
@@ -617,7 +1110,6 @@ $("#inp-cliente_id").select2({
     minimumInputLength: 2,
     language: "pt-BR",
     placeholder: "Digite para buscar o cliente",
-    theme: "bootstrap4",
 
     ajax: {
         cache: true,
@@ -653,8 +1145,6 @@ $("#inp-cliente_delivery_id").select2({
     minimumInputLength: 2,
     language: "pt-BR",
     placeholder: "Digite para buscar o cliente",
-    theme: "bootstrap4",
-
     ajax: {
         cache: true,
         url: path_url + "api/clientes/pesquisa-delivery",
@@ -689,8 +1179,6 @@ $(".cliente_id").select2({
     minimumInputLength: 2,
     language: "pt-BR",
     placeholder: "Digite para buscar o cliente",
-    theme: "bootstrap4",
-
     ajax: {
         cache: true,
         url: path_url + "api/clientes/pesquisa",
@@ -727,8 +1215,6 @@ $("#inp-fornecedor_id").select2({
     minimumInputLength: 2,
     language: "pt-BR",
     placeholder: "Digite para buscar o fornecedor",
-    theme: "bootstrap4",
-
     ajax: {
         cache: true,
         url: path_url + "api/fornecedores/pesquisa",
@@ -834,6 +1320,23 @@ $(document).delegate(".btn-remove-tr", "click", function (e) {
             }
         }
     });
+});
+
+$(".multi-select").bootstrapDualListbox({
+    nonSelectedListLabel: "Disponíveis",
+    selectedListLabel: "Selecionados",
+    filterPlaceHolder: "Filtrar",
+    filterTextClear: "Mostrar Todos",
+    moveSelectedLabel: "Mover Selecionados",
+    moveAllLabel: "Mover Todos",
+    removeSelectedLabel: "Remover Selecionado",
+    removeAllLabel: "Remover Todos",
+    infoText: "Mostrando Todos - {0}",
+    infoTextFiltered:
+    '<span class="label label-warning">Filtrado</span> {0} DE {1}',
+    infoTextEmpty: "Sem Dados",
+    moveOnSelect: false,
+    selectorMinimalHeight: 300
 });
 
 function notifications(){

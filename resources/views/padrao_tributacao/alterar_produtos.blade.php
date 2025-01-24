@@ -30,7 +30,7 @@
                     <div class="row mt-4 m-2">
                         <p class="text-danger"><i class="ri-alert-line"></i>Desmaque os produtos que não deseja atualizar</p>
                         <h5>Produtos</h5>
-                        <div class="form-check m-2 form-checkbox-success col-12">
+                        <div class="form-check m-1 form-checkbox-success col-12">
                             <input type="checkbox" checked class="form-check-input" id="check-all">
                             <label class="form-check-label">Selecionar todos</label>
                         </div>
@@ -55,10 +55,12 @@
         {!!Form::close()!!}
     </div>
 </div>
+
 @endsection
 
 @section('js')
 <script type="text/javascript">
+
     $(document).on("change", "#inp-padrao_id", function () {
         if($(this).val()){
 
@@ -100,5 +102,14 @@
         }
     })
 
+    $(document).on("blur", "#inp-cfop_estadual", function () {
+
+        let v = $(this).val().substring(1,4)
+        $("#inp-cfop_outro_estado").val('6'+v)
+        $("#inp-cfop_entrada_estadual").val('1'+v)
+        $("#inp-cfop_entrada_outro_estado").val('2'+v)
+    })
+
 </script>
 @endsection
+

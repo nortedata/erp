@@ -25,24 +25,37 @@ function transmitir(id){
 				swal("Algo deu errado", err[0], "error")
 			}
 		}catch{
-
-			try{
-				if(err.responseJSON.error){
-					swal("Algo deu errado", err.responseJSON.error, "error")
-					.then(() => {
-						location.reload()
-					})
-				}else{
-					swal("Algo deu errado", err.responseJSON, "error")
+			if(err.responseJSON.message){
+				swal("Algo deu errado", err.responseJSON.message, "error")
+				.then(() => {
+					location.reload()
+				})
+			}else{
+				try{
+					if(err.responseJSON.xMotivo){
+						swal("Algo deu errado", err.responseJSON.xMotivo, "error")
+						.then(() => {
+							location.reload()
+						})
+					}else{
+						if(err.responseJSON.error){
+							swal("Algo deu errado", err.responseJSON.error, "error")
+							.then(() => {
+								location.reload()
+							})
+						}else{
+							swal("Algo deu errado", err.responseJSON, "error")
+							.then(() => {
+								location.reload()
+							})
+						}
+					}
+				}catch{
+					swal("Algo deu errado", err.responseJSON[0], "error")
 					.then(() => {
 						location.reload()
 					})
 				}
-			}catch{
-				swal("Algo deu errado", err.responseJSON[0], "error")
-				.then(() => {
-					location.reload()
-				})
 			}
 		}
 		
@@ -135,11 +148,42 @@ function consultar(id, numero){
 		id: id,
 	})
 	.done((success) => {
+		console.log(success)
 		swal("Sucesso", success, "success")
+		.then(() => {
+			location.reload()
+		})
 	})
 	.fail((err) => {
+		console.log(err)
 		
 		swal("Algo deu errado", err.responseJSON, "error")
 
 	})
 }
+
+
+function enviarEmail(id, numero){
+	$('.ref-numero').text(numero)
+	$('#modal-email').modal('show')
+	$('#inp-danfe').prop('checked', 1)
+	$('#inp-xml').prop('checked', 1)
+	$('#nfe_email_id').val(id)
+	$('#inp-email').val('')
+	$.get(path_url + "api/nfe_painel/find", {
+		id: id,
+	})
+	.done((success) => {
+		if(success.cliente){
+			$('#inp-email').val(success.cliente.email)
+		}
+	})
+	.fail((err) => {
+		// console.log(err)
+	})
+}
+
+$('.btn-enviar-email').click(() => {
+	$('.modal-loading').modal('show')
+})
+

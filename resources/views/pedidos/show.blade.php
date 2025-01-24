@@ -9,9 +9,12 @@
 @section('content')
 <div class="mt-3">
 	<div class="row">
+		<div id="print"></div>
+		
 		<div class="col-12 col-lg-4">
 			<div class="card">
 				<div class="card-body">
+
 					<form class="row" method="post" action="{{ route('pedidos-cardapio.store-item', [$item->id]) }}">
 						@csrf
 
@@ -97,10 +100,11 @@
 				<div class="card-body">
 					<div class="col-12">
 						<h3>ITENS <strong class="text-success">#{{ $item->comanda }}</strong></h3>
-						<a target="_blank" class="float-end btn btn-dark" href="{{ route('pedidos-cardapio.print', [$item->id])}}">
+
+						<button class="float-end btn btn-dark" onclick="print('{{ $item->id }}')">
 							<i class="ri-printer-line"></i>
 							Imprimir
-						</a>
+						</button>
 					</div>
 
 					
@@ -119,7 +123,12 @@
 							<tbody>
 								@foreach($item->itens as $i)
 								<tr class="bg-{{ $i->estado }}">
-									<td>{{ $i->produto->nome }}</td>
+									<td>
+										{{ $i->produto->nome }}
+										@if($i->funcionario)
+										<br> <span style="color: red; font-size: 11px">garçom: {{ $i->funcionario->nome }}</span>
+										@endif
+									</td>
 									<td>{{ __moeda($i->quantidade) }}</td>
 									<td>{{ __moeda($i->valor_unitario) }}</td>
 									<td>{{ __moeda($i->sub_total) }}</td>
@@ -135,7 +144,7 @@
 										@endif
 									</td>
 									<td>
-										<form action="{{ route('pedidos-cardapio.destroy-item', $i->id) }}" method="post" id="form-{{$item->id}}">
+										<form action="{{ route('pedidos-cardapio.destroy-item', $i->id) }}" method="post" id="form-{{$i->id}}">
 											@csrf
 											@method('delete')
 											<button type="submit" title="Deletar" class="btn btn-danger btn-delete btn-sm"><i class="ri-delete-bin-2-line"></i></button>
@@ -179,7 +188,7 @@
 					</div>	
 
 					<div class="row">
-						<h5>estados dos itens</h5>
+						<h5>estado dos itens</h5>
 						<div class="col-lg-3 col-6">
 							<h6 class="text-novo">
 								<i class="ri-flag-2-fill"></i> novo
@@ -209,6 +218,12 @@
 						<a class="btn btn-lg btn-primary pull-right @if(!$item->status) disabled @endif" href="{{ route('pedidos-cardapio.finish', [$item->id])}}">
 							<i class="ri-shopping-cart-2-line"></i>
 							Finalizar <strong style="font-size: 25px; margin-left: 15px">R$ {{ __moeda($item->total) }}</strong>
+						</a>
+					</div>
+
+					<div style="text-align: right; margin-top: -40px;">
+						<a href="{{ route('pedidos-cardapio.index') }}" class="btn btn-sm btn-danger btn-sm px-3">
+							<i class="ri-arrow-left-double-fill"></i>Voltar
 						</a>
 					</div>
 				</div>

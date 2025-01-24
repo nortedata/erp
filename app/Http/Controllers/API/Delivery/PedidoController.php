@@ -184,7 +184,7 @@ public function consultaPix(Request $request){
     try{
 
         $pedido = PedidoDelivery::findOrFail($request->pedido_id);
-
+        
         $config = MarketPlaceConfig::where('empresa_id', $pedido->empresa_id)->first();
         \MercadoPago\SDK::setAccessToken($config->mercadopago_access_token);
 

@@ -20,8 +20,7 @@
 
     <div class="col-md-4">
         {!!Form::select('ncm', 'NCM')
-        ->required()
-        ->options(isset($item) ? [$item->ncm => $item->_ncm->descricao] : [])
+        ->options(isset($item) && $item->ncm ? [$item->ncm => $item->_ncm->descricao] : [])
         !!}
     </div>
     <div class="col-md-2">
@@ -121,6 +120,30 @@
         !!}
     </div>
 
+    <div class="col-md-3">
+        {!!Form::select('modBCST', 'Modalidade BC-ST', App\Models\Produto::modalidadesBCST())
+        ->attrs(['class' => 'form-select'])
+        !!}
+    </div>
+
+    <div class="col-md-2">
+        {!!Form::tel('pICMSST', '% ICMS ST')
+        ->attrs(['class' => 'percentual'])
+        !!}
+    </div>
+
+    <div class="col-md-2">
+        {!!Form::tel('pMVAST', '% MVA ST')
+        ->attrs(['class' => 'percentual'])
+        !!}
+    </div>
+
+    <div class="col-md-2">
+        {!!Form::tel('redBCST', '% Red BC ST')
+        ->attrs(['class' => 'percentual'])
+        !!}
+    </div>
+
     @if(!isset($not_submit))
     <hr class="mt-4">
     <div class="col-12" style="text-align: right;">
@@ -128,3 +151,4 @@
     </div>
     @endif
 </div>
+

@@ -36,6 +36,19 @@
                                 @if(!$item->em_atendimento)
                                 <span class="text-danger">Pedindo para fechar</span>
                                 @endif
+
+                            </div>
+                            @if(__isAdmin() || sizeof($item->itens) == 0)
+                            <div class="card-footer">
+                                <form action="{{ route('pedidos-cardapio.destroy', $item->id) }}" method="post" id="form-{{$item->id}}">
+                                    @method('delete')
+                                    @csrf
+                                    <button class="btn btn-danger btn-delete w-100">
+                                        Remover comanda
+                                    </button>
+                                </form>
+                                @endif
+                                
                             </div>
                         </div>
                     </a>
@@ -63,6 +76,11 @@
                             {!!Form::text('comanda', 'Número comanda')
                             ->required()
                             ->attrs(['data-mask' => 'AAAAAAAA'])
+                            !!}
+                        </div>
+
+                        <div class="col-md-2">
+                            {!!Form::tel('mesa', 'Mesa')
                             !!}
                         </div>
 

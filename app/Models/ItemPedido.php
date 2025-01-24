@@ -11,11 +11,15 @@ class ItemPedido extends Model
 
     protected $fillable = [
         'pedido_id', 'produto_id', 'observacao', 'estado', 'quantidade', 'valor_unitario', 'sub_total', 
-        'ponto_carne', 'tamanho_id', 'tempo_preparo'
+        'ponto_carne', 'tamanho_id', 'tempo_preparo', 'funcionario_id'
     ];
 
     public function produto(){
         return $this->belongsTo(Produto::class, 'produto_id');
+    }
+
+    public function funcionario(){
+        return $this->belongsTo(Funcionario::class, 'funcionario_id');
     }
 
     public function pedido(){
@@ -23,7 +27,7 @@ class ItemPedido extends Model
     }
 
     public function adicionais(){
-        return $this->hasMany(ItemAdicional::class, 'item_pedido_id');
+        return $this->hasMany(ItemAdicional::class, 'item_pedido_id')->with('adicional');
     }
 
     public function pizzas(){

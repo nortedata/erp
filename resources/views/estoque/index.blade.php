@@ -5,6 +5,7 @@
         <div class="card">
             <div class="card-body">
                 <div class="row">
+                    @can('estoque_create')
                     <div class="col-md-2">
                         <a href="{{ route('estoque.create') }}" class="btn btn-success">
                             <i class="ri-add-circle-fill"></i>
@@ -17,6 +18,7 @@
                             Apontamento Produção
                         </a>
                     </div>
+                    @endcan
                 </div>
                 <hr class="mt-3">
                 <div class="col-lg-12">
@@ -45,7 +47,7 @@
                                     <th>Produto</th>
                                     <th>Quantidade</th>
                                     <th>Valor de venda</th>
-
+                                    <th>Ações</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -55,13 +57,63 @@
                                     <td>
                                         {{ $item->descricao() }}
                                     </td>
-                                    <td>{{ number_format($item->quantidade, 3, '.', '') }}</td>
-                                    <td>{{ __moeda($item->produto->valor_unitario) }}</td>
+                                    <td>
 
+                                        @if(__countLocalAtivo() == 1)
+
+                                        @if($item->produto->unidade == 'UN' || $item->produto->unidade == 'UNID')
+                                        {{ number_format($item->quantidade, 0) }}
+                                        @else
+                                        {{ number_format($item->quantidade, 3, '.', '') }}
+                                        @endif
+
+                                        @else
+
+                                        @foreach($item->produto->estoqueLocais as $e)
+                                        @if($e->local)
+                                        {{ $e->local->descricao }}:
+                                        <strong class="text-success">
+                                            @if($item->produto->unidade == 'UN' || $item->produto->unidade == 'UNID')
+                                            {{ number_format($e->quantidade, 0) }}
+                                            @else
+                                            {{ number_format($e->quantidade, 3) }}
+                                            @endif
+                                        </strong>
+                                        @endif
+                                        @if(!$loop->last) | @endif
+                                        @endforeach
+
+                                        @endif
+                                    </td>
+                                    <td>{{ __moeda($item->produto->valor_unitario) }}</td>
+                                    <td style="width: 300px">
+                                        <form action="{{ route('estoque.destroy', $item->id) }}" method="post" id="form-{{$item->id}}">
+                                            @method('delete')
+                                            @csrf
+                                            @can('estoque_edit')
+                                            <a title="Editar estoque" href="{{ route('estoque.edit', [$item->id]) }}" class="btn btn-dark btn-sm">
+                                                <i class="ri-pencil-fill"></i>
+                                            </a>
+                                            @endcan
+                                            @can('produtos_edit')
+                                            <a title="Editar produto" href="{{ route('produtos.edit', [$item->produto_id]) }}" class="btn btn-warning btn-sm">
+                                                <i class="ri-pencil-fill"></i>
+                                            </a>
+                                            @endcan
+
+                                            @can('estoque_delete')
+                                            <button type="button" class="btn btn-delete btn-sm btn-danger">
+                                                <i class="ri-delete-bin-line"></i>
+                                            </button>
+                                            @endcan
+
+                                        </form>
+
+                                    </td>
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="4" class="text-center">Nada encontrado</td>
+                                    <td colspan="5" class="text-center">Nada encontrado</td>
                                 </tr>
                                 @endforelse
                             </tbody>

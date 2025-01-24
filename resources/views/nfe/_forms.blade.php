@@ -1,3 +1,17 @@
+@if(__countLocalAtivo() > 1 && __escolheLocalidade())
+<div class="row mb-2">
+    <div class="col-md-3">
+        <label for="">Local</label>
+        <select id="inp-local_id" required class="select2 class-required" data-toggle="select2" name="local_id">
+            <option value="">Selecione</option>
+            @foreach(__getLocaisAtivoUsuario() as $local)
+            <option @isset($item) @if($item->local_id == $local->id) selected @endif @endif value="{{ $local->id }}">{{ $local->descricao }}</option>
+            @endforeach
+        </select>
+    </div>
+</div>
+@endif
+
 <div class="row">
     <div class="col-md-12">
         @isset($item)
@@ -19,8 +33,30 @@
         <input type="hidden" name="pedido_ecommerce_id" value="{{$item->id}}">
         @endif
 
+        @isset($isPedidoMercadoLivre)
+        <input type="hidden" name="pedido_mercado_livre_id" value="{{$item->id}}">
+        @endif
+
+        @isset($isPedidoNuvemShop)
+        <input type="hidden" name="pedido_nuvem_shop_id" value="{{$item->id}}">
+        @endif
+
         @isset($cotacao)
         <input type="hidden" name="cotacao_id" value="{{$cotacao->id}}">
+        @endif
+
+        @isset($isReserva)
+        <input type="hidden" name="reserva_id" value="{{$item->id}}">
+        @endif
+
+        @isset($isPedidoWoocommerce)
+        <input type="hidden" name="pedido_woocommerce_id" value="{{$item->id}}">
+        @endif
+
+        @isset($orcamentosId)
+        @foreach($orcamentosId as $i)
+        <input type="hidden" name="orcamento_id[]" value="{{ $i }}">
+        @endforeach
         @endif
 
         <ul class="nav nav-tabs nav-primary" role="tablist">
@@ -80,8 +116,19 @@
                     @if(!isset($isCompra))
                     <div class="row m-3">
                         <div class="col-md-5">
-                            {!!Form::select('cliente_id', 'Cliente')->attrs(['class' => 'select2 cliente_id'])->options(isset($item) ? [$item->cliente_id => $item->cliente->razao_social] : [])
-                            !!}
+                            <label class="required">Cliente</label>
+                            <div class="input-group flex-nowrap">
+                                <select required id="inp-cliente_id" name="cliente_id" class="cliente_id">
+                                    @if(isset($item) && $item->cliente)
+                                    <option value="{{ $item->cliente_id }}">{{ $item->cliente->razao_social }}</option>
+                                    @endif
+                                </select>
+                                @can('clientes_create')
+                                <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#modal_novo_cliente" type="button">
+                                    <i class="ri-add-circle-fill"></i>
+                                </button>
+                                @endcan
+                            </div>
                         </div>
                         <hr class="mt-3">
                         <div class="row d-cliente">
@@ -165,15 +212,29 @@
                     @else
 
                     <div class="row m-3">
+
                         <div class="col-md-5">
-                            @isset($cotacao)
-                            {!!Form::select('fornecedor_id', 'Fornecedor')->attrs(['class' => 'select2 fornecedor_id'])->options([$cotacao->fornecedor_id => $cotacao->fornecedor->razao_social])
-                            !!}
-                            @else
-                            {!!Form::select('fornecedor_id', 'Fornecedor')->attrs(['class' => 'select2 fornecedor_id'])->options(isset($item) ? [$item->fornecedor_id => $item->fornecedor->razao_social] : [])
-                            !!}
-                            @endif
+                            <label>Fornecedor</label>
+                            <div class="input-group flex-nowrap">
+                                <select id="inp-fornecedor_id" name="fornecedor_id" class="fornecedor_id">
+                                    @isset($cotacao)
+                                    <option value="{{ $cotacao->fornecedor_id }}">{{ $cotacao->fornecedor->razao_social }}</option>
+
+                                    @else
+                                    @isset($item)
+                                    <option value="{{ $item->fornecedor_id }}">{{ $item->fornecedor->razao_social }}</option>
+                                    @endif
+                                    @endif
+
+                                </select>
+                                @can('fornecedores_create')
+                                <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#modal_novo_fornecedor" type="button">
+                                    <i class="ri-add-circle-fill"></i>
+                                </button>
+                                @endcan
+                            </div>
                         </div>
+                        
                         <hr class="mt-3">
                         <div class="row d-cliente">
                             <div class="col-md-3">
@@ -259,11 +320,12 @@
             <div class="tab-pane fade" id="produtos" role="tabpanel">
                 <div class="card">
                     <div class="row m-3">
+
                         <div class="table-responsive">
                             <table class="table table-dynamic table-produtos" style="width: 2800px">
                                 <thead>
                                     <tr>
-                                        <th>Produto</th>
+                                        <th class="sticky-col first-col">Produto</th>
                                         <th>Quantidade</th>
                                         <th>Valor Unit.</th>
                                         <th>Subtotal</th>
@@ -279,10 +341,14 @@
                                         <th>CST PIS</th>
                                         <th>CST COFINS</th>
                                         <th>CST IPI</th>
+                                        <th>Nº do pedido</th>
+                                        <th>Nº item do pedido</th>
+                                        <th>Informação adicional do item</th>
                                         <th>Ações</th>
                                     </tr>
                                 </thead>
                                 <tbody>
+
                                     @if(isset($item))
 
                                     @foreach ($item->itens as $prod)
@@ -291,10 +357,18 @@
                                     @include('ordem_servico.partials.itens', ['prod' => $prod])
                                     @elseif(isset($isPedidoEcommerce))
                                     @include('pedido_ecommerce.partials.itens', ['prod' => $prod, 'cfop_estadual' => $item->cliente->cidade->uf])
+                                    @elseif(isset($isPedidoMercadoLivre))
+                                    @include('mercado_livre_pedidos.partials.itens', ['prod' => $prod, 'cfop_estadual' => $item->cliente->cidade->uf])
+
+                                    @elseif(isset($isReserva))
+                                    @include('mercado_livre_pedidos.partials.itens', ['prod' => $prod, 'cfop_estadual' => $item->cliente->cidade->uf])
+                                    @elseif(isset($isPedidoWoocommerce))
+                                    @include('woocommerce_pedidos.partials.itens', ['prod' => $prod, 'cfop_estadual' => $item->cliente->cidade->uf])
 
                                     @else
+
                                     <tr class="dynamic-form">
-                                        <td width="250">
+                                        <td class="sticky-col first-col">
                                             <select class="form-control select2 produto_id" name="produto_id[]" id="inp-produto_id">
                                                 <option value="{{ $prod->produto_id }}">{{ $prod->produto->nome }}</option>
                                             </select>
@@ -302,70 +376,86 @@
                                             <span>variação: <strong>{{ $prod->produtoVariacao->descricao }}</strong></span>
                                             @endif
                                             <input name="variacao_id[]" type="hidden" value="{{ $prod->variacao_id }}">
-
+                                            <div style="width: 500px;"></div>
                                         </td>
                                         <td width="80">
-                                            <input value="{{ __moeda($prod->quantidade) }}" class="form-control qtd" type="tel" name="quantidade[]" id="inp-quantidade">
+                                            <input style="width: 150px" value="{{ __moeda($prod->quantidade) }}" class="form-control qtd next" type="tel" name="quantidade[]" id="inp-quantidade">
                                         </td>
                                         <td width="100">
-                                            <input value="{{ __moeda($prod->valor_unitario) }}" class="form-control moeda valor_unit" type="tel" name="valor_unitario[]" id="inp-valor_unitario">
+                                            <input style="width: 150px" value="{{ __moeda($prod->valor_unitario) }}" class="form-control moeda valor_unit next" type="tel" name="valor_unitario[]" id="inp-valor_unitario">
                                         </td>
                                         <td width="150">
-                                            <input value="{{ __moeda($prod->sub_total) }}" class="form-control moeda sub_total" type="tel" name="sub_total[]" id="inp-subtotal">
-                                        </td>
-                                        <td width="80">
-                                            <input value="{{ $prod->perc_icms }}" class="form-control percentual" type="tel" name="perc_icms[]" id="inp-perc_icms">
-                                        </td>
-                                        <td width="80">
-                                            <input value="{{ $prod->perc_pis }}" class="form-control percentual" type="tel" name="perc_pis[]" id="inp-perc_pis">
-                                        </td>
-                                        <td width="80">
-                                            <input value="{{ $prod->perc_cofins }}" class="form-control percentual" type="tel" name="perc_cofins[]" id="inp-perc_cofins">
-                                        </td>
-                                        <td width="80">
-                                            <input value="{{ $prod->perc_ipi }}" class="form-control percentual" type="tel" name="perc_ipi[]" id="inp-perc_ipi">
-                                        </td>
-                                        <td width="80">
-                                            <input value="{{ $prod->perc_red_bc }}" class="form-control percentual ignore" type="tel" name="perc_red_bc[]" id="inp-perc_red_bc">
-                                        </td>
-                                        <td width="80">
-                                            <input value="{{ $prod->cfop }}" class="form-control cfop" type="tel" name="cfop[]" id="inp-cfop_estadual">
-                                        </td>
-
-                                        <td width="120">
-                                            <input value="{{ $prod->ncm }}" class="form-control ncm" type="tel" name="ncm[]" id="inp-ncm">
+                                            <input style="width: 150px" value="{{ __moeda($prod->sub_total) }}" class="form-control moeda sub_total next" type="tel" name="sub_total[]" id="inp-subtotal">
                                         </td>
                                         <td width="120">
-                                            <input value="{{ $prod->codigo_beneficio_fiscal }}" class="form-control ignore codigo_beneficio_fiscal" type="text" name="codigo_beneficio_fiscal[]">
+                                            <input style="width: 120px" value="{{ $prod->perc_icms }}" class="form-control percentual" type="tel" name="perc_icms[]" id="inp-perc_icms">
+                                        </td>
+                                        <td width="120">
+                                            <input style="width: 120px" value="{{ $prod->perc_pis }}" class="form-control percentual" type="tel" name="perc_pis[]" id="inp-perc_pis">
+                                        </td>
+                                        <td width="120">
+                                            <input style="width: 120px" value="{{ $prod->perc_cofins }}" class="form-control percentual" type="tel" name="perc_cofins[]" id="inp-perc_cofins">
+                                        </td>
+                                        <td width="120">
+                                            <input style="width: 120px" value="{{ $prod->perc_ipi }}" class="form-control percentual" type="tel" name="perc_ipi[]" id="inp-perc_ipi">
+                                        </td>
+                                        <td width="120">
+                                            <input style="width: 120px" value="{{ $prod->perc_red_bc }}" class="form-control percentual ignore" type="tel" name="perc_red_bc[]" id="inp-perc_red_bc">
+                                        </td>
+                                        <td width="120">
+                                            <input style="width: 120px" required value="{{ $prod->cfop }}" class="form-control cfop" type="tel" name="cfop[]" id="inp-cfop_estadual">
                                         </td>
 
-                                        <td width="250">
+                                        <td width="150">
+                                            <input style="width: 120px" required value="{{ $prod->ncm }}" class="form-control ncm" type="tel" name="ncm[]" id="inp-ncm2">
+                                        </td>
+                                        <td width="120">
+                                            <input style="width: 120px" value="{{ $prod->codigo_beneficio_fiscal }}" class="form-control ignore codigo_beneficio_fiscal" type="text" name="codigo_beneficio_fiscal[]">
+                                        </td>
+
+                                        <td>
                                             <select name="cst_csosn[]" class="form-control select2">
                                                 @foreach(App\Models\Produto::listaCSTCSOSN() as $key => $c)
                                                 <option @if($prod->cst_csosn == $key) selected @endif value="{{$key}}">{{$c}}</option>
                                                 @endforeach
                                             </select>
+                                            <div style="width: 400px"></div>
                                         </td>
-                                        <td width="250">
+                                        <td>
                                             <select name="cst_pis[]" class="form-control select2">
                                                 @foreach(App\Models\Produto::listaCST_PIS_COFINS() as $key => $c)
                                                 <option @if($prod->cst_pis == $key) selected @endif value="{{$key}}">{{$c}}</option>
                                                 @endforeach
                                             </select>
+                                            <div style="width: 400px"></div>
                                         </td>
-                                        <td width="250">
+                                        <td>
                                             <select name="cst_cofins[]" class="form-control select2">
                                                 @foreach(App\Models\Produto::listaCST_PIS_COFINS() as $key => $c)
                                                 <option @if($prod->cst_cofins == $key) selected @endif value="{{$key}}">{{$c}}</option>
                                                 @endforeach
                                             </select>
+                                            <div style="width: 400px"></div>
                                         </td>
-                                        <td width="250">
+                                        <td>
                                             <select name="cst_ipi[]" class="form-control select2">
                                                 @foreach(App\Models\Produto::listaCST_IPI() as $key => $c)
                                                 <option @if($prod->cst_ipi == $key) selected @endif value="{{$key}}">{{$c}}</option>
                                                 @endforeach
                                             </select>
+                                            <div style="width: 400px"></div>
+                                        </td>
+                                        <td>
+                                            <input class="form-control ignore" value="{{ $prod->xPed }}" maxlength="15" type="text" name="xPed[]">
+                                            <div style="width: 200px"></div>
+                                        </td>
+                                        <td>
+                                            <input class="form-control ignore" value="{{ $prod->nItemPed }}" maxlength="6" type="text" name="nItemPed[]">
+                                            <div style="width: 200px"></div>
+                                        </td>
+                                        <td>
+                                            <input class="form-control ignore" value="{{ $prod->infAdProd }}" maxlength="200" type="text" name="infAdProd[]">
+                                            <div style="width: 300px"></div>
                                         </td>
                                         <td width="30">
                                             <button class="btn btn-danger btn-remove-tr">
@@ -383,75 +473,91 @@
 
                                     @else
                                     <tr class="dynamic-form">
-                                        <td width="250">
+                                        <td class="sticky-col first-col">
                                             <select required class="form-control select2 produto_id" name="produto_id[]" id="inp-produto_id">
                                             </select>
-
+                                            <div style="width: 400px;"></div>
                                             <input name="variacao_id[]" type="hidden" value="">
                                         </td>
-                                        <td width="80">
-                                            <input class="form-control qtd" type="tel" name="quantidade[]" id="inp-quantidade">
-                                        </td>
-                                        <td width="100">
-                                            <input class="form-control moeda valor_unit" type="tel" name="valor_unitario[]" id="inp-valor_unitario">
+                                        <td width="120">
+                                            <input style="width: 120px" class="form-control qtd next" type="tel" name="quantidade[]" id="inp-quantidade">
                                         </td>
                                         <td width="150">
-                                            <input class="form-control moeda sub_total" type="tel" name="sub_total[]" id="inp-subtotal">
+                                            <input style="width: 120px" class="form-control moeda valor_unit next" type="tel" name="valor_unitario[]" id="inp-valor_unitario">
                                         </td>
-                                        <td width="80">
-                                            <input class="form-control percentual" type="tel" name="perc_icms[]" id="inp-perc_icms">
+                                        <td width="150">
+                                            <input style="width: 120px" readonly class="form-control moeda sub_total next" type="tel" name="sub_total[]" id="inp-subtotal">
                                         </td>
-                                        <td width="80">
-                                            <input class="form-control percentual" type="tel" name="perc_pis[]" id="inp-perc_pis">
+                                        <td width="120">
+                                            <input style="width: 120px" class="form-control percentual" type="tel" name="perc_icms[]" id="inp-perc_icms">
                                         </td>
-                                        <td width="80">
-                                            <input class="form-control percentual" type="tel" name="perc_cofins[]" id="inp-perc_cofins">
+                                        <td width="120">
+                                            <input style="width: 120px" class="form-control percentual" type="tel" name="perc_pis[]" id="inp-perc_pis">
                                         </td>
-                                        <td width="80">
-                                            <input class="form-control percentual" type="tel" name="perc_ipi[]" id="inp-perc_ipi">
+                                        <td width="120">
+                                            <input style="width: 120px" class="form-control percentual" type="tel" name="perc_cofins[]" id="inp-perc_cofins">
                                         </td>
-                                        <td width="80">
-                                            <input class="form-control percentual ignore" type="tel" name="perc_red_bc[]" id="inp-perc_red_bc">
+                                        <td width="120">
+                                            <input style="width: 120px" class="form-control percentual" type="tel" name="perc_ipi[]" id="inp-perc_ipi">
                                         </td>
-                                        <td width="80">
-                                            <input class="form-control cfop" type="tel" name="cfop[]" id="inp-cfop_estadual">
+                                        <td width="120">
+                                            <input style="width: 120px" class="form-control percentual ignore" type="tel" name="perc_red_bc[]" id="inp-perc_red_bc">
+                                        </td>
+                                        <td width="150">
+                                            <input style="width: 120px" required class="form-control cfop" type="tel" name="cfop[]" id="inp-cfop_estadual">
+                                        </td>
+
+                                        <td width="150">
+                                            <input style="width: 120px" required class="form-control ncm" type="tel" name="ncm[]" id="inp-ncm2">
                                         </td>
 
                                         <td width="120">
-                                            <input class="form-control ncm" type="tel" name="ncm[]" id="inp-ncm">
+                                            <input style="width: 120px" class="form-control codigo_beneficio_fiscal ignore" type="text" name="codigo_beneficio_fiscal[]">
                                         </td>
 
-                                        <td width="120">
-                                            <input class="form-control codigo_beneficio_fiscal ignore" type="text" name="codigo_beneficio_fiscal[]">
-                                        </td>
-
-                                        <td width="250">
+                                        <td>
                                             <select name="cst_csosn[]" class="form-control select2">
                                                 @foreach(App\Models\Produto::listaCSTCSOSN() as $key => $c)
                                                 <option value="{{$key}}">{{$c}}</option>
                                                 @endforeach
                                             </select>
+                                            <div style="width: 400px"></div>
                                         </td>
-                                        <td width="250">
+                                        <td>
                                             <select name="cst_pis[]" class="form-control select2">
                                                 @foreach(App\Models\Produto::listaCST_PIS_COFINS() as $key => $c)
                                                 <option value="{{$key}}">{{$c}}</option>
                                                 @endforeach
                                             </select>
+                                            <div style="width: 400px"></div>
                                         </td>
-                                        <td width="250">
+                                        <td>
                                             <select name="cst_cofins[]" class="form-control select2">
                                                 @foreach(App\Models\Produto::listaCST_PIS_COFINS() as $key => $c)
                                                 <option value="{{$key}}">{{$c}}</option>
                                                 @endforeach
                                             </select>
+                                            <div style="width: 400px"></div>
                                         </td>
-                                        <td width="250">
+                                        <td>
                                             <select name="cst_ipi[]" class="form-control select2">
                                                 @foreach(App\Models\Produto::listaCST_IPI() as $key => $c)
                                                 <option value="{{$key}}">{{$c}}</option>
                                                 @endforeach
                                             </select>
+                                            <div style="width: 400px"></div>
+                                        </td>
+                                        <td>
+                                            <input class="form-control ignore" maxlength="15" type="text" name="xPed[]">
+                                            <div style="width: 200px"></div>
+                                        </td>
+                                        <td>
+                                            <input class="form-control ignore" maxlength="6" type="text" name="nItemPed[]">
+                                            <div style="width: 200px"></div>
+                                        </td>
+                                        <td>
+                                            <input class="form-control ignore" maxlength="200" type="text" name="infAdProd[]">
+                                            <div style="width: 300px"></div>
                                         </td>
                                         <td width="30">
                                             <button class="btn btn-danger btn-remove-tr">
@@ -482,7 +588,7 @@
                 <div class="card">
                     <div class="row m-3">
                         <div class="col-md-5">
-                            {!!Form::select('transportadora_id', 'Transportadora',['' => 'Selecine..'] + $transportadoras->pluck('razao_social', 'id')->all())
+                            {!!Form::select('transportadora_id', 'Transportadora',['' => 'Selecione..'] + $transportadoras->pluck('razao_social', 'id')->all())
                             ->attrs(['class' => 'select2 transportadora_id'])
                             !!}
                         </div>
@@ -525,9 +631,9 @@
                                 !!}
                             </div>
                             <div class="col-md-3 mt-3">
-                                {!!Form::select('cidade_id', 'Cidade')
-                                ->attrs(['class' => 'select2'])
-                                ->options(isset($item->transportadora) ? [$item->transportadora->cidade->nome] : [])
+                                {!!Form::select('cidade_transp', 'Cidade')
+                                ->attrs(['class' => 'select2 cidade_select2'])
+                                ->options(isset($item->transportadora) && isset($item->transportadora->cidade) ? [$item->transportadora->cidade_id => $item->transportadora->cidade->nome] : [])
                                 !!}
                             </div>
                             <div class="col-md-2 mt-3">
@@ -570,7 +676,7 @@
                                 ->attrs(['class' => ''])
                                 !!}
                             </div>
-                            <div class="col-md-3 mt-2">
+                            <div class="col-md-2 mt-2">
                                 {!!Form::tel('numeracao_volumes', 'Número de Volumes')
                                 ->attrs(['class' => ''])
                                 !!}
@@ -591,7 +697,7 @@
                                 !!}
                             </div>
                             <div class="col-md-3 mt-3">
-                                {!!Form::select('tipo', 'Tipo', ['' => 'Selecione..'] + App\Models\Nfe::tiposFrete())
+                                {!!Form::select('tipo', 'Tipo', App\Models\Nfe::tiposFrete())
                                 ->attrs(['class' => 'form-select'])
                                 !!}
                             </div>
@@ -615,7 +721,7 @@
                         <div class="col-md-3">
                             {!!Form::select('natureza_id', 'Natureza de Operação', ['' => 'Selecione'] + $naturezas->pluck('descricao', 'id')->all())
                             ->attrs(['class' => 'form-select'])
-                            ->value(isset($item) ? $item->natureza_id : '')
+                            ->value(isset($item) ? $item->natureza_id : (isset($naturezaPadrao) && $naturezaPadrao != null ? $naturezaPadrao->id : '') )
                             ->required()
                             !!}
                         </div>
@@ -636,7 +742,8 @@
                             ->attrs(['class' => ''])
                             !!}
                         </div>
-                        @if(isset($isOrdemServico) || isset($isPedidoEcommerce))
+                        @if(__isPlanoFiscal())
+                        @if(isset($isOrdemServico) || isset($isPedidoEcommerce) || isset($isPedidoMercadoLivre) || isset($isReserva))
                         <div class="col-md-2 mt-3">
                             {!!Form::tel('numero_nfe', 'Número NFe')
                             ->required()
@@ -656,7 +763,7 @@
                             {!!Form::tel('referencia', 'Referência NFe')
                             !!}
                         </div>
-
+                        
                         <div class="col-md-2 mt-3">
                             {!!Form::date('data_emissao_saida', 'Data Emissão Saída')
                             !!}
@@ -664,6 +771,11 @@
 
                         <div class="col-md-2 mt-3">
                             {!!Form::date('data_emissao_retroativa', 'Data Emissão Retroativa')
+                            !!}
+                        </div>
+
+                        <div class="col-md-2 mt-3">
+                            {!!Form::date('data_entrega', 'Data de Entrega')
                             !!}
                         </div>
 
@@ -691,8 +803,9 @@
                             ->attrs(['class' => 'form-select'])
                             !!}
                         </div>
-
-                        @if(isset($item) && $item->orcamento == 0)
+                        @endif
+                        
+                        @if(!isset($item))
                         <div class="col-md-2 mt-3 div-conta-receber">
                             {!!Form::select('gerar_conta_receber', 'Gerar conta a receber', [
                             0 => 'Não',
@@ -700,8 +813,22 @@
                             ->attrs(['class' => 'form-select'])
                             !!}
                         </div>
+                        @else
+                        @if(isset($item) && $item->orcamento == 0)
+                        @can('conta_receber_create')
+                        <div class="col-md-2 mt-3 div-conta-receber">
+                            {!!Form::select('gerar_conta_receber', 'Gerar conta a receber', [
+                            0 => 'Não',
+                            1 => 'Sim'])
+                            ->attrs(['class' => 'form-select'])
+                            !!}
+                        </div>
+                        @endcan
+
+                        @endif
                         @endif
 
+                        @can('conta_pagar_create')
                         <div class="col-md-2 mt-3 div-conta-pagar d-none">
                             {!!Form::select('gerar_conta_pagar', 'Gerar conta a pagar', [
                             0 => 'Não',
@@ -709,9 +836,14 @@
                             ->attrs(['class' => 'form-select'])
                             !!}
                         </div>
+                        @endcan
 
+                        @if(isset($isOrcamento) && $isOrcamento == 1)
+                        <input type="hidden" value="1" name="orcamento">
+                        @else
                         @if(!isset($isCompra))
                         @if(!isset($item))
+                        @can('orcamento_create')
                         <div class="col-md-2 mt-3">
                             {!!Form::select('orcamento', 'Salvar como Orçamento', [
                             0 => 'Não',
@@ -719,13 +851,30 @@
                             ->attrs(['class' => 'form-select'])
                             !!}
                         </div>
+                        @endcan
                         @endif
+                        @endif
+                        @endif
+
+                        @if(!isset($isCompra))
+                        <div class="col-md-3 mt-3">
+                            {!! Form::select('funcionario_id', 'Vendedor')
+                            ->options(isset($item) && $item->funcionario ? [$item->funcionario->id => $item->funcionario->nome] : [])
+                            !!}
+                        </div>
                         @endif
 
                     </div>
                 </div>
                 <div class="card mt-1">
                     <div class="row m-3">
+                        <div class="col-12">
+
+                            <button type="button" class="btn btn-dark px-5 btn-gerar-fatura" data-bs-toggle="modal" data-bs-target="#modal_fatura_venda">
+                                <i class="ri-list-indefinite"></i>
+                                Gerar Fatura
+                            </button>
+                        </div>
                         <div class="table-responsive">
                             <table class="table table-dynamic table-fatura" style="width: 800px">
                                 <thead>
@@ -812,6 +961,7 @@
                                     </tr>
                                     @endforeach
                                     @else
+
                                     <tr class="dynamic-form">
                                         <td width="300">
                                             <select name="tipo_pagamento[]" class="form-control tipo_pagamento select2">
@@ -833,6 +983,7 @@
                                             </button>
                                         </td>
                                     </tr>
+                                    
                                     @endif
                                     @endif
                                 </tbody>
@@ -841,6 +992,7 @@
                         <div class="row">
                             <div class="col-12">
                                 <button type="button" class="btn btn-info btn-add-tr px-5">
+                                    <i class="ri-add-fill"></i>
                                     Adicionar Pagamento
                                 </button>
                             </div>
@@ -871,5 +1023,6 @@
 
 @include('modals._cartao_credito', ['not_submit' => true])
 @include('modals._variacao')
+@include('modals._fatura_venda')
 
 

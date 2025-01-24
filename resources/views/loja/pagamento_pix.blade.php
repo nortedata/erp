@@ -65,7 +65,7 @@
 				</div>
 			</div>
 
-			@if($item->endereco)
+			@if($item->endereco && strlen(trim($item->endereco) > 10))
 			<div class="section-title text-center">
 				<h4 class="title">Endereço de entrega</h4>
 

@@ -3,180 +3,189 @@
 
 @section('css')
 <style type="text/css">
-	.btn-main{
-		border: none;
-	}
-	.borders{
-		padding: 10px;
-		border: 1px solid #999;
-		border-radius: 5px;
-	}
-	.borders:hover{
-		cursor: pointer;
-	}
-	.b-2:hover{
-		cursor: pointer;
-	}
-	.bg-main h5{
-		color: #fff;
-	}
-	.b-2{
-		margin-top: 5px;
-		padding: 5px;
-		border: 1px solid #999;
-		border-radius: 4px;
-	}
-	.active-div{
-		background: var(--color-main);
-		color: #fff;
+	.image{
+		height: 50px;
 	}
 
-	.active-btn{
-		background: #27BCC2!important;
-		color: #fff!important;
-		border: none;
+	input[type="checkbox"] {
+		/* ...existing styles */
+		display: grid;
+		place-content: center;
 	}
-	.select-card:hover{
-		cursor: pointer;
+
+	input[type="checkbox"]::before {
+		content: "";
+		width: 0.65em;
+		height: 0.65em;
+		transform: scale(0);
+		transition: 120ms transform ease-in-out;
+		box-shadow: inset 1em 1em var(--form-control-color);
 	}
-	img.image{
-		height: 50px;
-		border-radius: 10px;
+
+	input[type="checkbox"]:checked::before {
+		transform: scale(1);
+	}
+
+	.check{
+		margin-top: 30px;
 	}
 </style>
 @endsection
 
-<section class="shoping-cart spad">
-	<div class="container">
-		<div class="row mb-2">
-			<div class="col-6">
-				<h3>{{ $cliente->razao_social }}</h3>
-
+<div class="minfit" style="min-height: 472px;">
+	<div class="middle">
+		<div class="container nopaddmobile">
+			<div class="row rowtitle">
+				<div class="col-md-12">
+					<div class="title-icon">
+						<span style="font-size: 18px;">{{ $cliente->razao_social }}</span>
+					</div>
+					<div class="bread-box">
+						<div class="bread">
+							<a href="{{ route('food.index', ['link='.$config->loja_id]) }}"><i class="lni lni-home"></i></a>
+							<span>/</span>
+							<a>Minha conta</a>
+						</div>
+					</div>
+				</div>
 			</div>
-			<div class="col-6 text-right">
-				<h3>{{ $cliente->telefone }}</h3>
-				<a href="{{ route('food.logoff', ['link='.$config->loja_id]) }}" class="btn btn-sm btn-danger text-white">sair</a>
-			</div>
-		</div>
 
-		<h4>Endereços</h4>
-		@foreach($cliente->enderecos as $e)
-		<div class="col-md-1"></div>
-		<div class="col-12 col-md-12 borders mt-1" onclick="editEndereco('{{ json_encode($e) }}')">
-			<h5>{{ $e->info }}</h5>
-			@if($e->padrao)
-			<p>endereço padrão</p>
-			@endif
-			<button class="btn btn-sm btn-warning text-white mt-1">
-				<i class="fa fa-edit"></i> Editar
-			</button>
-		</div>
-		@endforeach
-		<br>
-		<h4>Pedidos</h4>
-		@foreach($cliente->pedidos as $p)
-		<div class="card mt-2">
-			<div class="card-header">
-				<div class="row">
-					<div class="col-md-4 col-6">
-						#{{ $p->id }} - 
-						@if($p->estado == 'novo')
-						<span class="text-primary">Novo</span>
-						@elseif($p->estado == 'aprovado')
-						<span class="text-success">Aprovado</span>
-						@elseif($p->estado == 'cancelado')
-						<span class="text-danger">Cancelado</span>
-						@else
-						<span class="text-main">Finalizado</span>
+			<div class="row" style="margin-top: 20px;">
+
+				@foreach($cliente->enderecos as $e)
+				<div class="col-md-4 col-infinite">
+					<div class="novoproduto" style="box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px; height: 140px">
+
+						<h5>{{ $e->info }}<br>{{ $e->cep }}</h5>
+						@if($e->padrao)
+						<p class="text-danger">endereço padrão</p>
 						@endif
-					</div>
-					<div class="col-md-4 col-6 text-center">
-						{{ __data_pt($p->created_at) }}
-					</div>
-					<div class="col-md-4 col-6 text-right">
-						Total: <strong>R${{ __moeda($p->valor_total) }}</strong>
+						
+						<form action="{{ route('food.remove-endereco', [$e->id, 'link='.$config->loja_id]) }}" method="post" id="form-{{$e->id}}">
+							@csrf
+							@method('delete')
+							<button type="button" onclick="editEndereco('{{ json_encode($e) }}')" class="sacola-adicionar botao-acao btn-sm" style="position: absolute; top: 90px; width: 100px;">
+								<i class="lni lni-pencil-alt"></i><span>Editar</span>
+							</button>
+							<button type="button" class="sacola-adicionar botao-acao btn-delete btn-sm" style="position: absolute; top: 90px; width: 110px; right: 30px; background-color: #C9302C !important;">
+								<i class="lni lni-trash"></i><span>Remover</span>
+							</button>
+						</form>
 					</div>
 				</div>
+				@endforeach
+
 			</div>
-			<div class="card-body">
-				<div class="table-responsive">
-					<table class="table">
-						<thead>
-							<tr>
-								<th></th>
-								<th>Produto</th>
-								<th>Qtd.</th>
-								<th>Valor unitário</th>
-								<th>Sub total</th>
-							</tr>
-						</thead>
-						<tbody>
-							@foreach($p->itens as $i)
-							<tr>
-								<td>
-									<img class="image" src="{{ $i->produto->img }}">
-								</td>
-								<td>
-									@if($i->tamanho)
-									@foreach($i->pizzas as $pizza)
-									1/{{ sizeof($i->pizzas) }} {{ $pizza->sabor->nome }} @if(!$loop->last) | @endif
-									@endforeach
-									- Tamanho: <strong>{{ $i->tamanho->nome }}</strong>
-									@else
-									{{ $i->produto->nome }}
+
+			<div class="container" style="margin-top: 10px;">
+				<h4>Pedidos</h4>
+
+				@foreach($cliente->pedidos as $p)
+				<div class="card mt-2">
+					<div class="card-header">
+						<div class="row" style="font-size: 18px; margin-top: 10px;">
+							<div class="col-md-4 col-12">
+								#{{ $p->id }} - 
+								@if($p->estado == 'novo')
+								<span class="text-primary">Novo</span>
+								@elseif($p->estado == 'aprovado')
+								<span class="text-success">Aprovado</span>
+								@elseif($p->estado == 'cancelado')
+								<span class="text-danger">Cancelado</span>
+								@else
+								<span class="text-main">Finalizado</span>
+								@endif
+							</div>
+							<div class="col-md-4 col-12">
+								{{ __data_pt($p->created_at) }}
+							</div>
+							<div class="col-md-4 col-12">
+								Valor total do pedido: <strong>R${{ __moeda($p->valor_total) }}</strong>
+							</div>
+						</div>
+					</div>
+					<div class="card-body">
+						<div class="table-responsive">
+							<table class="table">
+								<thead>
+									<tr>
+										<th>#</th>
+										<th>Produto</th>
+										<th>Qtd.</th>
+										<th>Valor unitário</th>
+										<th>Sub total</th>
+									</tr>
+								</thead>
+								<tbody>
+									@foreach($p->itens as $i)
+									<tr>
+										<td>
+											<img class="image" src="{{ $i->produto->img }}">
+										</td>
+										<td>
+											@if($i->tamanho)
+											@foreach($i->pizzas as $pizza)
+											1/{{ sizeof($i->pizzas) }} {{ $pizza->sabor->nome }} @if(!$loop->last) | @endif
+											@endforeach
+											- Tamanho: <strong>{{ $i->tamanho->nome }}</strong>
+											@else
+											{{ $i->produto->nome }}
+											@endif
+										</td>
+										<td>{{ number_format($i->quantidade, 0) }}</td>
+										<td>{{ __moeda($i->valor_unitario) }}</td>
+										<td>{{ __moeda($i->sub_total) }}</td>
+									</tr>
+									@if(sizeof($i->adicionais) > 0)
+									<tr>
+										<td colspan="5">
+											Adicionais: 
+											@foreach($i->adicionais as $a)
+											<strong>{{ $a->adicional->nome }}@if(!$loop->last), @endif</strong>
+											@endforeach
+										</td>
+									</tr>
 									@endif
-								</td>
-								<td>{{ number_format($i->quantidade, 0) }}</td>
-								<td>{{ __moeda($i->valor_unitario) }}</td>
-								<td>{{ __moeda($i->sub_total) }}</td>
-							</tr>
-							@if(sizeof($i->adicionais) > 0)
-							<tr>
-								<td colspan="5">
-									Adicionais: 
-									@foreach($i->adicionais as $a)
-									<strong>{{ $a->adicional->nome }}@if(!$loop->last), @endif</strong>
+
+									@if($i->observacao)
+									<tr>
+										<td colspan="5">
+											Observação: 
+											<strong>{{ $i->observacao }}</strong>
+										</td>
+									</tr>
+									@endif
 									@endforeach
-								</td>
-							</tr>
-							@endif
-
-							@if($i->observacao)
-							<tr>
-								<td colspan="5">
-									Observação: 
-									<strong>{{ $i->observacao }}</strong>
-								</td>
-							</tr>
-							@endif
-							@endforeach
-						</tbody>
-					</table>
-				</div>
-			</div>
-			<div class="card-footer">
-				<div class="row">
-					<div class="col-md-4 col-6">
-						Valor de entrega: <strong>R${{ __moeda($p->valor_entrega) }}</strong><br>
-						{{ $p->tipo_pagamento }}
+								</tbody>
+							</table>
+						</div>
 					</div>
+					<div class="card-footer">
+						<div class="row">
+							<div class="col-md-4 col-12">
+								Valor de entrega: <strong>R${{ __moeda($p->valor_entrega) }}</strong><br>
+								Forma de pagamengo: <strong>{{ $p->tipo_pagamento }}</strong>
+							</div>
 
-					<div class="col-md-4 col-6 text-center">
-						Desconto: <strong>R${{ __moeda($p->desconto) }}</strong>
-						@if($p->cupom)#{{ $p->cupom->codigo }}@endif
-					</div>
+							<div class="col-md-4 col-12">
+								Desconto: <strong>R${{ __moeda($p->desconto) }}</strong>
+								@if($p->cupom)#{{ $p->cupom->codigo }}@endif
+							</div>
 
-					<div class="col-md-4 col-12 text-right">
-						<a href="{{ route('food.carrinho-pedir-novamente', [$p->id, 'link='.$config->loja_id]) }}" class="btn btn-success">
-							Pedir novamente
-						</a>
+							<div class="col-md-4 col-12">
+								<a href="{{ route('food.carrinho-pedir-novamente', [$p->id, 'link='.$config->loja_id]) }}" class="btn btn-success">
+									Pedir novamente
+								</a>
+							</div>
+						</div>
 					</div>
 				</div>
+				<hr>
+				@endforeach
 			</div>
 		</div>
-		@endforeach
 	</div>
-</section>
+</div>
 
 @include('food.partials.modal_edit_endereco')
 

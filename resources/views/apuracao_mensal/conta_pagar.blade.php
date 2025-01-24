@@ -1,4 +1,4 @@
-@extends('layouts.app', ['title' => 'Apuração Mensal'])
+@extends('layouts.app', ['title' => 'Adicionar ao conta a pagar'])
 @section('content')
 <div class="mt-3">
     <div class="row">

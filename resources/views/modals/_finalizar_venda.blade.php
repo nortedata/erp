@@ -7,17 +7,18 @@
             </div> 
             <div class="modal-body">
                 <div class="row">
-                    <div class="col-md-6 col-12">
-                        <button type="submit" class="btn btn-info" id="btn_nao_fiscal" style="height: 50px; width: 100%">
-                            <i class="bx bx-file-blank"> </i> CUPOM NÃO FISCAL
+                    <div class="@can('nfce_create') col-md-6 @endcan col-12">
+                        <button type="button" class="btn btn-info" id="btn_nao_fiscal" style="height: 50px; width: 100%">
+                            <i class="bx bx-file-blank"> </i> DOCUMENTO AUXILIAR
                         </button>
                     </div>
-
+                    @can('nfce_create')
                     <div class="col-md-6 col-12">
                         <button type="button" class="btn btn-success" style="height: 50px; width: 100%" data-bs-toggle="modal" data-bs-target="#cpf_nota">
                             <i class="bx bx-file-blank"> </i> CUPOM FISCAL
                         </button>
                     </div>
+                    @endcan
                 </div>
             </div>
         </div> 

@@ -4,9 +4,17 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\MercadoLivreConfig;
+use App\Utils\MercadoLivreUtil;
 
 class MercadoLivreAuthController extends Controller
 {
+
+    protected $utilMercadoLivre;
+    public function __construct(MercadoLivreUtil $utilMercadoLivre)
+    {
+        $this->utilMercadoLivre = $utilMercadoLivre;
+    }
+
     public function getCode(Request $request){
         $config = MercadoLivreConfig::where('empresa_id', $request->empresa_id)
         ->first();
@@ -56,15 +64,27 @@ class MercadoLivreAuthController extends Controller
             if($config){
                 $config->code = $request->code;
                 $config->access_token = $retorno->access_token;
+                $config->refresh_token = $retorno->refresh_token;
                 $config->user_id = $retorno->user_id;
+                $config->token_expira = strtotime(date('Y-m-d H:i:s')) + $retorno->expires_in;
                 $config->save();
+
             }
             session()->flash("flash_success", "Token armazenado!");
         }else{
-            session()->flash("flash_error", "Algo deu errado!");
+            session()->flash("flash_error", "Algo deu errado: " . $retorno->message);
         }
 
         return redirect()->route('mercado-livre-config.index');
+    }
+
+    public function refreshToken(Request $request){
+
+        $retorno = $this->utilMercadoLivre->refreshToken($request->empresa_id);
+        if($retorno == 'token valido!'){
+            return redirect()->back();
+        }
+        dd($retorno);
     }
 
     public function getUsers(Request $request){

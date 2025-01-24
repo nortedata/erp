@@ -5,10 +5,12 @@
         <div class="card">
             <div class="card-body">
                 <div class="col-md-2">
+                    @can('natureza_operacao_create')
                     <a href="{{ route('natureza-operacao.create') }}" class="btn btn-success">
                         <i class="ri-add-circle-fill"></i>
                         Nova Natureza
                     </a>
+                    @endcan
                 </div>
                 <hr class="mt-3">
                 <div class="col-lg-12">
@@ -34,7 +36,9 @@
                             <thead class="table-dark">
                                 <tr>
                                     <th>Descrição</th>
-                                    <th width="10%">Ações</th>
+                                    <th>Padrão</th>
+                                    <th>Sobrescrerver CFOP</th>
+                                    <th width="20%">Ações</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -42,15 +46,35 @@
                                 <tr>
                                     <td>{{ $item->descricao }}</td>
                                     <td>
+                                        @if($item->padrao)
+                                        <i class="ri-checkbox-circle-fill text-success"></i>
+                                        @else
+                                        <i class="ri-close-circle-fill text-danger"></i>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if($item->sobrescrever_cfop)
+                                        <i class="ri-checkbox-circle-fill text-success"></i>
+                                        @else
+                                        <i class="ri-close-circle-fill text-danger"></i>
+                                        @endif
+                                    </td>
+                                    <td>
                                         <form action="{{ route('natureza-operacao.destroy', $item->id) }}" method="post" id="form-{{$item->id}}">
                                             @method('delete')
+
+                                            @can('natureza_operacao_edit')
                                             <a class="btn btn-warning btn-sm text-white" href="{{ route('natureza-operacao.edit', [$item->id]) }}">
                                                 <i class="ri-pencil-fill"></i>
                                             </a>
+                                            @endcan
+                                            
                                             @csrf
+                                            @can('natureza_operacao_delete')
                                             <button type="button" class="btn btn-delete btn-sm btn-danger">
                                                 <i class="ri-delete-bin-line"></i>
                                             </button>
+                                            @endcan
                                         </form>
                                     </td>
                                 </tr>

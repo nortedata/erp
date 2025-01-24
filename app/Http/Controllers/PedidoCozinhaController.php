@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\ItemPedido;
+use App\Models\ItemPedidoDelivery;
 
 class PedidoCozinhaController extends Controller
 {
@@ -19,6 +20,21 @@ class PedidoCozinhaController extends Controller
         }
         $item->save();
         session()->flash("flash_success", "Estado do item #$id - ". $item->produto->nome ." alterado para $request->estado!");
+        return redirect()->back();
+    }
+
+    public function updateAll(Request $request){
+        ItemPedido::join('pedidos', 'pedidos.id', '=', 'item_pedidos.pedido_id')
+        ->where('pedidos.empresa_id', $request->empresa_id)
+        ->where('item_pedidos.estado', '!=', 'finalizado')
+        ->update(['item_pedidos.estado' => 'finalizado']);
+
+        ItemPedidoDelivery::join('pedido_deliveries', 'pedido_deliveries.id', '=', 'item_pedido_deliveries.pedido_id')
+        ->where('pedido_deliveries.empresa_id', $request->empresa_id)
+        ->where('item_pedido_deliveries.estado', '!=', 'finalizado')
+        ->update(['item_pedido_deliveries.estado' => 'finalizado']);
+
+        session()->flash("flash_success", "Itens finalizados");
         return redirect()->back();
     }
 }

@@ -36,7 +36,8 @@
     <div class="col-md-3">
         @isset($item)
         {!!Form::select('cidade_id', 'Cidade')
-        ->attrs(['class' => 'select2'])->options($item != null ? [$item->cidade_id => $item->cidade->info] : [])
+        ->attrs(['class' => 'select2'])
+        ->options($item != null && $item->cidade_id ? [$item->cidade_id => $item->cidade->info] : [])
         ->required()
         !!}
         @else
@@ -54,7 +55,6 @@
     </div>
     <div class="col-md-3">
         {!!Form::text('email', 'E-mail')
-        ->required()
         !!}
     </div>
     <div class="col-md-2">

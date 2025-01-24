@@ -12,6 +12,8 @@ use App\Models\Fornecedor;
 use App\Models\PadraoTributacaoProduto;
 use App\Models\CategoriaProduto;
 use App\Models\Marca;
+use App\Models\VariacaoModelo;
+use App\Models\MercadoLivreConfig;
 use App\Models\Nfe;
 use App\Models\NaturezaOperacao;
 use App\Models\ContadorEmpresa;
@@ -20,9 +22,17 @@ use App\Models\UsuarioEmpresa;
 use NFePHP\Common\Certificate;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use App\Utils\EmpresaUtil;
 
 class ContadorAdminController extends Controller
 {
+    protected $empresaUtil;
+
+    public function __construct(EmpresaUtil $empresaUtil)
+    {
+        $this->empresaUtil = $empresaUtil;
+    }
+    
     public function setEmpresa($id){
 
         $contador = Empresa::findOrFail(request()->empresa_id);
@@ -131,8 +141,13 @@ class ContadorAdminController extends Controller
             $cardapio = 1;
         }
         $marcas = Marca::where('empresa_id', request()->empresa_id)->get();
+        $variacoes = VariacaoModelo::where('empresa_id', request()->empresa_id)
+        ->where('status', 1)->get();
 
-        return view('contador.produtos_show', compact('item', 'listaCTSCSOSN', 'padroes', 'categorias', 'cardapio', 'marcas'));
+        $configMercadoLivre = MercadoLivreConfig::where('empresa_id', request()->empresa_id)
+        ->first();
+        return view('contador.produtos_show', 
+            compact('item', 'listaCTSCSOSN', 'padroes', 'categorias', 'cardapio', 'marcas', 'variacoes', 'configMercadoLivre'));
     }
 
     public function clientes(Request $request){
@@ -210,7 +225,8 @@ class ContadorAdminController extends Controller
                 ]);
 
                 $empresa = Empresa::create($request->all());
-
+                $this->empresaUtil->initLocation($empresa);
+                
                 if ($request->usuario) {
 
                     $usuario = User::create([

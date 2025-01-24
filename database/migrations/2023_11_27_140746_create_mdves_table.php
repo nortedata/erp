@@ -59,6 +59,8 @@ return new class extends Migration
             $table->string('longitude_carregamento', 15)->defaul('');
             $table->string('latitude_descarregamento', 15)->defaul('');
             $table->string('longitude_descarregamento', 15)->defaul('');
+            $table->integer('local_id')->nullable();
+            $table->integer('tipo_modal')->default(1);
 
             // alter table mdves add column latitude_carregamento varchar(15) default '';
             // alter table mdves add column longitude_carregamento varchar(15) default '';
@@ -68,6 +70,8 @@ return new class extends Migration
             // alter table mdves add column estado_emissao enum('novo', 'aprovado', 'rejeitado', 'cancelado');
             // alter table mdves add column mdfe_numero integer default null;
 
+            // alter table mdves add column local_id integer default null;
+            // alter table mdves add column tipo_modal integer default 1;
 
             $table->timestamps();
         });

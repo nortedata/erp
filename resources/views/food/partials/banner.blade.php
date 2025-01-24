@@ -8,7 +8,7 @@
 
         <p>{{ $b->descricao }}</p>
         @if($b->produto_id)
-        <a href="{{ route('food.produto-detalhe', [$p->hash_delivery, 'link='.$config->loja_id])}}" class="primary-btn btn-main">COMPRAR AGORA</a>
+        <a href="{{ route('food.produto-detalhe', [$b->produto->hash_delivery, 'link='.$config->loja_id])}}" class="primary-btn btn-main">COMPRAR AGORA</a>
         @endif
     </div>
 </div>

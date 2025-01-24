@@ -8,29 +8,29 @@ $('#btn-enviar').click(() => {
             id: id,
             empresa_id: empresa_id,
         })
-            .done((success) => {
-                swal("Sucesso", "CTe emitida " + success, "success")
-                    .then(() => {
-                        window.open(path_url + 'cte-os/imprimir/' + id, "_blank")
-                        setTimeout(() => {
-                            location.reload()
-                        }, 100)
-                    })
+        .done((success) => {
+            swal("Sucesso", "CTe emitida " + success, "success")
+            .then(() => {
+                window.open(path_url + 'cte-os/imprimir/' + id, "_blank")
+                setTimeout(() => {
+                    location.reload()
+                }, 100)
             })
-            .fail((err) => {
-                console.log(err)
-                if (err.status == 403) {
-                    console.log(err.responseJSON.protCTe.infProt)
-                    let infProt = err.responseJSON.protCTe.infProt
-                    swal("Algo deu errado", infProt.cStat + " - " + infProt.xMotivo, "error")
-                } else {
-                    try {
-                        swal("Algo deu errado", err.responseJSON, "error")
-                    } catch {
-                        swal("Algo deu errado", err.responseText, "error")
-                    }
+        })
+        .fail((err) => {
+            console.log(err)
+            if (err.status == 403) {
+                console.log(err.responseJSON.protCTe.infProt)
+                let infProt = err.responseJSON.protCTe.infProt
+                swal("Algo deu errado", infProt.cStat + " - " + infProt.xMotivo, "error")
+            } else {
+                try {
+                    swal("Algo deu errado", err.responseJSON, "error")
+                } catch {
+                    swal("Algo deu errado", err.responseText, "error")
                 }
-            })
+            }
+        })
     })
 })
 
@@ -83,25 +83,25 @@ $('#btn-cancelar-send').click(() => {
                     empresa_id: empresa_id,
                     motivo: motivo
                 })
-                    .done((success) => {
-                        let infEvento = success.infEvento
-                        swal("Sucesso", "[" + infEvento.cStat + "] " + infEvento.xMotivo, "success")
-                            .then(() => {
-                                window.open(path_url + 'cte-os/imprimir-cancela/' + id, "_blank")
-                                setTimeout(() => {
-                                    location.reload()
-                                }, 100)
-                            })
+                .done((success) => {
+                    let infEvento = success.infEvento
+                    swal("Sucesso", "[" + infEvento.cStat + "] " + infEvento.xMotivo, "success")
+                    .then(() => {
+                        window.open(path_url + 'cte-os/imprimir-cancela/' + id, "_blank")
+                        setTimeout(() => {
+                            location.reload()
+                        }, 100)
+                    })
 
-                    })
-                    .fail((err) => {
-                        console.log(err)
-                        try {
-                            swal("Algo deu errado", err.responseJSON.infEvento.xMotivo, "error")
-                        } catch {
-                            swal("Algo deu errado", err.responseJSON, "error")
-                        }
-                    })
+                })
+                .fail((err) => {
+                    console.log(err)
+                    try {
+                        swal("Algo deu errado", err.responseJSON.infEvento.xMotivo, "error")
+                    } catch {
+                        swal("Algo deu errado", err.responseJSON, "error")
+                    }
+                })
             } else {
                 swal("Alerta", "Informe no mínimo 15 caracteres", "warning")
             }
@@ -138,22 +138,22 @@ $('#btn-corrige-send').click(() => {
                     campo: campo,
                     grupo: grupo,
                 })
-                    .done((success) => {
-                        let infEvento = success.infEvento
-                        swal("Sucesso", "[" + infEvento.cStat + "] " + infEvento.xMotivo, "success")
-                            .then(() => {
-                                window.open(path_url + 'cte-os/imprimir-cce/' + id, "_blank")
-                                $('#modal-corrigir').modal('hide')
-                            })
+                .done((success) => {
+                    let infEvento = success.infEvento
+                    swal("Sucesso", "[" + infEvento.cStat + "] " + infEvento.xMotivo, "success")
+                    .then(() => {
+                        window.open(path_url + 'cte-os/imprimir-cce/' + id, "_blank")
+                        $('#modal-corrigir').modal('hide')
                     })
-                    .fail((err) => {
-                        console.log(err)
-                        try {
-                            swal("Algo deu errado", err.responseJSON.infEvento.xMotivo, "error")
-                        } catch {
-                            swal("Algo deu errado", err.responseJSON, "error")
-                        }
-                    })
+                })
+                .fail((err) => {
+                    console.log(err)
+                    try {
+                        swal("Algo deu errado", err.responseJSON.infEvento.xMotivo, "error")
+                    } catch {
+                        swal("Algo deu errado", err.responseJSON, "error")
+                    }
+                })
             } else {
                 swal("Alerta", "Informe no mínimo 15 caracteres", "warning")
             }

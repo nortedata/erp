@@ -37,16 +37,17 @@
                             <h5>Início: <strong class="text-primary">{{ __data_pt($ordem->data_inicio) }}</strong></h5>
                         </div>
 
-                        <div class="col-md-3 col-6">
-                            <h5>Previsão de entrega: <strong class="text-primary">{{ __data_pt($ordem->data_entrega) }}</strong></h5>
-                        </div>
 
                         <div class="col-md-3 col-6">
                             <h5>Total: <strong class="text-primary">R$ {{ __moeda($ordem->valor) }}</strong> </h5>
                         </div>
 
                         <div class="col-md-3 col-6">
-                            <h5>Usuário responsável: <strong class="text-primary">{{ $ordem->usuario->name }}</strong></h5>
+                            <h5>Atendente: <strong class="text-primary">{{ $ordem->funcionario ? $ordem->funcionario->nome : '' }}</strong></h5>
+                        </div>
+
+                        <div class="col-md-3 col-6">
+                            <h5>Usuário: <strong class="text-primary">{{ $ordem->usuario->name }}</strong></h5>
                         </div>
                     </div>
 
@@ -62,6 +63,13 @@
                         Gerar NFe
                     </a>
                     @endif
+
+                    @if($ordem->oticaOs)
+                    <a class="btn btn-warning btn-sm" href="{{ route('ordem-servico.edit', $ordem->id) }}">
+                        <i class="ri-edit-line"></i>
+                        Editar receita
+                    </a>
+                    @endif
                     <!-- <h5 class="mt-2">NFSe:
                         @if($ordem->nfe_id)   
                         <strong>{{$ordem->nfe_id}}</strong>
@@ -70,6 +78,24 @@
                         @endif
                     </h5> -->
                 </div>
+
+                <form method="post" class="row g-2 mt-3" action="{{ route('ordem-servico.update-entrega', [$ordem->id])}}">
+                    @csrf
+                    @method('put')
+                    <div class="col-md-2">
+                        {!! Form::tel('adiantamento', 'Valor de adiantamento')->attrs(['class' => 'moeda'])
+                        ->value(__moeda($ordem->adiantamento)) !!}
+                    </div>
+                    <div class="col-md-2">
+                        {!! Form::date('data_entrega', 'Data de entrega')->value(substr($ordem->data_entrega,0, 10)) !!}
+                    </div>
+                    <div class="col-md-2">
+                        <br>
+                        <button class="btn btn-success" href="{{ route('ordem-servico.gerar-nfe', $ordem->id) }}">
+                            Salvar
+                        </button>
+                    </div>
+                </form>
             </div>
             <hr class="">
             <div class="card border row">
@@ -165,7 +191,7 @@
                 {!! Form::open()
                 ->post()
                 ->route('ordem-servico.store-produto')!!}
-                <h3 class="text-center mt-2">Produtos:</h3>
+                <h3 class="text-center mt-2">Produtos</h3>
                 <div class="row m-2">
                     <input type="hidden" value="{{$ordem->id}}" name="ordem_servico_id">
                     <div class="col-md-4">
@@ -285,7 +311,7 @@
             </div>
 
             <div class="card border row">
-                <h3 class="text-center mt-2">Descrição</h3>
+                <h3 class="text-center mt-2">Descrição/Observação</h3>
 
                 <div class="card-body">
                     <div class="col-md-12">

@@ -10,7 +10,7 @@ class Interrupcoes extends Model
     use HasFactory;
 
     protected $fillable = [
-        'funcionario_id', 'inicio', 'fim', 'dia_id', 'empresa_id', 'motivo'
+        'funcionario_id', 'inicio', 'fim', 'dia_id', 'empresa_id', 'motivo', 'status'
     ];
 
     public function getInicioParseAttribute()

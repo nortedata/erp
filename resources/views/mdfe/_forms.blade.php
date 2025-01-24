@@ -1,9 +1,22 @@
 <div class="row g-2">
+    @if(__countLocalAtivo() > 1)
+    <div class="col-md-2">
+        <label for="">Local</label>
 
+        <select id="inp-local_id" required class="select2 class-required" data-toggle="select2" name="local_id">
+            <option value="">Selecione</option>
+            @foreach(__getLocaisAtivoUsuario() as $local)
+            <option @isset($item) @if($item->local_id == $local->id) selected @endif @endif value="{{ $local->id }}">{{ $local->descricao }}</option>
+            @endforeach
+        </select>
+    </div>
+    @else
+    <input id="inp-local_id" type="hidden" value="{{ __getLocalAtivo() ? __getLocalAtivo()->id : '' }}" name="local_id">
+    @endif
     <div class="col-md-2">
         {!!Form::tel('mdfe_numero', 'Número MDFe')
         ->required()
-        ->value(isset($item) ? $item->mdfe_numero : $numeroMDFe)
+        ->value(isset($item) ? $item->numero : $numeroMDFe)
         !!}
     </div>
     <div class="col-md-2">
@@ -38,6 +51,10 @@
         'Tipo do transportador',
         ['' => 'Selecione...'] + [1 => '1 - ETC', 2 => '2 - TAC', 3 => '3 - CTC'],
         )->attrs(['class' => 'form-select'])->required() !!}
+    </div>
+    <div class="col-md-2">
+        {!! Form::select('tipo_modal', 'Tipo modal', ['' => 'Selecione...'] + App\Models\Mdfe::tiposModal())->attrs([
+        'class' => 'form-select select2'])->required() !!}
     </div>
     <div class="col-md-2">
         {!! Form::text('lac_rodo', 'Lacre rodoviário')->attrs(['data-mask' => '00000000'])->required() !!}
@@ -212,8 +229,8 @@
             <div class="row">
                 <div class="col-12 mt-3">
                     <h4>Percurso</h4>
-                    <div class="table-responsive">
-                        <table class="table mb-0 table-striped">
+                    <div class="row">
+                        <table class="table mb-0 table-striped table-dynamic">
                             <thead class="table-dark">
                                 <tr>
                                     <th>UF</th>
@@ -222,12 +239,15 @@
                             </thead>
                             <tbody class="datatable-body" id="tbody">
                                 @if (isset($item) && sizeof($item->percurso) > 0)
-                                @foreach($item->percurso as $cuf)
-                                <tr class="">
+                                @foreach($item->percurso as $p)
+                                <tr class="dynamic-form">
                                     <td class="col-10">
                                         <br>
+
                                         {!! Form::select('uf[]', '', ['' => 'Selecione...'] + App\Models\Cidade::estados())
-                                        ->attrs(['class' => 'select2'])!!}
+                                        ->attrs(['class' => 'select2'])
+                                        ->value($p->uf)
+                                        !!}
                                     </td>
                                     <td>
                                         <br>
@@ -238,7 +258,7 @@
                                 </tr>
                                 @endforeach
                                 @else
-                                <tr class="">
+                                <tr class="dynamic-form">
                                     <td class="col-10">
                                         <br>
                                         {!! Form::select('uf[]', '', ['' => 'Selecione...'] + App\Models\Cidade::estados())
@@ -255,8 +275,9 @@
                             </tbody>
                         </table>
                     </div>
-                    <div class="row mt-3">
+                    <div class="row">
                         <div class="col-12">
+                            <br>
                             <button type="button" class="btn btn-dark btn-add-tr">
                                 <i class="ri-add-line"></i>
                                 Adicionar
@@ -405,7 +426,7 @@
                     {!! Form::text('condutor_nome', 'Nome')->attrs(['class' => 'class-condutor class-required'])->required() !!}
                 </div>
                 <div class="col-md-2 mt-3">
-                    {!! Form::tel('condutor_cpf', 'CPF')->attrs(['class' => 'cpf_cnpj class-condutor class-required'])->required() !!}
+                    {!! Form::tel('condutor_cpf', 'CPF')->attrs(['class' => 'cpf class-condutor class-required'])->required() !!}
                 </div>
             </div>
         </div>
@@ -432,7 +453,7 @@
                     <div class="col-md-2 mt-3">
                         {!! Form::tel('id_unidade_carga', 'ID unidade da carga') !!}
                     </div>
-                    <div class="col-md-2 mt-3">
+                    <div class="col-md-3 mt-3">
                         {!! Form::tel('quantidade_rateio_carga', 'Quantidade de rateio (unidade carga)')->attrs(['data-mask' => '000,00']) !!}
                     </div>
                 </div>

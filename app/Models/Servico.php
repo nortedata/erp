@@ -12,7 +12,9 @@ class Servico extends Model
     protected $fillable = [
         'nome', 'unidade_cobranca', 'valor', 'categoria_id', 'empresa_id', 'tempo_servico',
         'tempo_adicional', 'valor_adicional', 'tempo_tolerancia', 'comissao', 'codigo_servico', 'aliquota_iss',
-        'aliquota_pis', 'aliquota_cofins', 'aliquota_inss', 'imagem', 'status', 'codigo_tributacao_municipio'
+        'aliquota_pis', 'aliquota_cofins', 'aliquota_inss', 'imagem', 'status', 'codigo_tributacao_municipio',
+        'reserva', 'padrao_reserva_nfse', 'marketplace', 'hash_delivery', 'descricao', 'destaque_marketplace',
+        'numero_sequencial'
     ];
 
     protected $appends = [ 'imgApp' ];

@@ -1,162 +1,269 @@
 @extends('food.default', ['title' => 'Carrinho'])
 @section('content')
 
-@section('css')
-<style type="text/css">
-	.btn-main{
-		border: none;
-	}
-
-	@media (max-width:480px)  {
-		th{
-			font-size: 13px !important;
-		}
-		td{
-			font-size: 14px !important;
-		}
-
-	}
-	.img-prod{
-		height: 60px;
-		border-radius: 5px;
-	}
-</style>
-@endsection
-
-<section class="shoping-cart">
-	<div class="container">
-		<div class="row">
-			<div class="col-lg-12">
-				<div class="shoping__cart__table" style="margin-top: -60px">
-					<table>
-						<thead>
-							<tr>
-								<th class="shoping__product">Produto</th>
-								<th>Valor unitário</th>
-								<th>Quantidade</th>
-								<th>Subtotal</th>
-								<th></th>
-							</tr>
-						</thead>
-						<tbody>
-
-							@foreach($carrinho->itens as $i)
-							<tr>
-								<td class="shoping__cart__item">
-									<img class="img-prod" src="{{ $i->produto->img }}">
-									@if($i->tamanho_id == null)
-									<h5>{{ $i->produto->nome }}</h5>
-									@else
-									@foreach($i->sabores as $s)
-									<h5>1/{{ sizeof($i->sabores) }} {{ $s->sabor->nome }} @if(!$loop->last) | @endif</h5>
-									@endforeach
-									@endif
-								</td>
-								<td class="shoping__cart__price">
-									R$ {{ __moeda($i->valor_unitario) }}
-								</td>
-								<form id="form-cart-{{$i->id}}" action="{{ route('food.carrinho-update') }}">
-									<input type="hidden" value="{{ $config->loja_id }}" name="link">
-									<input type="hidden" name="item_id" value="{{ $i->id }}">
-									<td class="shoping__cart__quantity">
-										<div class="quantity" data-item="{{$i->id}}">
-											<div class="pro-qty">
-												<input name="quantidade" type="text" value="{{ number_format($i->quantidade, 0) }}">
+<div class="minfit" style="min-height: 472px;">
+	<div class="middle">
+		<div class="container nopaddmobile">
+			<div class="row rowtitle">
+				<div class="col-md-12">
+					<div class="title-icon">
+						@if(__isProdutoServicoDelivery($config->empresa_id))
+						<span>Finalizar Pedido/Agendamento</span>
+						@else
+						@if(__isSegmentoServico($config->empresa_id))
+						<span>Finalizar Agendamento</span>
+						@else
+						<span>Finalizar Pedido</span>
+						@endif
+						@endif
+					</div>
+					<div class="bread-box">
+						<div class="bread">
+							<a href="{{ route('food.index', ['link='.$config->loja_id]) }}"><i class="lni lni-home"></i></a>
+							<span>/</span>
+							<a href="{{ route('food.carrinho', ['link='.$config->loja_id]) }}">Meu carrinho</a>
+						</div>
+					</div>
+				</div>
+				<div class="col-md-12 hidden-xs hidden-sm">
+					<div class="clearline"></div>
+				</div>
+			</div>
+			<div class="sacola">
+				<div id="the_form" novalidate="novalidate">
+					<div class="row">
+						<div class="col-md-12">
+							<table class="listing-table sacola-table">
+								<thead>
+									<tr>
+										<th></th>
+										<th>Nome</th>
+										<th>Qtd</th>
+										<th>Valor</th>
+										<th>SubTotal</th>
+										<th>Detalhes</th>
+										<th></th>
+									</tr>
+								</thead>
+								<tbody>
+									@if($carrinho)
+									@foreach($carrinho->itens as $i)
+									<tr class="sacola-alterar sacola-{{ $i->id }}" sacola-produto-id="{{ $i->produto_id }}" sacola-eid="{{ $i->id }}" sacola-pid="{{ $i->produto_id }}" valor-adicional="0" valor-somado="{{ $i->sub_total 	}}">
+										<td class="td-foto">
+											@if($i->produto)
+											<a href="{{ route('food.produto-detalhe', [$i->produto->hash_delivery]) }}">
+												<div class="imagem">
+													<img src="{{ $i->produto->img }}">
+												</div>
+											</a>
+											@else
+											<a href="{{ route('food.servico-detalhe', [$i->servico->hash_delivery]) }}">
+												<div class="imagem">
+													<img src="{{ $i->servico->img }}">
+												</div>
+											</a>
+											@endif
+										</td>
+										<td class="td-nome">
+											<a href="">
+												<span class="nome">
+													@if($i->tamanho)
+													@foreach($i->pizzas as $pizza)
+													1/{{ sizeof($i->pizzas) }} {{ $pizza->sabor->nome }} @if(!$loop->last) | @endif
+													@endforeach
+													- Tamanho: <strong>{{ $i->tamanho->nome }}</strong>
+													@else
+													{{ $i->produto ? $i->produto->nome : $i->servico->nome }}
+													@endif
+												</span>
+											</a>
+										</td>
+										<td class="td-detalhes visible-xs visible-sm">
+											<div class="line detalhes">
+												<span>
+													{{ $i->observacao }}
+												</span>
 											</div>
-										</div>
-									</td>
-								</form>
-
-								<td class="shoping__cart__total">
-									R$ {{ __moeda($i->sub_total) }}
-								</td>
-								<td class="shoping__cart__item__close">
-									<form action="{{ route('food.remove-item', [$i->id, 'link='.$config->loja_id]) }}" method="post" id="form-{{$i->id}}">
-										@csrf
-										@method('delete')
-										<button type="button" class="btn btn-danger btn-sm btn-delete" title="Remover Item">
-											<span class="icon_close text-white"></span>
-										</button>
-									</form>
-								</td>
-
-							</tr>
-							@if(sizeof($i->adicionais) > 0 || $i->observacao != null || $i->tamanho_id != null)
-
-							<tr style="background: #EFEFEF;">
-								<td colspan="5">
+										</td>
+										<td class="td-quantidade">
+											<div class="clear"></div>
+											<div class="holder-acao">
+												<div class="item-acao visible-xs visible-sm">
+													@if($i->produto)
+													<a class="sacola-change" style="display:none" href="{{ route('food.produto-detalhe', [$i->produto->hash_delivery]) }}">
+														<i class="lni lni-pencil"></i>
+													</a>
+													@else
+													<a class="sacola-change" style="display:none" href="{{ route('food.servico-detalhe', [$i->servico->hash_delivery]) }}">
+														<i class="lni lni-pencil"></i>
+													</a>
+													@endif
+												</div>
+												<div class="item-acao">
+													<div class="line quantidade">
+														<div class="clear"></div>
+														<div class="campo-numero">
+															<i class="decrementar lni lni-minus" sacola-eid="{{ $i->id }}"></i>
+															<input readonly="" id="quantidade" type="number" name="quantidade" value="{{ number_format($i->quantidade, 0) }}">
+															<i class="incrementar lni lni-plus" sacola-eid="{{ $i->id }}"></i>
+														</div>
+														<div class="clear"></div>
+													</div>
+												</div>
+												<div class="item-acao visible-xs visible-sm">
+													<a class="sacola-remover" href="#" sacola-eid="{{ $i->id }}" sacola-tipo="{{ $i->produto ? 'produto' : 'servico' }}">
+														<i class="lni lni-trash"></i>
+													</a>
+												</div>
+											</div>
+										</td>
+										<td class="td-valor">
+											<span>Valor:</span>
+											<div class="line valor">
+												<span>R$ {{ __moeda($i->valor_unitario) }}</span>
+											</div>
+										</td>
+										<td class="td-valor">
+											<span>Sub total:</span>
+											<div class="line valor">
+												<span class="sub_total_item">R$ {{ __moeda($i->sub_total) }}</span>
+											</div>
+										</td>
+										<td class="td-detalhes hidden-xs hidden-sm">
+											<div class="line detalhes">
+												<span>
+													{{ $i->observacao }}
+												</span>
+											</div>
+										</td>
+										<td class="td-acoes hidden-xs hidden-sm">
+											<div class="holder">
+												<a class="sacola-remover" href="#" sacola-eid="{{ $i->id }}" sacola-tipo="{{ $i->produto ? 'produto' : 'servico' }}">
+													<i class="lni lni-trash"></i>
+													<span class="visible-xs">Excluir</span>
+												</a>
+											</div>
+											<div class="clear visible-xs visible-sm"></div>
+										</td>
+									</tr>
 									@if(sizeof($i->adicionais) > 0)
-									Adicionais: <b>@foreach($i->adicionais as $a) {{ $a->adicional->nome }}@if(!$loop->last), @endif @endforeach</b>
+									<tr class="sacola-{{ $i->id }}">
+										<td colspan="5">
+											Adicionais: 
+											@foreach($i->adicionais as $a)
+											<strong>{{ $a->adicional->nome }}@if(!$loop->last), @endif</strong>
+											@endforeach
+										</td>
+									</tr>
 									@endif
-
-									@if($i->observacao != null)
-									<span class="ml-2">Observação: <strong>{{ $i->observacao }}</strong></span>
+									@endforeach
+									@else
+									<tr class="sacola-null">
+										<td colspan="6"><span class="nulled">Sua sacola de compras está vazia, adicione produtos para poder fazer o seu pedido!</span></td>
+									</tr>
 									@endif
+								</tbody>
+							</table>
+						</div>
+					</div>
+					<div class="linha-subtotal">
+						<div class="row error-pedido-minimo error-pedido-minimo-sacola">
+							<div class="col-md-12">
+								<input class="fake-hidden" name="pedido_minimo" value="{{ $config->pedido_minimo }}">
+								<input class="fake-hidden" id="inp-carrinho_id" value="{{ $carrinho->id }}">
+							</div>
+						</div>
 
-									@if($i->tamanho_id != null)
-									<span class="ml-2">Tamanho: <strong>{{ $i->tamanho->nome }}</strong></span>
-									@endif
+						@if($funcionamento && $funcionamento->aberto)
+						@if($carrinho && $carrinho->valor_total >= $config->pedido_minimo)
+						<div class="row">
+							<div class="col-md-4">
+								<div class="subtotal"><strong>Subtotal:</strong> <span class="subtotal-valor">R$ {{ $carrinho ? __moeda($carrinho->valor_total) : '0,00' }}</span></div>
+								@if($tempoServico > 0)
+								<div><strong>Tempo de serviço:</strong> {{ $tempoServico }} Minutos</div>
+								@endif
+							</div>
+							<div class="clear visible-xs visible-sm"><br></div>
 
-								</td>
-							</tr>
+							@if($temServico == 0)
+							@if(in_array('delivery', $config->tipo_entrega))
+							<div class="col-md-3">
+								<form method="get" action="{{ route('food.pagamento') }}">
+
+									<input class="fake-hidden" name="delivery" value="1">
+									<input type="hidden" name="link" value="{{ $config->loja_id }}" />
+
+									<button class="botao-acao"><i class="lni lni-bi-cycle"></i> <span>Delivery</span></button>
+								</form>
+							</div>
 							@endif
-							@endforeach
 
-						</tbody>
-					</table>
-				</div>
-			</div>
-		</div>
-		<div class="row">
-			<div class="col-lg-12">
-				<div class="shoping__cart__btns">
-					<a href="{{ route('food.index', ['link='.$config->loja_id]) }}" class="primary-btn cart-btn">CONTINUAR COMPRANDO</a>
-				</div>
-			</div>
-			<div class="col-lg-6">
-				<div class="shoping__continue">
-					<div class="shoping__discount">
-						<h5>Cupom de desconto</h5>
-						<input type="hidden" id="inp-empresa_id" value="{{ $config->empresa_id }}">
-						<input type="hidden" id="inp-total" value="{{ $carrinho->valor_total }}">
-						<input type="hidden" id="inp-carrinho_id" value="{{ $carrinho->id }}">
-						<input type="hidden" id="inp-cliente_uid" value="{{ $clienteLogado }}">
-						<form action="#">
-							<input type="text" id="inp-cupom" value="{{ $carrinho->cupom }}" placeholder="Informe seu cupom" data-mask="AAAAAA">
-							<button type="button" class="site-btn btn-cupom">APLICAR DESCONTO</button>
-						</form>
+							<div class="clear visible-xs visible-sm"><br></div>
+							@if(in_array('balcao', $config->tipo_entrega))
+							<div class="col-md-3">
+								<form method="get" action="{{ route('food.pagamento') }}">
+									<input class="fake-hidden" name="balcao" value="1">
+									<input type="hidden" name="link" value="{{ $config->loja_id }}" />
+
+									<button class="botao-acao"><i class="lni lni-restaurant"></i> <span>Retirada Balcão</span></button>
+								</form>
+							</div>
+							@endif
+							@endif
+
+							<div class="clear visible-xs visible-sm"><br></div>
+						</div>
+						@else
+
+						<h5 class="text-primary">Pedido mínimo R$ {{ __moeda($config->pedido_minimo) }}</h5>
+
+						@endif
+						@else
+						<div class="loja-fechada">
+							<span><button>Fechado</button></span>
+						</div>
+						@endif
+
+						@if($temServico == 1)
+						<div class="row">
+							<br>
+							<div class="col-md-3">
+								<div class="form-field-default">
+									<label>Data do agendamento:</label>
+									<input class="" type="date" id="inp-data_agendamento" value="">
+								</div>
+							</div>
+							<div class="col-md-3">
+								<div class="form-field-default">
+									<br>
+									<button type="button" id="btn-buscar-horarios" class="botao-acao-gray active" style="width: 100%; margin-top: 6px" type="button">
+										<i class="lni lni-search-alt"></i>
+										Buscar horários
+									</button>
+
+								</div>
+							</div>
+						</div>
+						@endif
+
+						<hr>
+						<div class="row atendentes">
+
+
+						</div>
 					</div>
+
 				</div>
+
 			</div>
-			<form class="col-lg-6" method="get" action="{{ route('food.pagamento') }}">
-				<input type="hidden" name="link" value="{{ $config->loja_id }}">
-				@if($funcionamento && $funcionamento->aberto)
-
-				<div class="shoping__checkout">
-					<h5>Total do carrinho</h5>
-					<ul>
-						<li>Subtotal <span class="text-main">R$ {{ __moeda($carrinho->itens->sum('sub_total')) }}</span></li>
-						<li>Desconto <span class="vl-desconto">R$ {{ __moeda($carrinho->valor_desconto) }}</span></li>
-						<li>Total <span class="text-main total-cart">R$ {{ __moeda($carrinho->valor_total - $carrinho->valor_frete) }}</span></li>
-					</ul>
-
-					<button type="submit" class="primary-btn btn-main w-100">IR PAGA PAGAMENTO</button>
-				</div>
-				@else
-				<div class="card bg-danger">
-					<div class="card-header" style="height: 50px;">
-						<p class="text-white">Restaurante fechado</p>
-					</div>
-				</div>
-				@endif
-			</form>
-			
 		</div>
 	</div>
-</section>
+</div>
+
+@include('food.partials.modal_escolhe_agendamento')
 
 @endsection
-
 @section('js')
-<script type="text/javascript" src="/delivery/js/cart.js"></script>
+<script src="/food-files/js/carrinho.js"></script>
+<script src="/food-files/js/agendamento.js"></script>
 @endsection

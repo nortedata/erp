@@ -17,7 +17,10 @@ return new class extends Migration
             $table->foreignId('caixa_id')->nullable()->constrained('caixas');
             $table->decimal('valor', 10, 2);
             $table->string('observacao', 200);
+            $table->integer('conta_empresa_id')->nullable();
 
+            // alter table sangria_caixas add column conta_empresa_id integer default null;
+            
             $table->timestamps();
         });
     }

@@ -13,11 +13,15 @@ class NotaServico extends Model
         'empresa_id', 'valor_total', 'estado', 'serie', 'codigo_verificacao', 'numero_nfse', 'url_xml',
         'url_pdf_nfse', 'url_pdf_rps', 'cliente_id', 'documento', 'razao_social', 'im', 'ie', 'cep',
         'rua', 'numero', 'bairro', 'complemento', 'cidade_id', 'email', 'telefone', 'natureza_operacao', 'uuid',
-        'ambiente'
+        'ambiente', 'gerar_conta_receber', 'data_vencimento', 'conta_receber_id'
     ];
 
     public function servico(){
         return $this->hasOne(ItemNotaServico::class, 'nota_servico_id');
+    }
+
+    public function contaReceber(){
+        return $this->belongsTo(ContaReceber::class, 'conta_receber_id');
     }
 
     public function novoNumeroNFse(){

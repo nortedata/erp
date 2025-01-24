@@ -6,6 +6,21 @@
 		->value(isset($item) ? $item->padrao_id : ($padraoTributacao != null ? $padraoTributacao->id : ''))
 		!!}
 	</div>
+
+	@if(__countLocalAtivo() > 1)
+	<div class="col-md-4">
+		<label for="">Disponibilidade</label>
+
+		<select required class="select2 form-control select2-multiple" data-toggle="select2" name="locais[]" multiple="multiple">
+			@foreach(__getLocaisAtivoUsuario() as $local)
+			<option @if(in_array($local->id, (isset($item) ? $item->locais->pluck('localizacao_id')->toArray() : []))) selected @endif value="{{ $local->id }}">{{ $local->descricao }}</option>
+			@endforeach
+		</select>
+	</div>
+	@else
+	<input type="hidden" value="{{ __getLocalAtivo() ? __getLocalAtivo()->id : '' }}" name="local_id">
+	@endif
+
 	<div class="table-responsive">
 		<table class="table table-striped table-centered mb-0">
 			<thead class="table-dark">
@@ -25,6 +40,9 @@
 					<td>CEST</td>
 					<td>CFOP sáida estadual</td>
 					<td>CFOP sáida outro estado</td>
+
+					<td>CFOP entrada estadual</td>
+					<td>CFOP entrada outro estado</td>
 					<td>%ICMS</td>
 					<td>%PIS</td>
 					<td>%COFINS</td>
@@ -42,6 +60,7 @@
 				<tr>
 					<td>
 						<input required style="width: 400px" type="" class="form-control" name="nome[]" value="{{ $p['nome'] }}">
+						<input required type="hidden" name="mercado_livre_categoria[]" value="{{ $p['mercado_livre_categoria'] }}">
 					</td>
 					<td>
 						<input style="width: 150px" readonly type="" class="form-control" name="mercado_livre_status[]" value="{{ $p['status'] }}">
@@ -76,8 +95,8 @@
 
 					<td>
 						<select required style="width: 130px" class="form-select" required name="unidade[]">
-							@foreach(App\Models\Produto::unidadesMedida() as $un)
-							<option @if($un == 'UN') selected @endif value="{{ $un }}">{{ $un }}</option>
+							@foreach($unidades as $un)
+							<option @if($un == 'UN') selected @endif value="{{ $un->nome }}">{{ $un->nome }}</option>
 							@endforeach
 						</select>
 					</td>
@@ -100,6 +119,13 @@
 					</td>
 					<td>
 						<input required style="width: 150px" type="tel" class="form-control cfop cfop_outro_estado" name="cfop_outro_estado[]" value="">
+					</td>
+
+					<td>
+						<input required style="width: 150px" type="tel" class="form-control cfop cfop_entrada_estadual" name="cfop_entrada_estadual[]" value="">
+					</td>
+					<td>
+						<input required style="width: 150px" type="tel" class="form-control cfop cfop_entrada_outro_estado" name="cfop_entrada_outro_estado[]" value="">
 					</td>
 
 					<td>
@@ -160,6 +186,51 @@
 						</select>
 					</td>
 				</tr>
+
+				@if(isset($p['variacoes']) && sizeof($p['variacoes']) > 0)
+				<tr>
+					<td colspan="4">
+						<table class="table">
+							<thead>
+								<tr>
+									<th>Tipo</th>
+									<th>Variação</th>
+									<th>Valor</th>
+									<th>Quantidade</th>
+									<th>ID variação</th>
+								</tr>
+							</thead>
+							<tbody>
+								@foreach($p['variacoes'] as $v)
+								<tr>
+									<td>
+										<input readonly class="form-control" type="" value="{{ $v['nome'] }}" name="variacao_nome[]">
+									</td>
+									<td>
+										<input readonly class="form-control" type="" value="{{ $v['valor_nome'] }}" name="variacao_valor_nome[]">
+									</td>
+									<td>
+										<input readonly class="form-control moeda" type="tel" value="{{ __moeda($v['valor']) }}" name="variacao_valor[]">
+									</td>
+
+									<td>
+										<input readonly class="form-control " type="tel" value="{{ ($v['quantidade']) }}" name="variacao_quantidade[]">
+									</td>
+
+									<td>
+										<input readonly class="form-control" type="" value="{{ $v['_id'] }}" name="variacao_id[]">
+									</td>
+
+									<input type="hidden" name="mercado_livre_id_row[]" value="{{ $p['mercado_livre_id'] }}">
+
+								</tr>
+								@endforeach
+							</tbody>
+						</table>
+					</td>
+				</tr>
+				
+				@endif
 				@endforeach
 			</tbody>
 		</table>

@@ -18,8 +18,8 @@
 
                     <div class="row mt-3">
                         <div class="col-md-3">
-                            {!!Form::select('empresa', 'Pesquisar por empresa', ['' => 'Selecione'] + $empresas->pluck('nome', 'id')->all())
-                            ->attrs(['class' => 'form-select'])
+                            {!!Form::select('empresa', 'Pesquisar por empresa')
+                            ->options($empresa ? [$empresa->id => $empresa->info] : [])
                             !!}
                         </div>
                         <div class="col-md-3 text-left ">
@@ -48,7 +48,7 @@
                                 @foreach($data as $item)
                                 <tr>
 
-                                    <td>{{ $item->empresa->nome }}</td>
+                                    <td>{{ $item->empresa->info }}</td>
                                     <td>{{ $item->plano->nome }}</td>
                                     <td>{{ __moeda($item->valor) }}</td>
                                     <td>
@@ -62,9 +62,14 @@
                                         <form action="{{ route('gerenciar-planos.destroy', $item->id) }}" method="post" id="form-{{$item->id}}">
                                             @method('delete')
                                             @csrf
+
+                                            <a class="btn btn-warning btn-sm text-white" href="{{ route('gerenciar-planos.edit', [$item->id]) }}">
+                                                <i class="ri-pencil-fill"></i>
+                                            </a>
                                             <button type="button" class="btn btn-delete btn-sm btn-danger">
                                                 <i class="ri-delete-bin-line"></i>
                                             </button>
+
                                         </form>
                                     </td>
                                 </tr>
@@ -91,17 +96,16 @@
             <div class="modal-body">
                 <div class="row">
                     <div class="col-md-6">
-                        {!!Form::select('empresa', 'Empresa', ['' => 'Selecione'] + $empresas->pluck('nome', 'id')->all())
+                        {!!Form::select('empresa_atribuir', 'Empresa')
                         ->required()
-                        ->attrs(['class' => 'select2'])
-
+                        ->attrs(['class' => 'select2 empresa'])
                         !!}
                     </div>
 
                     <div class="col-md-3">
 
                         <label>Plano</label>
-                        <select required id="plano" name="plano_id" class="form-select select2">
+                        <select required id="plano" name="plano_id" class="form-select">
                             <option value="">Selecione</option>
                             @foreach($planos as $p)
                             <option value="{{ $p->id }}" data-valor="{{ $p->valor }}">{{ $p->nome }} R$ {{ __moeda($p->valor)}}</option>
@@ -110,7 +114,7 @@
                     </div>
 
                     <div class="col-md-3">
-                        {!!Form::select('forma_pagamento', 'Forma de pagamento', \App\Models\Plano::formasPagamento())
+                        {!!Form::select('forma_pagamento', 'Tipo de pagamento', \App\Models\Plano::formasPagamento())
                         ->required()
                         ->attrs(['class' => 'select2'])
                         !!}
@@ -120,6 +124,14 @@
                         {!!Form::tel('valor', 'Valor')
                         ->required()
                         ->attrs(['class' => 'moeda'])
+                        !!}
+                    </div>
+
+                    <div class="col-md-3 mt-2">
+                        {!!Form::select('status_pagamento', 'Status de pagamento', \App\Models\FinanceiroPlano::statusDePagamentos())
+                        ->required()
+                        ->attrs(['class' => 'select2'])
+                        ->value('recebido')
                         !!}
                     </div>
                 </div>
@@ -135,24 +147,59 @@
 @section('js')
 <script type="text/javascript">
     $(function(){
-        // setTimeout(() => {
-        //     $("#inp-empresa").select2({
-        //         dropdownParent: $('#modal-cad'),
-        //         theme: "bootstrap4",
-        //         width: $(this).data("width")
-        //         ? $(this).data("width")
-        //         : $(this).hasClass("w-100")
-        //         ? "100%"
-        //         : "style",
-        //     });
-        // }, 100)
+        setTimeout(() => {
+            $("#modal-cad .empresa").select2({
+                minimumInputLength: 2,
+                language: "pt-BR",
+                placeholder: "Digite para buscar a empresa",
+                width: "100%",
+                theme: "bootstrap4",
+                dropdownParent: $('#modal-cad'),
+                ajax: {
+                    cache: true,
+                    url: path_url + "api/empresas/find-all",
+                    dataType: "json",
+                    data: function (params) {
+
+                        var query = {
+                            pesquisa: params.term,
+                        };
+                        return query;
+                    },
+                    processResults: function (response) {
+                        var results = [];
+
+                        $.each(response, function (i, v) {
+                            var o = {};
+                            o.id = v.id;
+
+                            o.text = v.info;
+                            o.value = v.id;
+                            results.push(o);
+                        });
+                        return {
+                            results: results,
+                        };
+                    },
+                },
+            });
+        }, 200)
 
     });
 
     $(document).on("change", "#plano", function () {
         if($(this).val()){
-            let valor = $('#plano option:selected').data('valor')
-            $('#inp-valor').val(convertFloatToMoeda(valor))
+            let empresa_id = $('#inp-empresa_atribuir').val()
+
+            $.get(path_url + 'api/planos/find', {empresa_id: empresa_id, plano_id: $(this).val()})
+            .done((res) => {
+                console.log(res)
+                $('#inp-valor').val(convertFloatToMoeda(res.valor))
+            })
+            .fail((err) => {
+                console.log(err)
+                swal("Erro", "Algo deu errado", "error")
+            })
         }else{
             $('#inp-valor').val(convertFloatToMoeda(0))
         }

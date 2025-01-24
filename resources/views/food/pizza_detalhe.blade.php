@@ -68,17 +68,23 @@
 					@if($funcionamento == null)
 					<div class="card bg-danger">
 						<div class="card-header" style="height: 50px;">
+							@if(\App\Models\MarketPlaceConfig::getSegmentoServico($config))
+							<p class="text-white">Estabelecimento está fechado hoje</p>
+							@else
 							<p class="text-white">Restaurante está fechado hoje</p>
+							@endif
 						</div>
 					</div>
 					@endif
 
+					@if(!\App\Models\MarketPlaceConfig::getSegmentoServico($config))
 					@if($funcionamento != null && !$funcionamento->aberto)
 					<div class="card bg-danger">
 						<div class="card-header" style="height: 50px;">
 							<p class="text-white">Restaurante abrirá às {{ __hora_pt($funcionamento->inicio) }}</p>
 						</div>
 					</div>
+					@endif
 					@endif
 
 					@if($funcionamento && $funcionamento->aberto)

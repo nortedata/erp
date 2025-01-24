@@ -24,11 +24,24 @@
         ->required()
         !!}
     </div>
+
     <div class="col-md-2">
         {!!Form::tel('maximo_mdfes', 'Max. MDFe (mês)')
         ->required()
         !!}
     </div>
+
+    <div class="col-md-2">
+        {!!Form::tel('maximo_usuarios', 'Max. Usuários')
+        ->required()
+        !!}
+    </div>
+    <div class="col-md-2">
+        {!!Form::tel('maximo_locais', 'Max. Locais')
+        ->required()
+        !!}
+    </div>
+    
     <div class="col-md-2">
         {!!Form::select('status', 'Ativo', ['1' => 'Sim', '0' => 'Não'])
         ->required()
@@ -63,7 +76,21 @@
     </div>
 
     <div class="col-md-2">
+        {!!Form::tel('valor_implantacao', 'Valor de implantação')
+        ->attrs(['class' => 'moeda'])
+        ->value(isset($item) ? __moeda($item->valor_implantacao) : '')
+        !!}
+    </div>
+
+    <div class="col-md-2">
         {!!Form::select('auto_cadastro', 'Auto cadastro cliente', ['0' => 'Não', '1' => 'Sim'])
+        ->required()
+        ->attrs(['class' => 'form-select'])
+        !!}
+    </div>
+
+    <div class="col-md-2">
+        {!!Form::select('fiscal', 'Emite fiscal', ['1' => 'Sim', '0' => 'Não'])
         ->required()
         ->attrs(['class' => 'form-select'])
         !!}
@@ -78,9 +105,18 @@
     <div class="col-12"></div>
 
     <div class="row m-3">
+        <h5>Módulos do plano</h5>
+        @if(!isset($item))
+        <div class="row">
+            <div class="col-lg-3 col-6">
+                <input type="checkbox" class="form-check-input check_todos" style=" width: 25px; height: 25px;">
+                <label class="form-check-label m-1" for="customCheck1">Marcar todos</label>
+            </div>
+        </div>
+        @endif
         @foreach($modulos as $m)
         <div class="col-lg-3 col-6">
-            <input name="modulos[]" value="{{$m}}" type="checkbox" class="form-check-input" style=" width: 25px; height: 25px;" @isset($item) @if(sizeof($item->modulos) > 0 && in_array($m, $item->modulos)) checked="true" @endif @endif>
+            <input name="modulos[]" value="{{$m}}" type="checkbox" class="form-check-input check-module" style=" width: 25px; height: 25px;" @isset($item) @if(sizeof($item->modulos) > 0 && in_array($m, $item->modulos)) checked="true" @endif @endif>
             <label class="form-check-label m-1" for="customCheck1">{{$m}}</label>
         </div>
         @endforeach
@@ -108,3 +144,31 @@
         <button type="submit" class="btn btn-success px-5" id="btn-store">Salvar</button>
     </div>
 </div>
+
+@section('js')
+<script type="text/javascript">
+
+    $(function(){
+        @if(!isset($item))
+        setTimeout(() => {
+            checkTodos()
+        }, 10)
+        @endif
+    })
+
+    $('body').on('click', '.check_todos', function () {
+        setTimeout(() => {
+            checkTodos()
+        }, 10)
+    })
+
+    function checkTodos(){
+
+        if($('.check_todos').is(':checked')){
+            $('.check-module').prop('checked', 1)
+        }else{
+            $('.check-module').prop('checked', 0)
+        }
+    }
+</script>
+@endsection

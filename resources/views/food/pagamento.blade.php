@@ -1,292 +1,307 @@
 @extends('food.default', ['title' => 'Pagamento'])
-@section('css')
-<style type="text/css">
-	.btn-main{
-		border: none;
-	}
-	.borders{
-		padding: 10px;
-		border: 1px solid #999;
-		border-radius: 5px;
-	}
-	.borders:hover{
-		cursor: pointer;
-	}
-	.b-2:hover{
-		cursor: pointer;
-	}
-	.bg-main h5{
-		color: #fff;
-	}
-	.b-2{
-		margin-top: 5px;
-		padding: 5px;
-		border: 1px solid #999;
-		border-radius: 4px;
-	}
-	.active-div{
-		background: var(--color-main);
-		color: #fff;
-	}
 
-	.active-btn{
-		background: #27BCC2!important;
-		color: #fff!important;
-		border: none;
-	}
-	.select-card:hover{
-		cursor: pointer;
-	}
-</style>
-@endsection
 @section('content')
+<div class="middle">
+	<div class="container nopaddmobile">
+		<div class="row rowtitle">
+			<div class="col-md-12">
+				<div class="title-icon">
+					<span>Pagamento</span>
 
-<section class="featured spad" style="margin-top: -100px">
-	<div class="container">
-		<form id="form-pay" class="row featured__filter mt-4" method="post" action="{{ route('food.finalizar-pagamento') }}">
-			@csrf
-			<br>
-			<input type="hidden" id="inp-carrinho_id" value="{{ $carrinho->id }}">
-			<input type="hidden" id="inp-total" value="{{ $carrinho->valor_total }}">
-			<input type="hidden" id="inp-empresa_id" value="{{ $carrinho->empresa_id }}">
-			<input type="hidden" name="link" value="{{ $config->loja_id }}">
-			<input type="hidden" name="tipo_pagamento" id="inp-tipo_pagamento">
-
-			@if(in_array('delivery', $config->tipo_entrega))
-
-			<div class="col-md-4"></div>
-			<div class="col-12 col-md-4">
-				<button type="button" class="primary-btn btn-main btn-novo-endereco w-100" data-toggle="modal" data-target="#modal-endereco">
-					<i class="fa fa-plus"></i> Novo endereço
-				</button>
-			</div>
-
-			<div class="col-12 mt-2">
-
-				@foreach($cliente->enderecos as $e)
-
-				<div class="borders @if($carrinho->endereco_id == $e->id) bg-main @endif mt-1 end-{{$e->id}}" onclick="selecionaEndereco('{{ $e->id }}')">
-					<h5>{{ $e->info }}</h5>
 				</div>
-				@endforeach
-
-				@if(in_array('balcao', $config->tipo_entrega))
-				<div class="borders mt-1 end-balcao" onclick="selecionaEndereco('balcao')">
-					<h5>Retirar no balcão</h5>
+				<div class="bread-box">
+					<div class="bread">
+						<a href="{{ route('food.index', ['link='.$config->loja_id]) }}"><i class="lni lni-home"></i></a>
+						<span>/</span>
+						<a href="{{ route('food.carrinho', ['link='.$config->loja_id]) }}">Meu carrinho</a>
+						<span>/</span>
+						<a href="">Pagamento</a>
+					</div>
 				</div>
-				@endif
-
 			</div>
-			@endif
-
-			<div class="col-12 mt-2">
-				<h5>Total de produtos: <strong class="text-muted">R$ {{ __moeda($carrinho->itens->sum('sub_total')) }}</strong></h5>
-
-				<h5>Valor de entrega: <strong class="text-danger text-entrega">R$ {{ __moeda($carrinho->valor_frete) }}</strong></h5>
-
-				@if($carrinho->valor_desconto > 0)
-				<h5>Valor de desconto: <strong class="text-primary text-entrega">R$ {{ __moeda($carrinho->valor_desconto) }}</strong></h5>
-				@endif
-				<h4 class="mt-1">Valor total: <strong class="text-main text-total">R$ {{ __moeda($carrinho->valor_total) }}</strong></h4>
-
-				@if($entregaGratis)
-				<h6 class="text-success">
-					<i class="fa fa-check"></i>
-					Entrega gratis
-				</h6>
-				@endif
+			<input type="hidden" value="{{ $carrinho->id }}" id="inp-carrinho_id">
+			<input type="hidden" value="{{ $carrinho->empresa_id }}" id="inp-empresa_id">
+			<div class="col-md-12 hidden-xs hidden-sm">
+				<div class="clearline"></div>
 			</div>
-
-			<div class="col-12 mt-2">
-				<h4 class="text-center">Forma de pagamento</h4>
+		</div>
+		<div class="row">
+			<div class="col-md-12">
 			</div>
-			<div class="col-md-3"></div>
+		</div>
+		<div class="pedido">
 
-			<div class="col-6 col-md-3 text-center pay-entrega b-2 active-div">
-				Na entrega
-			</div>
+			<div class="row">
+				<div class="col-md-8 muda-checkout">
+					<div class="titler">
+						<div class="row">
+							<div class="col-md-12">
+								<div class="title-line mt-0 pd-0">
+									<i class="lni lni-user"></i>
+									<span>Dados do cliente</span>
+									<div class="clear"></div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="elemento-usuario">
+						<div class="row">
+							<div class="col-md-12">
+								<div class="form-field-default">
+									<label>Nome completo:</label>
+									<input type="text" name="nome" placeholder="Nome:" value="{{ $cliente->razao_social }}">
+								</div>
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-md-12">
+								<div class="form-field-default">
+									<label>Whatsapp:</label>
+									<input class="maskcel" type="text" name="whatsapp" placeholder="Whatsapp:" value="{{ $cliente->telefone }}">
+								</div>
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-md-12">
+								<div class="form-field-default">
+									<label>CPF(Somente números):</label>
+									<input type="text" name="cpf" placeholder="CPF:" class="maskcpf" value="{{ $cliente->cpf_cnpj }}">
+								</div>
+							</div>
+						</div>
+						
+					</div>
 
-			<div class="col-6 col-md-3 text-center b-2 pay-app">
-				Pelo App
+					<input type="hidden" id="tipo_entrega" value="{{ $carrinho->tipo_entrega }}">
+
+					@if($carrinho->tipo_entrega == 'delivery')
+					<div class="titler mtminus">
+						<div class="row">
+							<div class="col-md-12">
+								<div class="title-line mt-0 pd-0">
+									<i class="lni lni-cart"></i>
+									<span>Entrega</span>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div id="enderecoCompleto">
+						<div class="elemento-forma-entrega">
+							<div class="row">
+								<div class="col-md-12">
+									<div class="form-field-default">
+										<label>Endereço:</label>
+
+										<div class="fake-select">
+											<i class="lni lni-chevron-down"></i>
+											<select id="endereco_id" name="endereco_id">
+												<option value="">Selecione...</option>
+												@foreach($enderecos as $e)
+												<option @if($e->padrao) selected @endif value="{{ $e->id }}">
+													{{ $e->info }}
+												</option>
+												@endforeach
+											</select>
+											<div class="clear"></div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<div class="elemento-forma-entrega">
+							<div class="row">
+								<div class="col-md-12">
+									<div class="form-field-default">
+										<label class="lbl-bairro">Bairro:</label>
+
+										<div class="fake-select">
+											<i class="lni lni-chevron-down"></i>
+											<select id="input-forma-entrega" name="bairro_id">
+												<option value="" valortx="0">Selecione...</option>
+												@foreach($bairros as $b)
+												<option valortx="{{$b->valor_entrega}}" value="{{ $b->id }}">
+													{{ $b->nome }}
+												</option>
+												@endforeach
+											</select>
+											<div class="clear"></div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="elemento-entrega" style="display: block;">
+
+							<div class="row">
+								<div class="col-md-6 col-sm-6 col-xs-6">
+									<div class="form-field-default">
+										<label>CEP</label>
+										<input class="maskcep" type="text" name="endereco_cep" placeholder="CEP" value="">
+									</div>
+								</div>
+								<div class="col-md-6 col-sm-6 col-xs-6">
+									<div class="form-field-default">
+										<label>Nº</label>
+										<input type="text" name="endereco_numero" placeholder="Nº" value="190">
+									</div>
+								</div>
+							</div>
+							<div class="row">
+								<div class="col-md-12">
+									<div class="form-field-default">
+										<label>Logradouro(rua,avenida...):</label>
+										<input type="text" name="endereco_rua" placeholder="Rua">
+									</div>
+								</div>
+							</div>
+							
+							<div class="row">
+								<div class="col-md-12">
+									<div class="form-field-default">
+										<label>Ponto de referência</label>
+										<input type="text" name="endereco_referencia" placeholder="Referência" value="">
+									</div>
+								</div>
+							</div>
+
+							<div class="row">
+								<div class="col-md-6">
+									<div class="form-field-default">
+										<label>Tipo</label>
+										<div class="fake-select">
+											<i class="lni lni-chevron-down"></i>
+											<select id="input-forma-entrega" name="tipo">
+												<option value="casa">Casa</option>
+												<option value="trabalho">Trabalho</option>
+											</select>
+											<div class="clear"></div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					@endif
+					<div class="titler mtminus">
+						<div class="row">
+							<div class="col-md-12">
+								<div class="title-line mt-0 pd-0">
+									<i class="lni lni-coin"></i>
+									<span>Pagamento</span>
+									<div class="clear"></div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="elemento-forma-pagamento">
+						<div class="row">
+							<div class="col-md-12">
+								<div class="form-field-default">
+									<label class="lbl-forma-pagamento">Forma de pagamento:</label>
+									<div class="fake-select">
+										<i class="lni lni-chevron-down"></i>
+										<select id="input-forma-pagamento" name="forma_pagamento">
+											<option value="">Selecione</option>
+											@foreach($config->tipos_pagamento as $t)
+											<option value="{{ $t }}">{{ $t }}</option>
+											@endforeach
+										</select>
+										<div class="clear"></div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="elemento-forma-pagamento-descricao" style="display: block;">
+						<div class="row">
+							<div class="col-md-12">
+								<div class="form-field-default">
+									<label>Deseja troco para:</label>
+									<span class="form-tip" style="display: none;"></span>
+									
+									<input class="maskmoney" type="text" name="forma_pagamento_informacao" id="forma_pagamento_informacao" placeholder="Deixe em branco caso não precise" value="">
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="row">
+						<div class="col-md-12">
+							<div class="form-field-default">
+								<span>Observações:</span>
+								<textarea id="observacoes" rows="5" name="observacoes" placeholder="Observações:"></textarea>
+							</div>
+						</div>
+					</div>
+					<div class="row">
+						<div class="col-md-9">
+							<div class="form-field-default">
+								<label>Cupom de desconto:</label>
+								<input class="strupper" type="text" name="cupom" placeholder="Código do cupom" value="">
+							</div>
+						</div>
+						<div class="col-md-3">
+							<div class="form-field-default">
+								<label class="hidden-xs hidden-sm">&nbsp;</label>
+								<span class="botao-acao botao-aplicar"><i class="lni lni-ticket"></i> Aplicar</span>
+							</div>
+						</div>
+					</div>
+					<div class="row">
+						<div class="col-md-12">
+						</div>
+					</div>
+				</div>
+				<div class="col-md-4 muda-comprovante">
+					<div class="titler titlerzero">
+						<div class="row">
+							<div class="col-md-12">
+								<div class="title-line mt-0 pd-0">
+									<i class="lni lni-ticket-alt"></i>
+									<span>Resumo do pedido</span>
+									<div class="clear"></div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div id="sticky-wrapper" class="sticky-wrapper"><div class="comprovante-parent grudado-desktop" style="width: 360px;">
+						<div class="comprovante">
+							<div class="content">
+							</div>
+						</div>
+
+					</div></div>
+					<div class="clear"></div>
+				</div>
 			</div>
-			
-			<div class="col-12 col-md-6 div-pay-entrega mt-3 offset-md-3">
-				@if(in_array('Dinheiro', $config->tipos_pagamento))
-				<button type="button" class="btn btn-light btn-pay w-100 btn-Dinheiro" onclick="setFormaPagamento('Dinheiro')">Dinheiro</button>
-				@endif
+			<div class="pedido-actions" style="margin-top: 30px;">
 				
-				<div class="row div-troco d-none">
-					<div class="col-6">
-						<input type="tel" class="form-control m-3 moeda" id="inp-troco_para" name="troco_para" placeholder="Troco para">
+				<input type="hidden" name="formdata" value="1">
+				<div class="row">
+					<div class="col-md-3 col-xs-5 col-sm-5">
+						<a class="back-button" href="{{ route('food.carrinho', ['link='.$config->loja_id]) }}"><i class="lni lni-arrow-left"></i> <span>Alterar</span></a>
 					</div>
-					<div class="col-6">
-						<br>
-						<input type="checkbox" id="nao_precisa_troco" class="form-checkbox m-1"><span>Não precisa</span>
-					</div>
+					<div class="col-md-6 hidden-xs hidden-sm"></div>
+					<form method="post" id="form-finalizar" action="{{ route('food.finalizar-pagamento') }}" class="col-md-3 col-xs-7 col-sm-7">
+						@csrf
+						<input type="hidden" name="link" value="{{ $config->loja_id }}" />
+						
+						<button type="button" id="enviarPedido" class="botao-acao"><i class="lni lni-enter"></i> <span>Concluir pagamento</span></button>
+					</form>
 				</div>
-
-				@if(App\Models\MarketPlaceConfig::validaCartaoEntrega($config->tipos_pagamento))
-				<button type="button" class="btn btn-light w-100 mt-1 btn-pay btn-cartao-entrega" onclick="setFormaPagamento('cartao-entrega')">Cartão na entrega <span class="text-main cartao-escolhido"></span></button>
-				@endif
-			</div>
-			<div class="col-12 col-md-6 div-pay-app mt-3 d-none offset-md-3">
-				@if(in_array('Pix pelo App', $config->tipos_pagamento))
-				<button type="button" class="btn btn-light w-100" onclick="setFormaPagamento('Pix pelo App')">Pagar com PIX</button>
-				@endif
-				@if(in_array('Cartão pelo App', $config->tipos_pagamento))
-				<button type="button" class="btn btn-light w-100 mt-1" onclick="setFormaPagamento('Cartão pelo App')">Pagar com Cartão</button>
-				@endif
-
 			</div>
 
-			<br>
-			<div class="col-12 mt-4">
-				<input type="text" class="form-control" id="inp-observacao" name="observacao" placeholder="Alguma observação para o pedido?">
-			</div>
-
-			<div class="col-12 col-md-4 offset-md-8">
-				<button type="submit" class="btn btn-success btn-finish w-100 mt-3" disabled>Finalizar pedido</button>
-			</div>
-		</form>
+		</div>
 	</div>
-</section>
+</div>
 
-@include('food.partials.modal_endereco')
 @include('food.partials.modal_pix')
-@include('food.partials.modal_cartao')
-@include('food.partials.modal_escolhe_cartao', ['tipos_pagamento' => $config->tipos_pagamento])
+
 @section('js')
+<script type="text/javascript" src="/delivery/js/gera_comprovante.js"></script>
 <script type="text/javascript" src="/delivery/js/pagamento.js"></script>
-
 <script src="https://secure.mlstatic.com/sdk/javascript/v1/mercadopago.js"></script>
-<script type="text/javascript">
-	$(function(){
-		window.Mercadopago.setPublishableKey('{{ $config->mercadopago_public_key }}');
-		window.Mercadopago.getIdentificationTypes();
-		
-	})
 
-	$('#cardNumber').keyup(() => {
-		let cardnumber = $('#cardNumber').val().replaceAll(" ", "");
-		if (cardnumber.length >= 6) {
-			let bin = cardnumber.substring(0,6);
-
-			window.Mercadopago.getPaymentMethod({
-				"bin": bin
-			}, setPaymentMethod);
-		}
-	})
-
-	function setPaymentMethod(status, response) {
-		if (status == 200) {
-			let paymentMethod = response[0];
-			document.getElementById('paymentMethodId').value = paymentMethod.id;
-
-			$('#band-img').attr("src", paymentMethod.thumbnail);
-			getIssuers(paymentMethod.id);
-		} else {
-			alert(`payment method info error: ${response}`);
-		}
-	}
-
-	function getIssuers(paymentMethodId) {
-		window.Mercadopago.getIssuers(
-			paymentMethodId,
-			setIssuers
-			);
-	}
-
-	function setIssuers(status, response) {
-		if (status == 200) {
-			let issuerSelect = document.getElementById('issuer');
-			$('#issuer').html('');
-			response.forEach( issuer => {
-				let opt = document.createElement('option');
-				opt.text = issuer.name;
-				opt.value = issuer.id;
-				issuerSelect.appendChild(opt);
-			});
-
-			getInstallments(
-				document.getElementById('paymentMethodId').value,
-				document.getElementById('transactionAmount').value,
-				issuerSelect.value
-				);
-		} else {
-			alert(`issuers method info error: ${response}`);
-		}
-	}
-
-	function getInstallments(paymentMethodId, transactionAmount, issuerId){
-		window.Mercadopago.getInstallments({
-			"payment_method_id": paymentMethodId,
-			"amount": parseFloat(transactionAmount),
-			"issuer_id": parseInt(issuerId)
-		}, setInstallments);
-	}
-
-	function setInstallments(status, response){
-		if (status == 200) {
-			document.getElementById('installments').options.length = 0;
-			response[0].payer_costs.forEach( payerCost => {
-				let opt = document.createElement('option');
-				opt.text = payerCost.recommended_message;
-				opt.value = payerCost.installments;
-				document.getElementById('installments').appendChild(opt);
-
-				$('.installments').css('display', 'none')
-				$('#installments').css('display', 'block')
-
-			});
-		} else {
-			alert(`installments method info error: ${response}`);
-		}
-	}
-
-	doSubmit = false;
-	document.getElementById('paymentFormCartao').addEventListener('submit', getCardToken);
-	function getCardToken(event){
-		event.preventDefault();
-		if(!doSubmit){
-			$('.carrinho_id').val($('#inp-carrinho_id').val())
-			$('.total').val($('#inp-total').val())
-			$('.tipo_pagamento').val($('#inp-tipo_pagamento').val())
-			$('.observacao').val($('#inp-observacao').val())
-
-			let docNumber = $('.cpf_cnpj').val().replace(/[^0-9]/g,'')
-			$('.cpf_cnpj').val(docNumber)
-
-			setTimeout(() => {
-				let $form = document.getElementById('paymentFormCartao');
-				// $form.submit();
-
-				window.Mercadopago.createToken($form, setCardTokenAndPay);
-				return false;
-			}, 50)
-		}
-	};
-
-	function setCardTokenAndPay(status, response) {
-
-		if (status == 200 || status == 201) {
-			let form = document.getElementById('paymentForm');
-			let card = document.createElement('input');
-			card.setAttribute('name', 'token');
-			card.setAttribute('type', 'hidden');
-			card.setAttribute('value', response.id);
-			form.appendChild(card);
-			doSubmit=true;
-			$('button').attr('disabled', true)
-			form.submit();
-		} else {
-			alert("Verify filled data!\n"+JSON.stringify(response, null, 4));
-		}
-	};
-
-	$('#observacao').focusout(() => {
-		$('.observacao').val($('#observacao').val())
-	})
-
-</script>
 @endsection
 @endsection
