@@ -14,12 +14,17 @@ use App\Services\NFCeService;
 use App\Utils\EmailUtil;
 use Mail;
 use NFePHP\DA\NFe\Danfce;
+use App\Utils\SiegUtil;
 
 class NFCePainelController extends Controller
 {
     protected $emailUtil;
-    public function __construct(EmailUtil $util){
+    protected $siegUtil;
+
+    public function __construct(EmailUtil $util, SiegUtil $siegUtil){
         $this->emailUtil = $util;
+        $this->siegUtil = $siegUtil;
+
         if (!is_dir(public_path('xml_nfce'))) {
             mkdir(public_path('xml_nfce'), 0777, true);
         }
@@ -153,10 +158,18 @@ class NFCePainelController extends Controller
 
                         try{
                             $fileDir = public_path('xml_nfce/').$nfce->chave.'.xml';
-                            $this->emailUtil->enviarXmlContador($empresa->id, $fileDir, 'NFCe', $nfce->chave);
+                            $this->emailUtil->enviarXmlContador($nfce->empresa_id, $fileDir, 'NFCe', $nfce->chave);
                         }catch(\Exception $e){
 
                         }
+
+                        try{
+                            $fileDir = public_path('xml_nfce/').$nfce->chave.'.xml';
+                            $this->siegUtil->enviarXml($nfce->empresa_id, $fileDir);
+                        }catch(\Exception $e){
+
+                        }
+
                         return response()->json($data, 200);
                     }else{
                         $recibo = isset($resultado['recibo']) ? $resultado['recibo'] : null;
@@ -240,6 +253,13 @@ class NFCePainelController extends Controller
                 if($cStat == 135){
                     $descricaoLog = "CANCELADA $nfce->chave";
                     __createLog($nfce->empresa_id, 'NFCe', 'cancelar', $descricaoLog);
+
+                    try{
+                        $fileDir = public_path('xml_nfce_cancelada/').$nfce->chave.'.xml';
+                        $this->siegUtil->enviarXml($nfce->empresa_id, $fileDir);
+                    }catch(\Exception $e){
+                    }
+
                     return response()->json("[$cStat] $motivo", 200);
                 }else{
                     $descricaoLog = "ERRO CANCELAR: $nfce->chave";

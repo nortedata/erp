@@ -16,6 +16,10 @@
         <div class="card">
             <div class="card-body">
                 <div class="col-md-2">
+                    <a href="{{ route('usuario-super.create') }}" class="btn btn-success">
+                        <i class="ri-add-circle-fill"></i>
+                        Novo Usuário
+                    </a>
                 </div>
                 <hr class="mt-3">
                 <div class="col-lg-12">
@@ -61,7 +65,11 @@
                                         {{ $item->empresa ? $item->empresa->empresa->nome : '' }}
                                         @if($item->email == env('MAILMASTER')) SUPER @endif
                                     </td>
-                                    <td>{{ sizeof($item->roles) > 0 ? $item->roles->first()->description : '' }}</td>
+                                    <td>
+                                        {{ sizeof($item->roles) > 0 ? $item->roles->first()->description : '' }}
+                                        @if($item->suporte) SUPORTE @endif
+                                        
+                                    </td>
                                     <td>
                                         @if($item->email != env('MAILMASTER'))
                                         <form action="{{ route('usuario-super.destroy', $item->id) }}" method="post" id="form-{{$item->id}}">

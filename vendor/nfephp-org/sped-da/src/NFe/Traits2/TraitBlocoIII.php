@@ -84,7 +84,8 @@ trait TraitBlocoIII
                 $y2,
                 ($this->wPrint * $matrix[2]),
                 $it->height,
-                number_format($item->quantidade,2),
+
+                (($item->produto->unidade == 'UN' || $item->produto->unidade == 'UNID') ? number_format($item->quantidade, 0) : number_format($item->quantidade, 3)),
                 $aFont,
                 'T',
                 'R',
@@ -114,7 +115,7 @@ trait TraitBlocoIII
                 $y2,
                 ($this->wPrint * $matrix[5]),
                 $it->height,
-                number_format($item->valor_unitario*$item->quantidade, 2, ',', '.'),
+                number_format($item->sub_total, 2, ',', '.'),
                 $aFont,
                 'T',
                 'R',

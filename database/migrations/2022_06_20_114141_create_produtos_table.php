@@ -157,6 +157,15 @@ return new class extends Migration
             $table->integer('quantidade_atacado')->nullable();
             $table->string('referencia_xml', 50)->nullable();
 
+            $table->boolean('tipo_dimensao')->default(0);
+            $table->decimal('espessura', 8, 2)->nullable();
+            $table->integer('_id_import')->nullable();
+
+            $table->string('observacao', 100)->nullable();
+            $table->string('observacao2', 100)->nullable();
+            $table->string('observacao3', 100)->nullable();
+            $table->string('observacao4', 100)->nullable();
+
             // alter table produtos add column valor_compra decimal(12,4);
             // alter table produtos add column valor_delivery decimal(12,4);
             // alter table produtos add column tempo_preparo integer default null;
@@ -253,6 +262,15 @@ return new class extends Migration
             // alter table produtos add column balanca_pdv boolean default 0;
             // alter table produtos add column exportar_balanca boolean default 0;
             // alter table produtos add column referencia_xml varchar(50) default null;
+            // alter table produtos add column tipo_dimensao boolean default 0;
+            // alter table produtos add column espessura decimal(8,2) default null;
+            // alter table produtos add column _id_import integer default null;
+
+            // alter table produtos add column observacao varchar(100) default null;
+            // alter table produtos add column observacao2 varchar(100) default null;
+            // alter table produtos add column observacao3 varchar(100) default null;
+            // alter table produtos add column observacao4 varchar(100) default null;
+
 
             $table->timestamps();
         });

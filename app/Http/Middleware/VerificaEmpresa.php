@@ -24,6 +24,10 @@ class VerificaEmpresa
     		return $next($request);
     	}
 
+        if(auth::user()->suporte){
+            return $next($request);
+        }
+
     	session()->flash("flash_error", "Configure a empresa para continuar!");
     	return redirect()->route('config.index');
     }

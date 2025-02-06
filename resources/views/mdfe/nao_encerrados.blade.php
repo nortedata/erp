@@ -20,14 +20,12 @@
                                 <tr>
                                     <th>Chave</th>
                                     <th>Protocolo</th>
-                                    <!-- <th>Número</th>
-                                    <th>Data</th> -->
                                     <th>Ação</th>
                                 </tr>
                             </thead>
 
                             <tbody>
-                                @if(count($data) == 0)
+                                @if(sizeof($data) == 0)
                                 <tr>
                                     <td colspan="3" class="center-align">
                                         <h5 class="text-center">Nada Encontrado</h5>
@@ -49,19 +47,9 @@
                                             {{$m['protocolo']}}
                                         </span>
                                     </td>
-                                    <!-- <td class="datatable-cell">
-                                        <span class="codigo" style="width: 100px;">
-                                            {{$m['numero'] > 0 ? $m['numero'] : '--'}}
-                                        </span>
-                                    </td>
-                                    <td class="datatable-cell">
-                                        <span class="codigo" style="width: 100px;">
-                                            {{$m['data'] != '' ? __data_pt($m['data']) : '--'}}
-                                        </span>
-                                    </td> -->
 
                                     <td class="datatable-cell">
-                                        <form action="{{ route('mdfe.encerrar') }}" method="get" id="form">
+                                        <form action="{{ route('mdfe.encerrar') }}" method="get" id="form-{{$m['chave']}}">
                                             <input type="hidden" value="{{$m['chave']}}" name="chave">
                                             <input type="hidden" value="{{$m['protocolo']}}" name="protocolo">
                                             <button class="btn btn-sm btn-danger btn-confirm">Encerrar</button>

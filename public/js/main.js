@@ -29,6 +29,27 @@ cpfOptions = {
     },
 };
 
+var clickedIndex = 0;
+$(document).on("click", ".click-left", function () {
+    var content = document.getElementsByClassName("navbar-collapse")[0];
+    if (clickedIndex > 0)
+    {
+        clickedIndex = clickedIndex -1;
+        content.style.marginLeft = -190*clickedIndex + "px";  
+
+    }
+})
+$(document).on("click", ".click-right", function () {
+
+    var content = document.getElementsByClassName("navbar-collapse")[0];
+    if (clickedIndex < 5)
+    {
+        clickedIndex = clickedIndex +1;
+        content.style.marginLeft = -190*clickedIndex + "px";  
+    }
+})
+
+
 $(document).on("focus", ".cnpj", function () {
     $(this).mask("00.000.000/0000-00", { reverse: true })
 });
@@ -158,6 +179,14 @@ $(function () {
     setTimeout(() => {
         notifications()
         videoSuporte()
+
+        //valida menu horizontal
+        console.log($('.nav-horizontal').length)
+        if($('.nav-horizontal').length){
+            if($('.nav-item').length > 16){
+                $('.click-menu').removeClass('d-none')
+            }
+        }
     }, 10)
     
 });
@@ -212,8 +241,6 @@ $(".btn-delete").on("click", function (e) {
         }
     });
 });
-
-
 
 $(".btn-confirm").on("click", function (e) {
     e.preventDefault();
@@ -705,6 +732,7 @@ $("#inp-ncm").select2({
     },
 });
 
+
 $("#inp-empresa").select2({
     minimumInputLength: 2,
     language: "pt-BR",
@@ -855,6 +883,49 @@ $("#inp-produto_id").select2({
                 if(v.codigo_barras){
                     o.text += ' [' + v.codigo_barras  + ']';
                 }
+                o.value = v.id;
+                results.push(o);
+            });
+            return {
+                results: results,
+            };
+        },
+    },
+});
+
+$(".produtos_filtro").select2({
+    minimumInputLength: 2,
+    language: "pt-BR",
+    placeholder: "Digite para buscar o produto",
+    width: "100%",
+    ajax: {
+        cache: true,
+        url: path_url + "api/produtos-filtro",
+        dataType: "json",
+        data: function (params) {
+            let empresa_id = $('#empresa_id').val()
+            console.clear();
+            var query = {
+                pesquisa: params.term,
+                empresa_id: empresa_id,
+            };
+            return query;
+        },
+        processResults: function (response) {
+            var results = [];
+            let compra = 0
+            if($('#is_compra') && $('#is_compra').val() == 1){
+                compra = 1
+            }
+
+            $.each(response, function (i, v) {
+                var o = {};
+                o.id = v.id;
+                if(v.codigo_variacao){
+                    o.codigo_variacao = v.codigo_variacao
+                }
+
+                o.text = v.nome
                 o.value = v.id;
                 results.push(o);
             });

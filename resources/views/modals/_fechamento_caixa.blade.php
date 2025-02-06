@@ -13,9 +13,9 @@
                     ->multipart()
                     !!}
                     <div class="col-md-12">
-                        <h4>Valor Total: <strong class="text-success">R$ {{ __moeda($soma + $valor_abertura) }}</strong></h4>
+                        <h4>Valor Total: <strong class="text-success">R$ {{ __moeda($totalVendas + $valor_abertura) }}</strong></h4>
                     </div>
-                    <input type="hidden" name="valor_fechamento" value="{{ $soma + $valor_abertura }}">
+                    <input type="hidden" name="valor_fechamento" value="{{ $totalVendas + $valor_abertura }}">
                     <input type="hidden" name="caixa_id" value="{{ $item->id }}">
                     <div class="col-md-12 mt-3">
                         {!! Form::tel('valor_dinheiro', 'Total em Dinheiro')->attrs(['class' => 'moeda']) !!}

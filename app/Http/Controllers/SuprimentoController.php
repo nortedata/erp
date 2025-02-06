@@ -85,6 +85,6 @@ class SuprimentoController extends Controller
         $domPdf->set_paper(array(0,0,214,220));
         $domPdf->render();
         $domPdf->stream("Comprovante de suprimento.pdf", array("Attachment" => false));
-
+        exit();
     }
 }

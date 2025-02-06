@@ -25,6 +25,10 @@ class ItemNfe extends Model
         return $this->belongsTo(ProdutoVariacao::class, 'variacao_id');
     }
 
+    public function itensDimensao(){
+        return $this->hasMany(ItemDimensaoNfe::class, 'item_nfe_id');
+    }
+
     public function descricao(){
         if($this->variacao_id == null){
             return $this->produto->nome;

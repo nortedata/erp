@@ -11,7 +11,7 @@ class EscritorioContabil extends Model
 
     protected $fillable = [
         'razao_social', 'nome_fantasia', 'cnpj', 'ie', 'rua', 'numero', 'bairro', 'telefone', 'email', 
-        'cep', 'empresa_id', 'envio_xml_automatico', 'cidade_id', 'crc', 'cpf'
+        'cep', 'empresa_id', 'envio_xml_automatico', 'cidade_id', 'crc', 'cpf', 'token_sieg'
     ];
 
     public function cidade(){

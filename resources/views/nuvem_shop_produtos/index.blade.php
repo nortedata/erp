@@ -1,4 +1,13 @@
 @extends('layouts.app', ['title' => 'Produtos Nuvem Shop'])
+@section('css')
+<style type="text/css">
+    .div-overflow {
+        width: 220px;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+</style>
+@endsection
 @section('content')
 <div class="mt-3">
     <div class="row">
@@ -26,6 +35,7 @@
                                     <th>Valor promocional</th>
                                     <th>Estoque</th>
                                     <th>Categoria</th>
+                                    <th>Variações</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -60,15 +70,37 @@
                                     <td>{{ $item->id }}</td>
                                     <td>{{ $item->name->pt }}</td>
                                     <td>{{ $item->variants[0]->barcode }}</td>
-                                    <td>{{ __moeda($item->variants[0]->price) }}</td>
+                                    <td>
+
+                                        @if(sizeof($item->variacoes) > 0)
+                                        <div class="div-overflow">
+                                            @foreach($item->variants as $v)
+                                            {{ $v->values[0]->pt }} 
+                                            {{ isset($v->values[1]) ? $v->values[1]->pt : ''}}
+                                            R$ {{ __moeda($v->price) }}@if(!$loop->last), @endif
+                                            @endforeach
+                                        </div>
+                                        @else
+                                        {{ __moeda($item->variants[0]->price) }}
+                                        @endif
+                                    </td>
                                     <td>{{ __moeda($item->variants[0]->promotional_price) }}</td>
                                     <td>{{ number_format($item->variants[0]->stock, 2, '.', '') }}</td>
                                     
                                     <td>
                                         @foreach($item->categories as $key => $c)
                                         {{$c->name->pt}} 
+
                                         @if(!$loop->last) | @endif
                                         @endforeach
+                                    </td>
+
+                                    <td>
+                                        @if(sizeof($item->variacoes) > 0)
+                                        <i class="ri-checkbox-circle-fill text-success"></i>
+                                        @else
+                                        <i class="ri-close-circle-fill text-danger"></i>
+                                        @endif
                                     </td>
                                     
                                 </tr>
@@ -84,6 +116,24 @@
                         
                     </div>
                 </div>
+
+                @if($search == "")
+                <div class="row">
+                    <div class="col-md-1">
+                        @if($page > 1)
+                        <a class="btn btn-light btn-sm" href="{{ route('nuvem-shop-produtos.index', ['page='.$page-1]) }}" class="float-left">
+                            <i class="ri-arrow-left-circle-line"></i>
+                        </a>
+                        @endif
+                    </div>
+                    <div class="col-md-10"></div>
+                    <div class="col-md-1 text-end">
+                        <a class="btn btn-light btn-sm" href="{{ route('nuvem-shop-produtos.index', ['page='.$page+1]) }}" class="float-right">
+                            <i class="ri-arrow-right-circle-line"></i>
+                        </a>
+                    </div>
+                </div>
+                @endif
 
             </div>
         </div>

@@ -17,6 +17,15 @@ class UpdateFileController extends Controller
         return view('update_file.log', compact('data'));
     }
 
+    public function setVersion(Request $request){
+        $versao = $request->versao;
+        $system = SystemUpdate::where('versao', $versao)->first();
+        if($system == null){
+            SystemUpdate::create(['versao' => $versao]);
+        }
+        return redirect()->back();
+    }
+
     public function store(Request $request){
         $raiz = public_path();
         $raiz = substr($raiz, 0, strlen($raiz)-7);

@@ -104,7 +104,8 @@ class ProdutoController extends Controller
                 }
             }
         }
-
+        $countLocais = Localizacao::where('empresa_id', $request->empresa_id)
+        ->where('status', 1)->count();
         foreach($data as $p){
             if($p->gerenciar_estoque){
 
@@ -124,6 +125,11 @@ class ProdutoController extends Controller
                 
             }else{
                 $p->estoque_atual = 0;
+            }
+
+
+            if($countLocais > 1){
+                $p = __tributacaoProdutoLocalVenda($p, $local_id);
             }
         }
 
@@ -162,6 +168,15 @@ class ProdutoController extends Controller
 
         return response()->json($data, 200);
 
+    }
+
+    public function pesquisaFiltro(Request $request)
+    {
+        $data = Produto::orderBy('nome', 'desc')
+        ->where('empresa_id', $request->empresa_id)
+        ->where('nome', 'like', "%$request->pesquisa%")
+        ->get();
+        return response()->json($data, 200);
     }
 
     public function pesquisaCardapio(Request $request)
@@ -210,6 +225,8 @@ class ProdutoController extends Controller
         $item = Produto::where('id', $request->produto_id)
         ->first();
 
+        $item = __tributacaoProdutoLocalVenda($item, $caixa->local_id);
+
         $item->cfop_atual = $item->cfop_estadual;
         if($entrada == 1){
             $item->cfop_atual = $item->cfop_entrada_estadual;
@@ -233,6 +250,7 @@ class ProdutoController extends Controller
                 }
             }
         }
+
         return response()->json($item, 200);
     }
 
@@ -251,6 +269,8 @@ class ProdutoController extends Controller
         $item = Produto::where('id', $request->produto_id)
         ->with(['categoria', 'adicionais'])
         ->first();
+
+        $item = __tributacaoProdutoLocalVenda($item, $request->local_id);
 
         $itemLista = ItemListaPreco::where('lista_id', $lista_id)
         ->where('produto_id', $item->id)
@@ -299,6 +319,16 @@ class ProdutoController extends Controller
         ->where('categoria_id', $id)
         ->where('status', 1)
         ->get();
+
+        $countLocais = Localizacao::where('empresa_id', $request->empresa_id)
+        ->where('status', 1)->count();
+
+        if($countLocais > 1){
+            foreach($produtos as $p){
+                $p = __tributacaoProdutoLocalVenda($p, $local_id);
+            }
+        }
+
         if($lista_id){
             foreach($produtos as $p){
                 $itemLista = ItemListaPreco::where('lista_id', $lista_id)
@@ -336,6 +366,14 @@ class ProdutoController extends Controller
             ->where('produto_localizacaos.localizacao_id', $local_id);
         })
         ->limit(50)->get();
+
+        $countLocais = Localizacao::where('empresa_id', $request->empresa_id)
+        ->where('status', 1)->count();
+        if($countLocais > 1){
+            foreach($produtos as $p){
+                $p = __tributacaoProdutoLocalVenda($p, $local_id);
+            }
+        }
 
         if($lista_id){
             foreach($produtos as $p){
@@ -441,17 +479,17 @@ class ProdutoController extends Controller
         }
 
         if($item == null){
-            $item = ProdutoVariacao::where('produto_variacaos.codigo_barras', $request->barcode)
+            $variacao = ProdutoVariacao::where('produto_variacaos.codigo_barras', $request->barcode)
             ->where('produtos.empresa_id', $request->empresa_id)
             ->join('produtos', 'produtos.id', '=', 'produto_variacaos.produto_id')
             ->select('produto_variacaos.*')
             ->first();
-
-            $item->codigo_variacao = $item->id;
-            $item->valor_unitario = $item->valor;
-            $item->nome = $item->produto->nome . " - " . $item->descricao;
-            $item->codigo_variacao = $item->id;
-            $item->id = $item->produto_id;
+            if($variacao){
+                $item->codigo_variacao = $variacao->id;
+                $item->valor_unitario = $variacao->valor;
+                $item->nome = $variacao->produto->nome . " - " . $variacao->descricao;
+                $item->id = $variacao->produto_id;
+            }
         }
         return response()->json($item, 200);
     }
@@ -466,8 +504,11 @@ class ProdutoController extends Controller
         $ref = (int)substr($barcode, 1, $balanca_digito_verificador);
 
         // return response()->json($ref, 401);
-        $valor = (float)substr($barcode, 7, 12);
-        $valor = $valor / 1000;
+        $valor = substr($barcode, 7, 7);
+
+        $valor = (float)substr($valor, 0, strlen($valor)-1);
+        $valor = $valor/100;
+
         $quantidade = 1;
 
         $local_id = null;
@@ -499,11 +540,11 @@ class ProdutoController extends Controller
         if ($item->unidade == 'KG') {
             if ($balanca_valor_peso == 'valor') {
                 $quantidade = $valor / $item->valor_unitario;
-                $subtotal = $item->valor_unitario * number_format($quantidade, 3);
+                $subtotal = $valor;
             } else {
                 $quantidade = $valor / $item->valor_unitario;
                 $valor = $item->valor_unitario * number_format($quantidade, 3);
-                $subtotal = $valor;
+                $subtotal = $item->valor_unitario * number_format($quantidade, 3);
             }
         }else{
             $subtotal = $valor;
@@ -639,6 +680,9 @@ class ProdutoController extends Controller
 
     public function validaAtacado(Request $request){
         $item = Produto::findOrFail($request->produto_id);
+
+        $item = __tributacaoProdutoLocalVenda($p, $request->local_id);
+
         if($item->quantidade_atacado > 0 && $request->quantidade >= $item->quantidade_atacado){
             if($item->valor_atacado > 0){
                 return response()->json($item->valor_atacado, 200);
@@ -673,6 +717,33 @@ class ProdutoController extends Controller
         $item = Produto::findOrFail($request->produto_id);
 
         return view('produtos.partials.info', compact('item'));
+    }
 
+    public function linhaDimensao(Request $request){
+        return view('produtos.partials.linha_dimensao', compact('request'));
+    }
+
+    public function getDimensaoEdit(Request $request){
+        $item = ItemNfe::findOrFail($request->id);
+        $view = view('produtos.partials.edit_dimensao', compact('item'))->render();
+
+        return response()->json([
+            'view' => $view,
+            'produto' => $item->produto,
+            'data' => $item->itensDimensao
+        ], 200);
+    }
+
+    public function alterarGerenciamentoEstoque(Request $request){
+        try{
+            Produto::where('empresa_id', $request->empresa_id)
+            ->update([
+                'gerenciar_estoque' => $request->gerenciar_estoque
+            ]);
+
+            return response()->json("ok", 200);
+        }catch(\Exception $e){
+            return response()->json($e->getMessage(), 404);
+        }
     }
 }

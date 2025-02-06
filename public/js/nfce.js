@@ -14,6 +14,7 @@ function adicionaZero(numero) {
         return numero;
 }
 $(function () {
+
     let data = new Date
     let dataFormatada = (data.getFullYear() + "-" + adicionaZero((data.getMonth() + 1)) + "-" + adicionaZero(data.getDate()));
     $('.date_atual').val(dataFormatada)
@@ -127,7 +128,11 @@ $(document).on("change", ".produto_id", function () {
         $cst_cofins = $cst_pis.closest('td').next().find('select');
         $cst_ipi = $cst_cofins.closest('td').next().find('select');
 
-        $.get(path_url + "api/produtos/find", {produto_id: product_id, cliente_id: $('#inp-cliente_id').val()})
+        $.get(path_url + "api/produtos/find", {
+            produto_id: product_id, 
+            cliente_id: $('#inp-cliente_id').val(),
+            usuario_id: $('#usuario_id').val()
+        })
         .done((e) => {
             $qtd.val('1,00')
             $vlUnit.val(convertFloatToMoeda(e.valor_unitario))

@@ -26,6 +26,9 @@
         {!!Form::close()!!}
     </div>
 </div>
+
+@include('modals._dimensao_item_nfe')
+
 @section('js')
 <script src="/js/nfe.js"></script>
 @endsection

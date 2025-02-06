@@ -76,7 +76,7 @@
 									<th>Quantidade em estoque</th>
 									<th>Diferença</th>
 									<th>Estado</th>
-									<th>Ações</th>
+									<th class="d-print-none">Ações</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -88,8 +88,8 @@
 									<td>{{ $i['diferenca'] }}</td>
 
 									<td>{{ $i['estado'] }}</td>
-									<td>
-										<form action="{{ route('inventarios.destroy-item', $item['id']) }}" method="post" id="form-{{$item->id}}">
+									<td class="d-print-none">
+										<form action="{{ route('inventarios.destroy-item', $i['id']) }}" method="post" id="form-{{$i['id']}}">
 											@method('delete')
 											@csrf
 											<button type="button" class="btn btn-delete btn-sm btn-danger">

@@ -27,7 +27,7 @@ trait TraitBlocoIV
         }
 
         $desconto = $this->venda->desconto;
-        $frete = 0;
+        $frete = $this->venda->valor_entrega;
         $bruto = $valor + $desconto - $frete;
         $aFont = ['font' => 'arial', 'size' => 10, 'style' => 'B'];
         $texto = "Qtde total de itens";

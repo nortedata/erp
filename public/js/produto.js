@@ -14,6 +14,7 @@ $(function() {
     }
     if($('.table-variacao tbody tr').length == 0){
         $('#inp-variacao_modelo_id').val('').change()
+        $('#inp-sub_variacao_modelo_id').val('').change()
     }
 
     setTimeout(() => {
@@ -337,7 +338,7 @@ function changeVariavel() {
     if (variavel == 1) {
         $('.div-variavel').removeClass('d-none')
         $('#inp-valor_unitario').val('0')
-        $('#inp-valor_compra').val('0')
+        //$('#inp-valor_compra').val('0')
     } else {
         $('.div-variavel').addClass('d-none')
     }

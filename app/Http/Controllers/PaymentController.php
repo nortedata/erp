@@ -123,4 +123,30 @@ class PaymentController extends Controller
         return view('payment.pix', compact('item'));
 
     }
+
+    public function asaas($id){
+        $item = Plano::findOrFail($id);
+        $config = ConfiguracaoSuper::first();
+
+        $client = new \GuzzleHttp\Client();
+        $endPoint = 'https://api.asaas.com/v3/pix/qrCodes/static';
+
+        $response = $client->request('POST', $endPoint, [
+            'body' => '{"value":'.$item->valor.'}',
+            'headers' => [
+                'accept' => 'application/json',
+                'access_token' => $config->asaas_token,
+                'content-type' => 'application/json',
+            ],
+        ]);
+
+        $data = json_decode($response->getBody(),true);
+        // echo '<img src="data:image/jpeg;base64,'.($data['encodedImage']).'">';
+
+        // echo "<br>Payload: " . $data['payload'];
+
+        session()->flash("flash_success", "QrCode gerado!");
+        return view('payment.pix_asaas', compact('data', 'item'));
+
+    }
 }

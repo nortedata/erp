@@ -15,7 +15,7 @@ class Nfce extends Model
         'ambiente', 'uf', 'desconto', 'acrescimo', 'natureza_id', 'observacao', 'cliente_id',
         'api', 'caixa_id', 'dinheiro_recebido', 'troco', 'tipo_pagamento', 'bandeira_cartao',
         'cnpj_cartao', 'cAut_cartao', 'gerar_conta_receber', 'valor_cashback', 'lista_id',
-        'numero_sequencial', 'funcionario_id', 'local_id', 'user_id'
+        'numero_sequencial', 'funcionario_id', 'local_id', 'user_id', 'valor_entrega'
     ];
 
     public function cliente()

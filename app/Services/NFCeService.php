@@ -229,13 +229,20 @@ class NFCeService
 			$stdProd->vUnCom = $this->format($i->valor_unitario);
 			$stdProd->vProd = $this->format(($i->quantidade * $i->valor_unitario));
 			$stdProd->uTrib = $i->produto->unidade;
+			if($i->produto->unidade_tributavel != ''){
+				$stdProd->uTrib = $i->produto->unidade_tributavel;
+			}
 			// $stdProd->qTrib = $i->quantidade;
 			if($i->produto->quantidade_tributavel == 0){
 				$stdProd->qTrib = $i->quantidade;
 			}else{
 				$stdProd->qTrib = $i->produto->quantidade_tributavel * $i->quantidade;
 			}
+
 			$stdProd->vUnTrib = $this->format($i->valor_unitario);
+			if($i->produto->quantidade_tributavel > 0){
+				$stdProd->vUnTrib = $stdProd->vProd/$stdProd->qTrib;
+			}
 			$stdProd->indTot = 1;
 
 			// if ($item->desconto > 0) {
@@ -390,9 +397,11 @@ class NFCeService
 					$stdICMS->pST = 0.00;
 				}
 
-				if($i->cst_csosn != '60'){
-					$somaProdutos += $stdICMS->vBC;
-					$somaICMS += $stdICMS->vICMS;
+				if($i->cst_csosn != 60){
+					if($stdICMS->vICMS > 0){
+						$somaProdutos += $stdICMS->vBC;
+						$somaICMS += $stdICMS->vICMS;
+					}
 				}
 				if($i->cst_csosn == 10){
 
@@ -400,6 +409,13 @@ class NFCeService
 					$stdICMS->vBCST = $stdProd->vProd;
 					$stdICMS->pICMSST = $this->format($i->produto->pICMSST);
 					$somaVICMSST += $stdICMS->vICMSST = $stdICMS->vBCST * ($stdICMS->pICMSST/100);
+				}
+
+				if($i->cst_csosn == 61){
+
+					$stdICMS->qBCMonoRet = $this->format($stdProd->qTrib);
+					$stdICMS->adRemICMSRet = $this->format($i->produto->adRemICMSRet, 4);
+					$stdICMS->vICMSMonoRet = $this->format($i->produto->adRemICMSRet*$stdProd->qTrib, 4);
 				}
 
 				// $ICMS = $nfe->tagICMS($stdICMS);

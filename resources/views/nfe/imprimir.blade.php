@@ -911,7 +911,6 @@
                 <th class="b-top">{{$i->produto->id}} {{$i->produto->referencia != "" ? "/ " . $i->produto->referencia : "" }}</th>
                 <th class="b-top">
                     {{$i->descricao()}}
-
                 </th>
                 <th class="b-top">
                     {{__moeda($i->quantidade)}}
@@ -921,6 +920,7 @@
                 </th>
                 <th class="b-top">{{__moeda($i->valor_unitario)}}</th>
                 <th class="b-top">{{__moeda($i->quantidade * $i->valor_unitario)}}</th>
+
 
             </tr>
             @php
@@ -934,6 +934,20 @@
                 $tipoReceita = true;
             }
             @endphp
+            @if(sizeof($i->itensDimensao) > 0)
+            <tr>
+                <th colspan="">Dimensões</th>
+            </tr>
+            @foreach($i->itensDimensao as $id)
+            <tr>
+                <th class="b-top" colspan="5" style="text-align: left;">
+                    Largura: {{ $id->largura }}, Altura: {{ $id->altura }}, Quantidade: {{ $id->quantidade }},
+                    M2 Tot.: {{ $id->m2_total }}, Espessura: {{ $id->espessura }}, Observação: {{ $id->observacao }}
+                </th>
+            </tr>
+            @endforeach
+
+            @endif
 
             @endforeach
         </tbody>
@@ -1008,6 +1022,9 @@
     <table>
         <tr>
             <td class="b-bottom" style="width: 150px;">
+                Tipo de pagamento
+            </td>
+            <td class="b-bottom" style="width: 150px;">
                 Vencimento
             </td>
             <td class="b-bottom" style="width: 150px;">
@@ -1016,32 +1033,21 @@
         </tr>
         @foreach($item->fatura as $key => $d)
         <tr>
-            <td class="b-bottom">
-                <strong>{{ \Carbon\Carbon::parse($d->data_vencimento)->format('d/m/Y')}}</strong>
+            <td class="">
+                <strong>{{ \App\Models\Nfe::getTipo($d->tipo_pagamento) }}</strong>
             </td>
             <td class="b-bottom">
-                <strong>{{ __moeda($d->valor)}}</strong>
+                <strong>{{ \Carbon\Carbon::parse($d->data_vencimento)->format('d/m/Y') }}</strong>
+            </td>
+            <td class="b-bottom">
+                <strong>{{ __moeda($d->valor) }}</strong>
             </td>
         </tr>
         @endforeach
     </table>
     @endif
     <br>
-    <table>
-        <tr>
-            <td class="text-left" style="width: 278px;">
-                Forma de pagamento:<strong>
-                    @if(isset($item->fatura) && sizeof($item->fatura) > 0)
-                    @foreach ($item->fatura as $f)
-                    <span style="color: #8950FC">{{ $f->getTipo($f->tipo_pagamento) }}</span>
-                    @endforeach
-                    @else
-                    <span style="color: #8950FC">Não Informado</span>
-                    @endif
-                </strong>
-            </td>
-        </tr>
-    </table>
+   
     <table>
         <tr>
             {{-- @if(!$item->vendedor_id)

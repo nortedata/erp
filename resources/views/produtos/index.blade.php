@@ -31,13 +31,18 @@
                         Reajuste em Grupo
                     </a>
                     @endif
+
+                    <a href="{{ route('produtos.upload-imagens') }}" class="btn btn-light pull-right">
+                        <i class="ri-image-fill"></i>
+                        Upload de Imagens
+                    </a>
                 </div>
                 <hr class="mt-3">
                 <div class="col-lg-12">
                     {!!Form::open()->fill(request()->all())
                     ->get()
                     !!}
-                    <div class="row mt-3">
+                    <div class="row mt-3 g-1">
                         <div class="col-md-2">
                             {!!Form::text('nome', 'Pesquisar por nome')
                             !!}
@@ -76,6 +81,12 @@
                             !!}
                         </div>
                         @endif
+
+                        <div class="col-md-2">
+                            {!!Form::select('com_variacao', 'Com variação', ['' => 'Todos', 1 => 'Sim', 0 => 'Não'])
+                            ->attrs(['class' => 'form-select'])
+                            !!}
+                        </div>
                         <div class="col-md-3 text-left">
                             <br>
                             <button class="btn btn-primary" type="submit"> <i class="ri-search-line"></i>Pesquisar</button>
@@ -85,7 +96,7 @@
                     {!!Form::close()!!}
                 </div>
                 <div class="col-md-12 mt-3 table-responsive">
-                    <h6>Total de produtos: <strong>{{ $data->total() }}</strong></h6>
+                    <h6>Total de registros: <strong>{{ $data->total() }}</strong></h6>
                     <h6>Total de produtos cadastrados: <strong>{{ $totalCadastros }}</strong></h6>
                     <div class="table-responsive-sm">
                         <table class="table table-striped table-centered mb-0">
@@ -145,7 +156,7 @@
                                     </td>
                                     @endcan
                                     <td>
-                                        <form style="width: 250px" action="{{ route('produtos.destroy', $item->id) }}" method="post" id="form-{{$item->id}}">
+                                        <form style="width: 300px" action="{{ route('produtos.destroy', $item->id) }}" method="post" id="form-{{$item->id}}">
                                             @method('delete')
                                             @can('produtos_edit')
                                             <a class="btn btn-warning btn-sm" href="{{ route('produtos.edit', [$item->id]) }}">
@@ -175,11 +186,17 @@
                                             <a class="btn btn-light btn-sm" href="{{ route('produtos.etiqueta', [$item->id]) }}" title="Gerar etiqueta">
                                                 <i class="ri-barcode-box-line"></i>
                                             </a>
+
+                                            @if(__countLocalAtivo() > 1)
+                                            <a class="btn btn-dark btn-sm" href="{{ route('produto-tributacao-local.index', [$item->id]) }}" title="Valores por local">
+                                                <i class="ri-percent-fill"></i>
+                                            </a>
+                                            @endif
                                         </form>
                                     </td>
                                     <td><img class="img-60" src="{{ $item->img }}"></td>
                                     <td><label style="width: 300px">{{ $item->nome }}</label></td>
-                                    @if($item->variacao_modelo_id)
+                                    @if(sizeof($item->variacoes) > 0)
                                     <td>
                                         <div class="div-overflow">
                                             {{ $item->valoresVariacao() }}
@@ -249,7 +266,7 @@
                                         @endif
                                     </td>
                                     <td>
-                                        @if($item->variacao_modelo_id)
+                                        @if(sizeof($item->variacoes) > 0)
                                         <i class="ri-checkbox-circle-fill text-success"></i>
                                         @else
                                         <i class="ri-close-circle-fill text-danger"></i>

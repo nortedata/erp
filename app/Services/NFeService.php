@@ -263,6 +263,10 @@ class NFeService{
 				$stdProd->qTrib = $i->produto->quantidade_tributavel * $i->quantidade;
 			}
 			$stdProd->vUnTrib = $this->format($i->valor_unitario);
+			if($i->produto->quantidade_tributavel > 0){
+				$stdProd->vUnTrib = $stdProd->vProd/$stdProd->qTrib;
+			}
+			
 			$stdProd->indTot = 1;
 			$somaProdutos += $stdProd->vProd;
 			if($i->codigo_beneficio_fiscal){
@@ -474,6 +478,38 @@ class NFeService{
 					$stdICMS->pCredSN = 0;
 					$stdICMS->vCredICMSSN = 0;
 				}
+
+
+				if($stdIde->finNFe == 4){
+					if($i->modBCST){
+						$stdICMS->modBCST = $i->modBCST;
+					}
+					if($i->pMVAST){
+						$stdICMS->pMVAST = $i->pMVAST;
+					}
+					if($i->vBCST){
+						$stdICMS->vBCST = $i->vBCST;
+					}
+					if($i->pICMSST){
+						$stdICMS->pICMSST = $i->pICMSST;
+					}
+					if($i->vICMSST){
+						$stdICMS->vICMSST = $i->vICMSST;
+					}
+					if($i->vBCFCPST){
+						$stdICMS->vBCFCPST = $i->vBCFCPST;
+					}
+					if($i->pFCPST){
+						$stdICMS->pFCPST = $i->pFCPST;
+					}
+					if($i->vFCPST){
+						$somavFCPST += $stdICMS->vFCPST = $i->vFCPST;
+					}
+				}
+				if(isset($stdICMS->vICMSST)){
+					$somaVICMSST += $stdICMS->vICMSST;
+				}
+				
 				if($i->cst_csosn == 61){
 					$stdICMS->CST = $i->cst_csosn;
 					$stdICMS->qBCMonoRet = $this->format($stdProd->qTrib);
@@ -578,6 +614,12 @@ class NFeService{
 					$somaVICMSST += $stdICMS->vICMSST;
 				}
 
+				if($i->cst_csosn == 61){
+					$stdICMS->qBCMonoRet = $this->format($stdProd->qTrib);
+					$stdICMS->adRemICMSRet = $this->format($i->produto->adRemICMSRet, 4);
+					$stdICMS->vICMSMonoRet = $this->format($i->produto->adRemICMSRet*$stdProd->qTrib, 4);
+				}
+
 				if($i->cst_csosn == 60){
 					$ICMS = $nfe->tagICMSST($stdICMS);
 				}else{
@@ -605,6 +647,7 @@ class NFeService{
 			$stdPIS = new \stdClass();
 			$stdPIS->item = $itemCont;
 			$stdPIS->CST = $i->cst_pis;
+
 			$stdPIS->vBC = $this->format($i->perc_pis) > 0 ? $vbcPis : 0.00;
 			$stdPIS->pPIS = $this->format($i->perc_pis);
 			$stdPIS->vPIS = $this->format($vbcPis * ($i->perc_pis / 100));
@@ -616,7 +659,7 @@ class NFeService{
 				$vbcCofins -= $stdICMS->vICMS;
 			}
 
-			if($i->vbc_pis > 0){
+			if($i->vbc_cofins > 0){
 				$vbcCofins = $i->vbc_cofins;
 			}
 			if($item->natureza->perc_cofins){
@@ -757,7 +800,7 @@ class NFeService{
 		$stdICMSTot->vCOFINS = 0.00;
 		$stdICMSTot->vOutro = 0.00;
 
-		$stdICMSTot->vNF = $this->format($somaProdutos + $somaVICMSST + $somaIpi + $item->valor_frete + $somavFCPST);
+		$stdICMSTot->vNF = $this->format($somaProdutos + $somaVICMSST + $somaIpi + $item->valor_frete + $somavFCPST - $stdICMSTot->vDesc);
 		$stdICMSTot->vTotTrib = 0.00;
 		$ICMSTot = $nfe->tagICMSTot($stdICMSTot);
 
@@ -772,8 +815,8 @@ class NFeService{
 			$std = new \stdClass();
 			$std->xNome = $item->transportadora->razao_social;
 			$std->xEnder = $item->transportadora->endereco;
-			$std->xMun = $item->transportadora->cidade->nome;
-			$std->UF = $item->transportadora->cidade->uf;
+			$std->xMun = $item->transportadora->cidade ? $item->transportadora->cidade->nome : '';
+			$std->UF = $item->transportadora->cidade ? $item->transportadora->cidade->uf : '';
 
 			$cnpj_cpf = preg_replace('/[^0-9]/', '', $item->transportadora->cpf_cnpj);
 

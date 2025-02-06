@@ -85,7 +85,7 @@ class Empresa extends Model
     }
 
     public function plano(){
-        return $this->hasOne(PlanoEmpresa::class, 'empresa_id')->with('plano')->orderBy('data_expiracao', 'desc');
+        return $this->hasOne(PlanoEmpresa::class, 'empresa_id')->with('plano')->orderBy('data_expiracao', 'asc');
     }
 
     public function financeiroPlano(){

@@ -18,6 +18,7 @@ use App\Models\NaturezaOperacao;
 use App\Models\PreVenda;
 use App\Services\NFeService;
 use App\Utils\EstoqueUtil;
+use App\Utils\SiegUtil;
 use NFePHP\DA\NFe\Danfe;
 use Illuminate\Support\Facades\DB;
 use NFePHP\DA\NFe\Daevento;
@@ -27,10 +28,12 @@ class NFeController extends Controller
 {
 
     protected $util;
+    protected $siegUtil;
 
-    public function __construct(EstoqueUtil $util)
+    public function __construct(EstoqueUtil $util, SiegUtil $siegUtil)
     {
         $this->util = $util;
+        $this->siegUtil = $siegUtil;
 
         if (!is_dir(public_path('xml_nfe'))) {
             mkdir(public_path('xml_nfe'), 0777, true);

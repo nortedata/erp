@@ -80,6 +80,7 @@ class ProdutoController extends Controller
         $local_id = $request->get('local_id');
         $start_date = $request->get('start_date');
         $end_date = $request->get('end_date');
+        $com_variacao = $request->get('com_variacao');
 
         $data = Produto::where('empresa_id', request()->empresa_id)
         ->select('produtos.*')
@@ -97,6 +98,9 @@ class ProdutoController extends Controller
         })
         ->when(!empty($request->categoria_id), function ($q) use ($request) {
             return $q->where('categoria_id', $request->categoria_id);
+        })
+        ->when(!empty($com_variacao), function ($q) use ($com_variacao) {
+            return $q->where('variacao_modelo_id', $com_variacao);
         })
         ->when(!empty($tipo), function ($q) use ($tipo) {
             if($tipo == 'composto'){
@@ -809,6 +813,7 @@ public function destroy($id)
             $item->composicao()->delete();
             $item->itemPreVenda()->delete();
             $item->itensDoCombo()->delete();
+            $item->fornecedores()->delete();
             $item->locais()->delete();
 
             if($item->woocommerce_id){
@@ -1784,6 +1789,72 @@ public function reajusteUpdate(Request $request){
     } catch (\Exception $e) {
         session()->flash("flash_error", "Algo deu errado: " . $e->getMessage());
         return redirect()->back();
+    }
+}
+
+public function uploadImagens(){
+    return view('produtos.seleciona_imagens');
+}
+
+public function uploadMultiple(Request $request){
+    if (!is_dir(public_path('upload_temp'))) {
+        mkdir(public_path('upload_temp'), 0777, true);
+    }
+    $this->clearFolder(public_path('upload_temp'));
+
+    if ($request->hasfile('imagens')) {
+        foreach ($request->file('imagens') as $file) {
+            $ext = $file->getClientOriginalExtension();
+            $filename = Str::random(20) .'.'. $ext;
+            $file->move(public_path('upload_temp/'), $filename);
+        }
+    }
+
+    return redirect()->route('produtos.vincula-imagens');
+    
+}
+
+public function vinculaImagens(){
+    $files = glob(public_path('upload_temp/*'));
+    $data = [];
+
+    foreach($files as $file){
+        $img = explode("upload_temp", $file);
+        $item = [
+            'diretorio' => $file,
+            'img' => "/upload_temp".$img[1]
+        ];
+        $data[] = $item;
+    }
+    return view('produtos.vincula_imagens', compact('data'));
+
+}
+
+public function vincularImagens(Request $request){
+    try{
+        for($i=0; $i<sizeof($request->produto_id); $i++){
+            $produto = Produto::findOrFail($request->produto_id[$i]);
+            $img = explode("upload_temp", $request->diretorio[$i]);
+            $filename = str_replace("/", "", $img[1]);
+            $produto->imagem = $filename;
+            $produto->save();
+            copy($request->diretorio[$i], public_path("/uploads/produtos/").$filename);
+        }
+
+        $this->clearFolder(public_path('upload_temp'));
+        session()->flash("flash_success", "Imagens cadastradas!");
+        return redirect()->route('produtos.index');
+    }catch(\Exception $e){
+        session()->flash("flash_error", $e->getMessage());
+        return redirect()->back();
+    }
+
+}
+
+private function clearFolder($destino){
+    $files = glob($destino."/*");
+    foreach($files as $file){ 
+        if(is_file($file)) unlink($file); 
     }
 }
 

@@ -12,6 +12,7 @@
         !!}
     </div>
 
+    @if(sizeof($item->variacoes) == 0)
     <div class="col-md-2">
         {!!Form::tel('nuvem_shop_valor', 'Valor')
         ->attrs(['class' => 'moeda inp-nuvemshop'])
@@ -19,6 +20,13 @@
         !!}
     </div>
 
+    <div class="col-md-2">
+        {!!Form::tel('estoque', 'Estoque')
+        ->attrs(['class' => 'quantidade'])
+        ->value($produto->variants[0]->stock)
+        !!}
+    </div>
+    @endif
 
     <div class="col-md-2">
         {!!Form::tel('nuvem_shop_valor_promocional', 'Valor promocional')
@@ -61,19 +69,50 @@
         !!}
     </div>
 
-    <div class="col-md-2">
-        {!!Form::tel('estoque', 'Estoque')
-        ->attrs(['class' => 'quantidade'])
-        ->value($produto->variants[0]->stock)
-        !!}
-    </div>
-
     <div class="col-12">
         {!!Form::textarea('texto_nuvem_shop', 'Descrição')
         ->value($produto->description ? $produto->description->pt : '')
         ->attrs(['class' => 'tiny'])
         !!}
     </div>
+
+    @if(sizeof($produto->variants) > 1)
+
+    <div class="col-md-6 col-12">
+        <hr>
+        <h4>Variações</h4>
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Variação</th>
+                        <th>Valor</th>
+                        <th>Quantidade</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($produto->variants as $v)
+                    <tr>
+                        <td>
+                            <input type="" class="form-control" name="variacao_id[]" value="{{ $v->id }}">
+                        </td>
+                        <td>
+                            <input readonly type="" class="form-control" name="variacao_nome[]" value="{{ $v->values[0]->pt }}">
+                        </td>
+                        <td>
+                            <input type="" class="form-control" name="variacao_valor[]" value="{{ __moeda($v->price) }}">
+                        </td>
+                        <td>
+                            <input type="" class="form-control" name="variacao_quantidade[]" value="{{ $v->stock }}">
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>       
+            </table>
+        </div>
+    </div>
+    @endif
 
     <div class="col-12" style="text-align: right;">
         <button type="submit" class="btn btn-success px-5" id="btn-store">Salvar</button>

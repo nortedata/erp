@@ -68,57 +68,58 @@ class NuvemShopPedidoController extends Controller
     }
 
     private function storePedidos($pedidos, $empresa_id){
-        foreach($pedidos as $p){
 
+        foreach($pedidos as $p){
             $pedido = NuvemShopPedido::where('pedido_id', $p->id)->first();
             if($pedido != null){
                 $this->atualizaCliente($p, $empresa_id);
                 $this->atualizaPedido($p);
-                return $pedido;
-            }
+            }else{
 
-            $data = [
-                'pedido_id' => $p->id,
-                'rua' => $p->billing_address,
-                'numero' => $p->billing_number ?? 0,
-                'bairro' => $p->billing_locality ?? '',
-                'cidade' => $p->billing_city,
-                'cep' => $p->billing_zipcode,
-                'total' => $p->total,
-                'cliente_id' => $p->customer->id,
-                'observacao' => $p->shipping_option,
-                'nome' => $p->customer->name,
-                'valor_frete' => $p->shipping_cost_customer,
-                'email' => $p->customer->email,
-                'documento' => $p->customer->identification ? $p->customer->identification : '',
-                'empresa_id' => $empresa_id,
-                'subtotal' => $p->subtotal,
-                'desconto' => $p->discount,
-                'numero_nfe' => 0,
-                'status_envio' => $p->shipping_status,
-                'gateway' => $p->gateway,
-                'status_pagamento' => $p->payment_status,
-                'data' => $p->created_at
-            ];
 
-            $this->storeCliente($p, $empresa_id);
-
-            $pedido = NuvemShopPedido::create($data);
-
-            foreach($p->products as $prod){
-
-                $produto = $this->validaProduto($prod, $empresa_id);
-
-                $item = [
-                    'pedido_id' => $pedido->id,
-                    'produto_id' => $produto->id,
-                    'quantidade' => $prod->quantity,
-                    'valor_unitario' => $prod->price,
-                    'sub_total' => $prod->quantity * $prod->price,
-                    'nome' => $prod->name
+                $data = [
+                    'pedido_id' => $p->id,
+                    'rua' => $p->billing_address,
+                    'numero' => $p->billing_number ?? 0,
+                    'bairro' => $p->billing_locality ?? '',
+                    'cidade' => $p->billing_city,
+                    'cep' => $p->billing_zipcode,
+                    'total' => $p->total,
+                    'cliente_id' => $p->customer->id,
+                    'observacao' => $p->shipping_option,
+                    'nome' => $p->customer->name,
+                    'valor_frete' => $p->shipping_cost_customer,
+                    'email' => $p->customer->email,
+                    'documento' => $p->customer->identification ? $p->customer->identification : '',
+                    'empresa_id' => $empresa_id,
+                    'subtotal' => $p->subtotal,
+                    'desconto' => $p->discount,
+                    'numero_nfe' => 0,
+                    'status_envio' => $p->shipping_status,
+                    'gateway' => $p->gateway,
+                    'status_pagamento' => $p->payment_status,
+                    'data' => $p->created_at
                 ];
 
-                NuvemShopItemPedido::create($item);
+                $this->storeCliente($p, $empresa_id);
+
+                $pedido = NuvemShopPedido::create($data);
+
+                foreach($p->products as $prod){
+
+                    $produto = $this->validaProduto($prod, $empresa_id);
+
+                    $item = [
+                        'pedido_id' => $pedido->id,
+                        'produto_id' => $produto->id,
+                        'quantidade' => $prod->quantity,
+                        'valor_unitario' => $prod->price,
+                        'sub_total' => $prod->quantity * $prod->price,
+                        'nome' => $prod->name
+                    ];
+
+                    NuvemShopItemPedido::create($item);
+                }
             }
         }
     }
@@ -163,7 +164,8 @@ class NuvemShopPedidoController extends Controller
             $telefone = substr($telefone, 3, strlen($telefone));
         }
 
-        $doc = $customer->identification;
+        $doc = $customer->identification ? $customer->identification : $pedido->contact_identification;
+
         if(strlen($doc) >= 11){
             $mask = '00.000.000/0000-00';
             if(strlen($doc) == 11){
@@ -300,7 +302,8 @@ class NuvemShopPedidoController extends Controller
     private function atualizaCliente($pedido, $empresa_id){
 
         $customer = $pedido->customer;
-
+        // dd($pedido);
+        // dd($customer);
         if($customer){
 
             $cliente = Cliente::where('nuvem_shop_id', $customer->id)->first();
@@ -312,7 +315,7 @@ class NuvemShopPedidoController extends Controller
 
                 $cliente->razao_social = $customer->name;
                 // $cliente->nome_fantasia = $customer->name;
-                $cliente->cpf_cnpj = $customer->identification;
+                $cliente->cpf_cnpj = $customer->identification ? $customer->identification : $pedido->contact_identification;
 
                 if(isset($pedido->shipping_address)){
                     $address = $pedido->shipping_address;

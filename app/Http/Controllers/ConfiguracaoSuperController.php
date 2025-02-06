@@ -22,6 +22,7 @@ class ConfiguracaoSuperController extends Controller
             'timeout_nfce' => $request->timeout_nfce ?? 8,
             'timeout_cte' => $request->timeout_cte ?? 8,
             'timeout_mdfe' => $request->timeout_mdfe ?? 8,
+            'token_api' => $request->token_api ?? '',
         ]);
         try {
             if ($item == null) {

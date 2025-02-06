@@ -61,6 +61,9 @@
 @else
 @include('modals._novo_cliente')
 @endif
+
+@include('modals._dimensao_item_nfe')
+
 @section('js')
 
 <script type="text/javascript"> 

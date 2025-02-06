@@ -34,7 +34,6 @@
 <input type="hidden" id="alerta_sonoro" value="{{ $config ? $config->alerta_sonoro : 0 }}">
 <input type="hidden" id="local_id" value="{{ $caixa->localizacao->id }}">
 
-
 @if($isVendaSuspensa)
 <input type="hidden" value="{{ $item->id }}" name="venda_suspensa_id">
 @endif
@@ -43,7 +42,7 @@
 @isset($isDelivery)
 <input name="pedido_delivery_id" id="pedido_delivery_id" value="{{ $pedido->id }}" class="d-none">
 <input id="pedido_desconto" value="{{ $pedido->desconto ? $pedido->desconto : 0 }}" class="d-none">
-<input id="pedido_valor_entrega" value="{{ $pedido->valor_entrega }}" class="d-none">
+<input name="valor_entrega" id="pedido_valor_entrega" value="{{ $pedido->valor_entrega }}" class="d-none">
 @else
 <input name="pedido_id" id="pedido_id" value="{{ $pedido->id }}" class="d-none">
 @endif
@@ -124,7 +123,6 @@
             <h4 class="text-center mt-3">Produtos</h4>
             <div class="card-body lista_produtos m-1" data-simplebar data-simplebar-lg style="max-height: 522px;">
                 <div class="row cards-categorias">
-
                 </div>
             </div>
             <div class="row" style="margin-top: 0px">
@@ -539,6 +537,7 @@
 @include('modals._tef_consulta')
 @include('modals._valor_credito')
 @include('modals._modal_pix')
+@include('modals._fatura_venda')
 
 @include('modals._observacao_pdv')
 @include('modals._cliente', ['cashback' => 1])

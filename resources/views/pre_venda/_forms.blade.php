@@ -22,6 +22,8 @@
 <input type="hidden" id="lista_id" value="" name="lista_id">
 
 <input type="hidden" id="abertura" value="{{ $abertura }}" name="">
+<input type="hidden" id="local_id" value="{{ $caixa->localizacao->id }}">
+
 @isset($pedido)
 <input name="pedido_id" id="pedido_id" value="{{ $pedido->id }}" class="d-none">
 @endif

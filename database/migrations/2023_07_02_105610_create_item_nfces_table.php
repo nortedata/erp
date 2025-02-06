@@ -46,8 +46,8 @@ return new class extends Migration
 
             // alter table item_nfces add column codigo_beneficio_fiscal varchar(10) default null;
             // alter table item_nfces add column variacao_id integer default null;
-            // alter table item_nfces modify column quantidade decimal(7,3);
-            // alter table item_nfces modify column quantidade decimal(12,2);
+
+            // alter table item_nfces modify column quantidade decimal(12,3);
             
             $table->timestamps();
         });

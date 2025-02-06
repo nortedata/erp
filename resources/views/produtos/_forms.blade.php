@@ -33,7 +33,7 @@
 
     <div class="tab-content b-0 mb-0">
         <div class="tab-pane" id="tab-identificacao">
-            <div class="row g-2">
+            <div class="row g-2 m-2">
 
                 <input type="hidden" value="{{ isset($item) ? 1 : 0 }}" id="edit">
                 <div class="col-md-6">
@@ -216,6 +216,19 @@
                 </div>
 
                 <div class="col-md-2">
+                    {!!Form::select('tipo_dimensao', 'Tipo dimensão', ['0' => 'Não', '1' => 'Sim'])->attrs(['class' => 'form-select tooltipp2'])
+                    !!}
+                    <div class="text-tooltip2 d-none">
+                        Marcar como sim se for usar para registrar as dimensões do produto na venda
+                    </div>
+                </div>
+
+                <div class="col-md-2">
+                    {!!Form::tel('espessura', 'Espessura')->attrs(['data-mask' => '00000.00', 'data-mask-reverse' => 'true'])
+                    !!}
+                </div>
+
+                <div class="col-md-2">
                     {!!Form::select('balanca_pdv', 'Balança PDV', ['0' => 'Não', '1' => 'Sim'])->attrs(['class' => 'form-select'])
                     !!}
                 </div>
@@ -254,6 +267,23 @@
                     !!}
                 </div>
 
+                <div class="col-md-3">
+                    {!!Form::tel('observacao', 'Observação')
+                    !!}
+                </div>
+                <div class="col-md-3">
+                    {!!Form::tel('observacao2', 'Observação 2')
+                    !!}
+                </div>
+                <div class="col-md-3">
+                    {!!Form::tel('observacao3', 'Observação 3')
+                    !!}
+                </div>
+                <div class="col-md-3">
+                    {!!Form::tel('observacao4', 'Observação 4')
+                    !!}
+                </div>
+
                 <div class="col-12 div-variavel">
                     <div class="table-responsive">
                         <table class="table table-dynamic">
@@ -273,12 +303,12 @@
                                             !!}
                                         </div>
 
-                                        <!-- <div class="mt-2">
+                                        <div class="mt-2">
                                             {!!Form::select('sub_variacao_modelo_id', 'Sub variação', ['' => 'Selecione'] + $variacoes->pluck('descricao', 'id')->all())
                                             ->attrs(['class' => 'form-select'])
                                             ->value(isset($item) ? $item->variacao_modelo_id : null)
                                             !!}
-                                        </div> -->
+                                        </div>
                                     </td>
                                     <td>
                                         <div class="row">
@@ -438,7 +468,7 @@
 
     <div class="tab-content b-0 mb-0">
         <div class="tab-pane" id="tab-fiscal">
-            <div class="row g-2">
+            <div class="row g-2 m-2">
 
                 <div class="col-md-2">
                     {!!Form::select('padrao_id', 'Padrão de tributação', ['' => 'Selecione'] + $padroes->pluck('descricao', 'id')->all())
@@ -1204,6 +1234,10 @@
         $("#inp-cfop_entrada_estadual").val('1'+v)
         $("#inp-cfop_entrada_outro_estado").val('2'+v)
     })
+
+    @if(isset($item) && !$item->_ncm)
+    swal('Alerta', 'O NCM {{ $item->ncm }} não esta cadastrado no sistema, avise o administrador!', 'warning')
+    @endif
 </script>
 <script src="/assets/vendor/twitter-bootstrap-wizard/jquery.bootstrap.wizard.min.js"></script>
 <script src="/assets/js/pages/demo.form-wizard.js"></script>

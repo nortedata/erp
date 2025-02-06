@@ -11,7 +11,7 @@ class Transportadora extends Model
 
     protected $fillable = [ 
         'empresa_id', 'razao_social', 'nome_fantasia', 'cpf_cnpj', 'ie', 'email', 'telefone', 'cidade_id',
-        'rua', 'cep', 'numero', 'bairro', 'complemento', 'antt', 
+        'rua', 'cep', 'numero', 'bairro', 'complemento', 'antt', '_id_import'
     ];
 
     public function cidade(){

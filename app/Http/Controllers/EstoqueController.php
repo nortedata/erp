@@ -101,43 +101,49 @@ class EstoqueController extends Controller
 
     public function update(Request $request, $id){
 
-        $item = Estoque::findOrFail($id);
 
         try{
-            if(isset($request->local_id)){
 
+            if(isset($request->local_id)){
+                // dd($request->all());
                 for($i=0; $i<sizeof($request->local_id); $i++){
 
-                    $item = Estoque::findOrFail($request->local_id[$i]);
+                    $item = Estoque::where('id', $id)->where('local_id', $request->local_id[$i])->first();
 
-                    $diferenca = 0;
-                    $tipo = 'incremento';
+                    if($item){
+                        $diferenca = 0;
+                        $tipo = 'incremento';
 
-                    if($item->quantidade > $request->quantidade[$i]){
-                        $diferenca = $item->quantidade - $request->quantidade[$i];
-                        $tipo = 'reducao';
-                    }else{
-                        $diferenca = $request->quantidade[$i] - $item->quantidade;
-                    }
-                    $item->quantidade = $request->quantidade[$i];
-                    $item->save();
+                        if($item->quantidade > $request->quantidade[$i]){
+                            $diferenca = $item->quantidade - $request->quantidade[$i];
+                            $tipo = 'reducao';
+                        }else{
+                            $diferenca = $request->quantidade[$i] - $item->quantidade;
+                        }
+                        $item->quantidade = $request->quantidade[$i];
+                        $item->save();
 
-                    $codigo_transacao = $item->id;
-                    $tipo_transacao = 'alteracao_estoque';
+                        $codigo_transacao = $item->id;
+                        $tipo_transacao = 'alteracao_estoque';
 
-                    $this->util->movimentacaoProduto($item->produto_id, $diferenca, $tipo, $codigo_transacao, $tipo_transacao, \Auth::user()->id);
+                        $this->util->movimentacaoProduto($item->produto_id, $diferenca, $tipo, $codigo_transacao, $tipo_transacao, \Auth::user()->id);
 
-                    if(isset($request->novo_estoque)){
 
-                        $firstLocation = Localizacao::where('empresa_id', $item->produto->empresa_id)->first();
-                        ProdutoLocalizacao::updateOrCreate([
-                            'produto_id' => $item->produto_id, 
-                            'localizacao_id' => $firstLocation->id
-                        ]);
+                        if(isset($request->novo_estoque)){
+
+                            $firstLocation = Localizacao::where('empresa_id', $item->produto->empresa_id)->first();
+                            ProdutoLocalizacao::updateOrCreate([
+                                'produto_id' => $item->produto_id, 
+                                'localizacao_id' => $firstLocation->id
+                            ]);
+                        }
                     }
 
                 }
+                __createLog($request->empresa_id, 'Estoque', 'editar', $item->produto->nome . " estoque alterado!");
+
             }else{
+                $item = Estoque::findOrFail($id);
 
                 $diferenca = 0;
                 $tipo = 'incremento';
@@ -155,8 +161,8 @@ class EstoqueController extends Controller
                 $tipo_transacao = 'alteracao_estoque';
 
                 $this->util->movimentacaoProduto($item->produto_id, $diferenca, $tipo, $codigo_transacao, $tipo_transacao, \Auth::user()->id);
+                __createLog($request->empresa_id, 'Estoque', 'editar', $item->produto->nome . " - quantidade " . $request->quantidade);
             }
-            __createLog($request->empresa_id, 'Estoque', 'editar', $item->produto->nome . " - quantidade " . $request->quantidade);
             session()->flash("flash_success", "Estoque alterado com sucesso!");
         }catch (\Exception $e) {
             // echo $e->getLine();

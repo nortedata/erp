@@ -123,7 +123,7 @@ class MdfeController extends Controller
                     'longitude_descarregamento' => $request->longitude_descarregamento ?? '',
                     'quantidade_rateio' => __convert_value_bd($request->quantidade_rateio),
                     'quantidade_rateio_carga' => __convert_value_bd($request->quantidade_rateio_carga),
-                    'quantidade_carga' => __convert_value_bd($request->quantidade_carga),
+                    'quantidade_carga' => $request->quantidade_carga,
                     'produto_pred_nome' => $request->produto_pred_nome ?? '',
                     'produto_pred_ncm' => preg_replace('/[^0-9]/', '', $request->produto_pred_ncm ?? ''),
                     'produto_pred_cod_barras' => $request->produto_pred_cod_barras ?? '',
@@ -262,7 +262,7 @@ return redirect()->route('mdfe.index');
      */
     public function update(Request $request, $id)
     {
-        // dd($request);
+        // dd($request->all());
         // $this->_validate($request);
         $item = Mdfe::findOrFail($id);
         try {
@@ -561,7 +561,7 @@ return redirect()->route('mdfe.index');
             "versao" => '3.00'
         ], $config);
         $mdfe = Mdfe::where('chave', $request->chave)
-        ->where('empresa_id', request()->empresa_id)
+        ->where('empresa_id', $request->empresa_id)
         ->first();
         $resp = $mdfe_service->encerrar($request->chave, $request->protocolo);
         if ($resp->infEvento->cStat != 135) {

@@ -59,20 +59,22 @@ class NfeImportaXmlController extends Controller
         ->where('estado', 'novo')
         ->get();
 
+
         $zip = new \ZipArchive();
         $zip_file = public_path('zips') . '/xml-'.$doc.'.zip';
         $zip->open($zip_file, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
         $cont = 0;
         foreach($data as $item){
             if (file_exists(public_path('xml_entrada/') . $item->chave_importada . '.xml')) {
+                $cont++;
                 $filename = public_path('xml_entrada/') . $item->chave_importada . '.xml';
-                $zip->addFile($filename, $item->chave . '.xml');
+                $zip->addFile($filename, $item->chave_importada . '.xml');
             }
         }
 
         $zip->close();
         if (file_exists($zip_file)){
-            return response()->download($zip_file, 'nfe_'.$doc.'.zip');
+            return response()->download($zip_file, 'nfe_importada_'.$doc.'.zip');
         }else{
             session()->flash("flash_error", "Não foi possível gerar o arquivo");
             return redirect()->back();

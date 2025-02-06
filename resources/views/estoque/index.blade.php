@@ -47,6 +47,7 @@
                                     <th>Produto</th>
                                     <th>Quantidade</th>
                                     <th>Valor de venda</th>
+                                    <th>Unidade</th>
                                     <th>Ações</th>
                                 </tr>
                             </thead>
@@ -86,6 +87,7 @@
                                         @endif
                                     </td>
                                     <td>{{ __moeda($item->produto->valor_unitario) }}</td>
+                                    <td>{{ $item->produto->unidade }}</td>
                                     <td style="width: 300px">
                                         <form action="{{ route('estoque.destroy', $item->id) }}" method="post" id="form-{{$item->id}}">
                                             @method('delete')

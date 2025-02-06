@@ -23,6 +23,7 @@ use NFePHP\Common\Certificate;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use App\Utils\EmpresaUtil;
+use App\Models\UnidadeMedida;
 
 class ContadorAdminController extends Controller
 {
@@ -122,6 +123,7 @@ class ContadorAdminController extends Controller
             });
         })
         ->paginate(env("PAGINACAO"));
+
         return view('contador.produtos', compact('data'));
     }
 
@@ -146,8 +148,12 @@ class ContadorAdminController extends Controller
 
         $configMercadoLivre = MercadoLivreConfig::where('empresa_id', request()->empresa_id)
         ->first();
+
+        $unidades = UnidadeMedida::where('empresa_id', request()->empresa_id)
+        ->where('status', 1)->get();
         return view('contador.produtos_show', 
-            compact('item', 'listaCTSCSOSN', 'padroes', 'categorias', 'cardapio', 'marcas', 'variacoes', 'configMercadoLivre'));
+            compact('item', 'listaCTSCSOSN', 'padroes', 'categorias', 'cardapio', 'marcas', 'variacoes', 'configMercadoLivre',
+                'unidades'));
     }
 
     public function clientes(Request $request){

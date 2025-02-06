@@ -30,8 +30,11 @@ return new class extends Migration
             $table->string('cep', 10);
             $table->string('crc', 20)->nullable();
             $table->string('cpf', 15)->nullable();
+            $table->string('token_sieg', 255)->nullable();
 
             $table->boolean('envio_xml_automatico')->default(0);
+
+            // alter table escritorio_contabils add column token_sieg varchar(255) default null;
 
             $table->timestamps();
         });

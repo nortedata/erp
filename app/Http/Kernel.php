@@ -81,6 +81,7 @@ class Kernel extends HttpKernel
         'validaDelivery' => \App\Http\Middleware\ValidaDelivery::class,
         'validaApiToken' => \App\Http\Middleware\ValidaApiToken::class,
         'validaApiTokenSuperAdmin' => \App\Http\Middleware\ValidaApiTokenSuperAdmin::class,
+        'validaSuporte' => \App\Http\Middleware\ValidaSuporte::class,
     ];
 
     protected $routeMiddleware = [

@@ -219,4 +219,12 @@ class Nfe extends Model
         }
         return 0;
     }
+
+    public static function getEstadoImport($estado){
+
+        if($estado == 'DISPONIVEL') return 'novo';
+        else if($estado == 'REJEITADO') return 'rejeitado';
+        else if($estado == 'CANCELADO') return 'cancelado';
+        else if($estado == 'APROVADO') return 'aprovado';
+    }
 }

@@ -32,9 +32,17 @@
                     
                 </div>
                 <div class="card-footer">
+                    @if($config->banco_plano == 'mercado_pago')
                     <button onclick="selectPlano('{{$item->id}}', '{{$item->valor}}', '{{$item->nome}}')" class="btn btn-success btn-pay w-100" data-bs-toggle="modal" data-bs-target="#modal-pay">
-                        <i class="fa fa-cart"></i> contratar
+                        <i class="ri-shopping-bag-2-fill"></i> Contratar plano
                     </button>
+                    @else
+
+                    <a href="{{ route('payment.asaas', [$item->id]) }}" class="btn btn-success btn-pay w-100">
+                        <i class="ri-shopping-bag-2-fill"></i> Contratar plano
+                    </a>
+
+                    @endif
                 </div>
                 
             </div>
@@ -46,6 +54,7 @@
     </div>
 </div>
 
+@if($config->banco_plano == 'mercado_pago')
 <div class="modal fade" id="modal-pay" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl">
         <form class="modal-content" method="post" action="{{ route('payment.store') }}">
@@ -100,6 +109,7 @@
         </form>
     </div>
 </div>
+@endif
 
 @endsection
 

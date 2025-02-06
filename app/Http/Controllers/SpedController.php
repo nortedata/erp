@@ -73,7 +73,7 @@ class SpedController extends Controller
         $motivoInventario = $request->motivo_inventario;
 
         $config = Empresa::findOrFail($request->empresa_id);
-        $cnpj = preg_replace('/[^0-9]/', '', $config->cnpj);
+        $cnpj = preg_replace('/[^0-9]/', '', $config->cpf_cnpj);
 
         $dInicial = \Carbon\Carbon::parse($dataInicial)->format('dmY');
         $dFinal = \Carbon\Carbon::parse($dataFinal)->format('dmY');

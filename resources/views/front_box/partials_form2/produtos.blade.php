@@ -13,7 +13,7 @@
 			@endif
 
 			@else
-			<p class="card-text">R$ {{ __moeda($p->valor_unitario) }}</p>
+			<p class="card-text">R$ {{ __moeda(__valorProdutoLocal($p, $local_id)) }}</p>
 			@endif
 		</div>
 	</div>

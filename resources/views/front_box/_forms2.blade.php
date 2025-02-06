@@ -20,7 +20,7 @@
 @isset($isDelivery)
 <input name="pedido_delivery_id" id="pedido_delivery_id" value="{{ $pedido->id }}" class="d-none">
 <input id="pedido_desconto" value="{{ $pedido->desconto ? $pedido->desconto : 0 }}" class="d-none">
-<input id="pedido_valor_entrega" value="{{ $pedido->valor_entrega }}" class="d-none">
+<input name="valor_entrega" id="pedido_valor_entrega" value="{{ $pedido->valor_entrega }}" class="d-none">
 @else
 <input name="pedido_id" id="pedido_id" value="{{ $pedido->id }}" class="d-none">
 @endif
@@ -106,7 +106,7 @@
 							<div class="col-md-5">
 								<div class="d-flex" style="float: right;">
 									<span class="increment-decrement btn btn-light rounded-circle" data-code="{{$code}}">-</span> 
-									<input min="0" value="1" class="fw-semibold cart-qty m-0 px-2 qtd-row"> 
+									<input min="0" value="{{ $p->quantidade }}" class="fw-semibold cart-qty m-0 px-2 qtd-row"> 
 									<span class="increment-decrement btn btn-light rounded-circle" data-code="{{$code}}">+</span>
 								</div>
 							</div>
@@ -125,7 +125,7 @@
 							<input readonly type="hidden" name="key" class="form-control" value="{{ $key }}">
 							<div class="col-md-5 text-left cart-data">
 								<span class="title">{{ substr($p->produto->nome, 0, 30) }}</span><br>
-								<span class="price">R$ {{ __moeda($p->valor_unitario )}}</span><br>
+								<span class="price">R$ {{ __moeda($p->quantidade*$p->valor_unitario )}}</span><br>
 								<i class="ri-pencil-fill text-primary" onclick="editItem('{{$code}}', '{{$p->produto->id}}')"></i>
 								<i class="ri-close-circle-line text-danger" onclick="removeItem('{{$code}}')"></i>
 							</div>
@@ -138,7 +138,7 @@
 							<div class="col-md-5">
 								<div class="d-flex" style="float: right;">
 									<span class="increment-decrement btn btn-light rounded-circle" data-code="{{$code}}">-</span> 
-									<input min="0" value="1" class="fw-semibold cart-qty m-0 px-2 qtd-row"> 
+									<input min="0" value="{{ number_format($p->quantidade) }}" class="fw-semibold cart-qty m-0 px-2 qtd-row"> 
 									<span class="increment-decrement btn btn-light rounded-circle" data-code="{{$code}}">+</span>
 								</div>
 							</div>
@@ -285,6 +285,9 @@
 @include('modals._edit_item_pdv')
 @include('modals._finalizar_pdv2')
 @include('modals._vendas_suspensas')
+@include('modals._variacao', ['not_submit' => true])
+@include('modals._fatura_venda')
+
 @include('modals._lista_precos')
 
 @section('js')

@@ -38,7 +38,7 @@ return new class extends Migration
             $table->string('numero_averbacao', 40);
 
             $table->decimal('valor_carga', 10, 2);
-            $table->decimal('quantidade_carga', 10, 4);
+            $table->decimal('quantidade_carga', 16, 4);
             $table->string('info_complementar', 60);
             $table->string('info_adicional_fisco', 60);
 
@@ -72,6 +72,7 @@ return new class extends Migration
 
             // alter table mdves add column local_id integer default null;
             // alter table mdves add column tipo_modal integer default 1;
+            // alter table mdves modify column quantidade_carga decimal(16, 4) default 0;
 
             $table->timestamps();
         });

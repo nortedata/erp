@@ -33,6 +33,10 @@ return new class extends Migration
             $table->string('numero', 10);
             $table->string('bairro', 40);
             $table->string('complemento', 60)->nullable();
+
+            $table->integer('_id_import')->nullable();
+            // alter table fornecedors add column _id_import integer default null;
+            
             $table->timestamps();
         });
     }

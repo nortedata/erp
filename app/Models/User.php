@@ -28,7 +28,8 @@ class User extends Authenticatable
         'tipo_contador',
         'notificacao_marketplace',
         'notificacao_ecommerce',
-        'escolher_localidade_venda'
+        'escolher_localidade_venda',
+        'suporte'
     ];
 
     /**

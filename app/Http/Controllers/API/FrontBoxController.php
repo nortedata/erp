@@ -14,6 +14,7 @@ use App\Models\ItemNfce;
 use App\Models\ItemPedido;
 use App\Models\VendaSuspensa;
 use App\Models\ItemVendaSuspensa;
+use App\Models\Localizacao;
 use App\Models\Agendamento;
 use App\Models\CashBackCliente;
 use App\Models\Cliente;
@@ -31,6 +32,7 @@ use App\Models\CategoriaProduto;
 use App\Models\Marca;
 use App\Models\UsuarioAcesso;
 use App\Models\CashBackConfig;
+use App\Models\ProdutoTributacaoLocal;
 use App\Models\Funcionario;
 use App\Models\UsuarioEmissao;
 use App\Utils\EstoqueUtil;
@@ -110,6 +112,137 @@ class FrontBoxController extends Controller
         }
     }
 
+    public function gerarFaturaPdv(Request $request){
+        try {
+
+            $entrada_fatura = $request->entrada_fatura;
+            $tipo_pagamento = $request->tipo_pagamento_fatura;
+            $parcelas_fatura = $request->parcelas_fatura;
+            $intervalo_fatura = $request->intervalo_fatura;
+            $primeiro_vencimento_fatura = $request->primeiro_vencimento_fatura;
+            $total = $request->total;
+
+            if($primeiro_vencimento_fatura == ''){
+                $primeiro_vencimento_fatura = date('Y-m-d');
+            }
+
+            $somaFatura = $total;
+            if($request->entrada_fatura){
+                $somaFatura -= __convert_value_bd($entrada_fatura);
+                $parcelas_fatura--;
+            }
+
+            $valorParcela = $somaFatura/$parcelas_fatura;
+            $valorParcela = (float)number_format($valorParcela, 2, '.');
+            $parcelas_fatura++;
+
+            $data = [];
+            $somaLoop = 0;
+            for($i=0; $i<$parcelas_fatura; $i++){
+                if($i == 0){
+                    $vencimento = $primeiro_vencimento_fatura;
+                }else{
+                    $vencimento = date('Y-m-d', strtotime($vencimento. " + $intervalo_fatura days"));
+                }
+
+                $p['vencimento'] = $vencimento;
+
+                if($request->entrada_fatura && $i == 0){
+                    $p['valor'] = __convert_value_bd($request->entrada_fatura);
+                    $somaLoop += __convert_value_bd($request->entrada_fatura);
+                    
+                }else{
+                    if($i == $parcelas_fatura-1){
+                        $p['valor'] = $total - $somaLoop;
+                    }else{
+                        $p['valor'] = $valorParcela;
+                        $somaLoop += $valorParcela;
+                    }
+                }
+
+
+                array_push($data, $p);
+            }
+            // return response()->json($tipo_pagamento, 401);
+
+            return view('front_box.partials.row_fatura_pdv', compact('data', 'tipo_pagamento'))->render();
+        } catch (\Exception $e) {
+            return response()->json($e->getMessage(), 401);
+        }
+    }
+    public function gerarFaturaPdv2(Request $request){
+        try {
+
+            $entrada_fatura = $request->entrada_fatura;
+            $tipo_pagamento = $request->tipo_pagamento_fatura;
+            $parcelas_fatura = $request->parcelas_fatura;
+            $intervalo_fatura = $request->intervalo_fatura;
+            $primeiro_vencimento_fatura = $request->primeiro_vencimento_fatura;
+            $total = $request->total;
+
+            if($primeiro_vencimento_fatura == ''){
+                $primeiro_vencimento_fatura = date('Y-m-d');
+            }
+
+            $somaFatura = $total;
+            if($request->entrada_fatura){
+                $somaFatura -= __convert_value_bd($entrada_fatura);
+                $parcelas_fatura--;
+            }
+
+            $valorParcela = $somaFatura/$parcelas_fatura;
+            $valorParcela = (float)number_format($valorParcela, 2, '.');
+            $parcelas_fatura++;
+
+            $data = [];
+            $somaLoop = 0;
+            for($i=0; $i<$parcelas_fatura; $i++){
+                if($i == 0){
+                    $vencimento = $primeiro_vencimento_fatura;
+                }else{
+                    $vencimento = date('Y-m-d', strtotime($vencimento. " + $intervalo_fatura days"));
+                }
+
+                $p['vencimento'] = $vencimento;
+
+                if($request->entrada_fatura && $i == 0){
+                    $p['valor'] = __convert_value_bd($request->entrada_fatura);
+                    $somaLoop += __convert_value_bd($request->entrada_fatura);
+                    
+                }else{
+                    if($i == $parcelas_fatura-1){
+                        $p['valor'] = $total - $somaLoop;
+                    }else{
+                        $p['valor'] = $valorParcela;
+                        $somaLoop += $valorParcela;
+                    }
+                }
+
+
+                array_push($data, $p);
+            }
+            // return response()->json($tipo_pagamento, 401);
+            $config = ConfigGeral::where('empresa_id', request()->empresa_id)->first();
+            $tiposPagamento = Nfce::tiposPagamento();
+        // dd($tiposPagamento);
+            if($config != null){
+                $config->tipos_pagamento_pdv = $config != null && $config->tipos_pagamento_pdv ? json_decode($config->tipos_pagamento_pdv) : [];
+                $temp = [];
+                if(sizeof($config->tipos_pagamento_pdv) > 0){
+                    foreach($tiposPagamento as $key => $t){
+                        if(in_array($t, $config->tipos_pagamento_pdv)){
+                            $temp[$key] = $t;
+                        }
+                    }
+                    $tiposPagamento = $temp;
+                }
+            }
+            return view('front_box.partials_form2.row_fatura_pdv2', compact('data', 'tipo_pagamento', 'tiposPagamento'))->render();
+        } catch (\Exception $e) {
+            return response()->json($e->getMessage(), 401);
+        }
+    }
+
     public function linhaProdutoVenda(Request $request)
     {
         try {
@@ -168,8 +301,9 @@ class FrontBoxController extends Controller
         }
         try {
 
-            if($lista_id){
+            $product = __tributacaoProdutoLocalVenda($product, $local_id);
 
+            if($lista_id){
                 $itemLista = ItemListaPreco::where('lista_id', $lista_id)
                 ->where('produto_id', $product->id)
                 ->first();
@@ -492,12 +626,14 @@ class FrontBoxController extends Controller
                     'bandeira_cartao' => $request->bandeira_cartao ?? '',
                     'cAut_cartao' => $request->cAut_cartao ?? '',
                     'user_id' => $request->usuario_id,
+                    'valor_entrega' => isset($request->valor_entrega) ? $request->valor_entrega : 0,
                     'numero_sequencial' => $this->getLastNumero($request->empresa_id)
                 ]);
                 $nfce = Nfce::create($request->all());
                 if($request->produto_id){
                     for ($i = 0; $i < sizeof($request->produto_id); $i++) {
                         $product = Produto::findOrFail($request->produto_id[$i]);
+                        $product = __tributacaoProdutoLocalVenda($product, $caixa->local_id);
                         $variacao_id = isset($request->variacao_id[$i]) ? $request->variacao_id[$i] : null;
                         ItemNfce::create([
                             'nfce_id' => $nfce->id,
@@ -981,7 +1117,7 @@ public function produtosPage(Request $request){
         ->where('produto_localizacaos.localizacao_id', $local_id)
         ->paginate(12);
 
-        return view('front_box.partials_form2.produtos', compact('produtos', 'lista_id'))->render();
+        return view('front_box.partials_form2.produtos', compact('produtos', 'lista_id', 'local_id'))->render();
     }
 }
 
@@ -990,12 +1126,22 @@ public function addProduto(Request $request){
 
         $qtd = __convert_value_bd($request->qtd);
         $local_id = $request->local_id;
+        $variacao = null;
         try{
             $qtd = (float)$qtd+1;
         }catch(\Exception $e){
 
         }
-        $item = Produto::findOrFail($request->produto_id);
+        if(isset($request->variacao_id) && $request->variacao_id != null){
+            $variacao = ProdutoVariacao::findOrfail($request->variacao_id);
+        }
+        if($variacao == null){
+            $item = Produto::findOrFail($request->produto_id);
+        }else{
+            $item = $variacao->produto;
+            $item->valor_unitario = $variacao->valor;
+            $item->nome .= " " .$variacao->descricao;
+        }
 
         if ($item->gerenciar_estoque == true) {
             if($item->combo){
@@ -1019,6 +1165,7 @@ public function addProduto(Request $request){
                 // }
             }
         }
+        $item = __tributacaoProdutoLocalVenda($item, $local_id);
 
         $lista_id = $request->lista_id;
         if($lista_id){
@@ -1054,6 +1201,15 @@ public function pesquisaProduto(Request $request){
             });
         })
         ->get();
+
+        $countLocais = Localizacao::where('empresa_id', $request->empresa_id)
+        ->where('status', 1)->count();
+
+        if($countLocais > 1){
+            foreach($data as $p){
+                $p = __tributacaoProdutoLocalVenda($p, $request->local_id);
+            }
+        }
 
         return view('front_box.partials_form2.pesquisa', compact('data'))->render();
     }catch(\Exception $e){

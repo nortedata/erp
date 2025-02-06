@@ -1,7 +1,7 @@
 <div class="row g-2">
     
     <div class="col-md-3">
-        {!!Form::select('funcionario_id', 'Funcionárrio')->required()
+        {!!Form::select('funcionario_id', 'Funcionário')->required()
         ->options(isset($item) ? [$item->funcionario->id => $item->funcionario->nome] : [])
         !!}
     </div>

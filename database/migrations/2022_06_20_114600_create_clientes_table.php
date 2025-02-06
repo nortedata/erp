@@ -43,6 +43,7 @@ return new class extends Migration
             $table->decimal('limite_credito', 10,2)->nullable();
 
             $table->integer('lista_preco_id')->nullable();
+            $table->integer('_id_import')->nullable();
 
             // alter table clientes add column status boolean default 1;
             // alter table clientes add column uid varchar(30) default null;
@@ -56,6 +57,7 @@ return new class extends Migration
             // alter table clientes add column limite_credito decimal(10,2) default null;
 
             // alter table clientes add column lista_preco_id integer default null;
+            // alter table clientes add column _id_import integer default null;
             
             $table->timestamps();
         });

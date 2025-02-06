@@ -24,7 +24,7 @@ class WoocommercePedidoController extends Controller
     public function index(Request $request){
         $woocommerceClient = $this->util->getConfig($request->empresa_id);
         $data = $woocommerceClient->get($this->endpoint);
-        // dd($data);
+
         foreach($data as $pedido){
             $this->util->criaPedido($request->empresa_id, $pedido);
         }

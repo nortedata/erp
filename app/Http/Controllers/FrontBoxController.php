@@ -109,7 +109,7 @@ class FrontBoxController extends Controller
         ->when(!empty($cliente_id), function ($query) use ($cliente_id) {
             return $query->where('cliente_id', $cliente_id);
         })
-        ->orderBy('id', 'desc')
+        ->orderBy('created_at', 'desc')
         ->paginate(env("PAGINACAO"));
         $contigencia = $this->getContigencia(request()->empresa_id);
 
@@ -201,10 +201,11 @@ class FrontBoxController extends Controller
             ->where('produto_localizacaos.localizacao_id', $caixa->localizacao->id)
             ->paginate(12);
         }
+        $local_id = $caixa->local_id;
 
         return view($view, compact('categorias', 'abertura', 
             'funcionarios', 'caixa', 'config', 'tiposPagamento', 'item', 'isVendaSuspensa', 'title', 
-            'configTef', 'marcas', 'produtos'));
+            'configTef', 'marcas', 'produtos', 'local_id'));
     }
 
     /**
@@ -305,8 +306,10 @@ class FrontBoxController extends Controller
             ->paginate(12);
         }
 
+        $local_id = $caixa->local_id;
+
         return view($view, compact('categorias', 'abertura', 'funcionarios', 'item', 'cliente', 'funcionario', 
-            'caixa', 'isVendaSuspensa', 'tiposPagamento', 'config', 'produtos', 'categorias', 'marcas'));
+            'caixa', 'isVendaSuspensa', 'tiposPagamento', 'config', 'produtos', 'categorias', 'marcas', 'local_id'));
     }
 
 

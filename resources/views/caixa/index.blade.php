@@ -54,11 +54,9 @@
                         @endif
                     </div>
                 </div>
-                @php
-                $soma = 0;
-                @endphp
+                
                 <div class="row mt-3">
-                    <h3 class="text-center">Total por Tipo de Pagamento:</h3>
+                    <h3 class="text-center">Total por Tipo de Pagamento Vendas:</h3>
                     @foreach($somaTiposPagamento as $key => $tp)
                     @if($tp > 0)
                     <div class="col-sm-4 col-lg-3 col-md-6">
@@ -76,21 +74,35 @@
                             </div>
                         </div>
                     </div>
-                    @php
-                    $soma += $tp
-                    @endphp
+                    
                     @endif
                     @endforeach
                     <div class="row text-center mt-4">
-                        <div class="col-md-4 card">
-                            <h3>Total de vendas: <strong class="text-danger">{{ __moeda($soma) }}</strong></h3>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <h3>Total de vendas: <strong class="text-danger">R${{ __moeda($totalVendas) }}</strong></h3>
+                            </div>
                         </div>
-                        <div class="col-md-4 card">
-                            <h3>Venda de produtos: <strong class="text-danger">{{ __moeda($soma-$somaServicos) }}</strong></h3>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <h3>Total de compras: <strong class="text-danger">R${{ __moeda($totalCompras) }}</strong></h3>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <h3>Venda de produtos: <strong class="text-danger">R${{ __moeda($totalVendas-$somaServicos) }}</strong></h3>
+                            </div>
                         </div>
 
-                        <div class="col-md-4 card">
-                            <h3>Venda de serviços: <strong class="text-danger">{{ __moeda($somaServicos) }}</strong></h3>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <h3>Venda de serviços: <strong class="text-danger">R${{ __moeda($somaServicos) }}</strong></h3>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <h3>Total de registros: <strong class="text-danger">{{ sizeof($data) }}</strong></h3>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -106,22 +118,44 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @php $somaLista = 0; @endphp
-                                @forelse ($vendas as $i)
+                                @php 
+                                $somaReceita = 0; 
+                                $somaDespesa = 0; 
+                                @endphp
+                                @forelse ($data as $i)
                                 <tr>
                                     <td>{{ $i->tipo }}</td>
                                     <td>{{ __data_pt($i->created_at, 1) }}</td>
                                     @if($i->tipo != 'OS')
-                                    <td>{{ __moeda($i->total) }}</td>
+                                    <td>
+                                        <strong>R$ {{ __moeda($i->total) }}</strong>
+                                        <br>
+                                        @if($i->receita == 1)
+                                        <strong class="text-success">Receita</strong>
+                                        @else
+                                        <strong class="text-danger">Despesa</strong>
+                                        @endif
+                                    </td>
                                     @else
-                                    <td>{{ __moeda($i->valor) }}</td>
+                                    <td>
+                                        <strong>R$ {{ __moeda($i->valor) }}</strong>
+                                        <br>
+                                        @if($i->receita == 1)
+                                        <strong class="text-success">Receita</strong>
+                                        @else
+                                        <strong class="text-danger">Despesa</strong>
+                                        @endif
+                                    </td>
+
                                     @endif
                                 </tr>
                                 @php
-                                if($i->tipo != 'OS'){
-                                    $somaLista += $i->total;
+                                if($i->receita == 1 && $i->tipo != 'OS'){
+                                    $somaReceita += $i->total;
+                                }elseif($i->receita == 1 && $i->tipo == 'OS'){
+                                    $somaReceita += $i->valor;
                                 }else{
-                                    $somaLista += $i->valor;
+                                    $somaDespesa += $i->total;
                                 }
                                 @endphp
                                 @empty
@@ -130,13 +164,24 @@
                                 </tr>
                                 @endforelse
                             </tbody>
-                            <tfoot>
-                                <tr>
-                                    <td colspan="2">Total</td>
-                                    <td>R$ {{ __moeda($somaLista) }}</td>
-                                </tr>
-                            </tfoot>
                         </table>
+                    </div>
+                </div>
+
+                <div class="row mt-3">
+                    <div class="col-12 col-md-3">
+                        <div class="card card-custom gutter-b bg-light-info">
+                            <div class="card-body">
+                                <h4 class="card-title">Total Receita: <strong class="text-success">R$ {{ __moeda($somaReceita) }}</strong></h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-3">
+                        <div class="card card-custom gutter-b bg-light-info">
+                            <div class="card-body">
+                                <h4 class="card-title">Total Despesa: <strong class="text-danger">R$ {{ __moeda($somaDespesa) }}</strong></h4>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -171,7 +216,7 @@
                     <div class="col-12 col-xl-6">
                         <div class="card card-custom gutter-b bg-light-info">
                             <div class="card-body">
-                                <h2 class="card-title">Total Recebido:</h2>
+                                <h3 class="card-title">Total Recebido:</h3>
                                 @if(sizeof($receber) > 0)
                                 <h4>Valor: R$ {{ __moeda($receber->sum('valor_integral')) }}</h4>
                                 @else
@@ -183,7 +228,7 @@
                     <div class="col-12 col-xl-6">
                         <div class="card card-custom gutter-b bg-light-danger">
                             <div class="card-body">
-                                <h2 class="card-title">Total Pago:</h2>
+                                <h3 class="card-title">Total Pago:</h3>
                                 @if(sizeof($pagar) > 0)
                                 <h4>Valor: R$ {{ __moeda($pagar->sum('valor_integral')) }}</h4>
                                 @else
@@ -243,7 +288,7 @@
                                             <td colspan="5">Nenhum registro</td>
                                         </tr>
                                         @endforelse
-                                        
+
                                     </tbody>
                                 </table>
                             </div>
@@ -294,7 +339,7 @@
                                             <td colspan="5">Nenhum registro</td>
                                         </tr>
                                         @endforelse
-                                        
+
                                     </tbody>
                                 </table>
                             </div>
@@ -305,7 +350,7 @@
             <div class="row m-3">
                 <div class="col-md-4">
                     <h3 >Total Entrada: 
-                        <strong class="text-primary">R$ {{ __moeda($soma + $somaSuprimento + $receber->sum('valor_integral')) }}</strong>
+                        <strong class="text-primary">R$ {{ __moeda($totalVendas + $somaSuprimento + $receber->sum('valor_integral')) }}</strong>
                     </h3>
                 </div>
                 <div class="col-md-4">
@@ -314,11 +359,11 @@
                     </h3>
                 </div>
                 <div class="col-md-4">
-                    <h3>Saldo: <strong class="text-success">R$ {{ __moeda($soma + $somaSuprimento + $valor_abertura + $receber->sum('valor_integral') - $somaSangria - $pagar->sum('valor_integral')) }}</strong></h3>
+                    <h3>Saldo: <strong class="text-success">R$ {{ __moeda($totalVendas + $somaSuprimento + $valor_abertura + $receber->sum('valor_integral') - $somaSangria - $pagar->sum('valor_integral')) }}</strong></h3>
                 </div>
             </div>
             <div class="col-md-3 m-3">
-                @if(sizeof($vendas) == 0)
+                @if(sizeof($data) == 0)
                 <h3>Caixa sem movimentação!</h3>
                 @else
 

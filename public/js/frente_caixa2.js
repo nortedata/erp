@@ -4,7 +4,6 @@ document.addEventListener("DOMContentLoaded", function(event) {
 	}, 100)
 });
 $(function(){
-	$('#inp-pesquisa').focus()
 	
 	$(document).on('click', '.categorias-pagination a', function(event){
 		event.preventDefault()
@@ -51,6 +50,11 @@ $(function(){
 		})
 	})
 
+	if($('#pedido_valor_entrega').val()){
+		$('#inp-acrescimo').val(convertFloatToMoeda($('#pedido_valor_entrega').val()))
+		$('#inp-tipo_acrescimo').val('R$').change()
+	}
+
 	if($('#venda_id').val() == '0'){
 		$('#inp-desconto').val('0')
 		$('#inp-acrescimo').val('0')
@@ -58,6 +62,10 @@ $(function(){
 	}else{
 		calculaTotal()
 	}
+
+	setTimeout(() => {
+		$("#inp-pesquisa").focus();
+	}, 500)
 })
 
 function resetProdutos() {
@@ -67,6 +75,59 @@ function resetProdutos() {
 
 	getProdutos()
 }
+
+$('.btn-gerar-fatura').click(() => {
+	$('#modal_finalizar_pdv2').modal('hide')
+	$('#modal_fatura_venda').modal('show')
+	let desconto = convertMoedaToFloat($('#inp-valor_desconto').val())
+	let acrescimo = convertMoedaToFloat($('#inp-valor_acrescimo').val())
+	let total = $('#inp-valor_total').val()
+
+	let total_venda = total + acrescimo - desconto
+	$('.lbl-total_fatura').text("R$ " + convertFloatToMoeda(total_venda))
+})
+
+$('.btn-store-fatura').click(() => {
+	console.clear()
+	let desconto = convertMoedaToFloat($('#inp-valor_desconto').val())
+	let acrescimo = convertMoedaToFloat($('#inp-valor_acrescimo').val())
+	let total = $('#inp-valor_total').val()
+
+	let total_venda = total + acrescimo - desconto
+	if(!$('#inp-parcelas_fatura').val()){
+		swal("Erro", "Informe a quantidade de parcelas!", "error")
+		return;
+	}
+	if(!$('#inp-intervalo_fatura').val()){
+		swal("Erro", "Informe o intervalo!", "error")
+		return;
+	}
+	let data = {
+		entrada_fatura: $('#inp-entrada_fatura').val(),
+		parcelas_fatura: $('#inp-parcelas_fatura').val(),
+		intervalo_fatura: $('#inp-intervalo_fatura').val(),
+		primeiro_vencimento_fatura: $('#inp-primeiro_vencimento_fatura').val(),
+		tipo_pagamento_fatura: $('#inp-tipo_pagamento_fatura').val(),
+		total: total_venda
+	}
+	// console.log(data)
+	$.get(path_url + "api/frenteCaixa/gerar-fatura-pdv2", data)
+	.done((success) => {
+        // console.log(success)
+        $('#modal_finalizar_pdv2').modal('show')
+        setTimeout(() => {
+        	$(".fatura").html(success)
+        	$('#modal_fatura_venda').modal('hide')
+
+
+        }, 100)
+        
+
+    })
+	.fail((err) => {
+		console.log(err);
+	});
+})
 
 var CATEGORIAID = 0
 var MARCAID = 0
@@ -115,6 +176,18 @@ function removeItem(code){
 			swal("", "Este item está salvo!", "info");
 		}
 	});
+}
+
+function buscarVariacoes(produto_id){
+	$.get(path_url + "api/variacoes/find", { produto_id: produto_id })
+	.done((res) => {
+		$('#modal_variacao .modal-body').html(res)
+		$('#modal_variacao').modal('show')
+	})
+	.fail((err) => {
+		console.log(err)
+		swal("Algo deu errado", "Erro ao buscar variações", "error")
+	})
 }
 
 function editItem(code){
@@ -186,8 +259,9 @@ $(document).on('click', '.increment-decrement', function(e){
 
 	setTimeout(() => {
 		$('.product-line-'+code).find('.quantidade').val(qtd)
+
 		$('.product-line-'+code).find('.qtd-row').val(qtd)
-		let valor_unitario = $('.product-line-'+code).find('.valor_unitario').val()
+		let valor_unitario = convertMoedaToFloat($('.product-line-'+code).find('.valor_unitario').val())
 
 		$('.product-line-'+code).find('.price').text("R$ " + convertFloatToMoeda(valor_unitario*qtd))
 		$('.product-line-'+code).find('.subtotal_item').val(convertFloatToMoeda(valor_unitario*qtd))
@@ -346,10 +420,12 @@ $(document).on('keypress', '#inp-pesquisa', function(e){
 	if(pesquisa.length > 1){
 		let data = {
 			pesquisa: pesquisa,
-			empresa_id: $('#empresa_id').val()
+			empresa_id: $('#empresa_id').val(),
+			local_id: $('#local_id').val(),
 		}
 		$.get(path_url + 'api/frenteCaixa/pesquisa-produto', data)
 		.done((res) => {
+			// console.log(res)
 			$('.results-list').removeClass('d-none')
 			$('.results-list').html(res)
 		}).fail((err) => {
@@ -445,10 +521,43 @@ function validaCaixa() {
 	}
 }
 
-function addProduto(id){
+
+function selecionarVariacao(id, descricao, valor){
+	$('#modal_variacao').modal('hide')
+
+    // add
+    let abertura = $('#abertura').val()
+    if (abertura) {
+    	$.post(path_url + 'api/frenteCaixa/add-produto', { 
+    		produto_id: id, 
+    		lista_id: $('#lista_id').val(), 
+    		qtd: 1,
+    		local_id: $('#local_id').val(),
+    		variacao_id: id
+    	})
+    	.done((res) => {
+    		// console.log(res)
+    		$('.itens-cart').append(res)
+
+    	}).fail((err) => {
+    		console.log(err)
+    	})
+    }else{
+    	swal("Atenção", "Abra o caixa para continuar!", "warning").then(() => {
+    		validaCaixa()
+    	})
+    }
+}
+
+function addProduto(id, variacao_id = null){
 	$('.results-list').html('').addClass('d-none')
 	$('#inp-pesquisa').val('')
 	let qtd = 0;
+
+	if(variacao_id){
+		buscarVariacoes(id)
+		return ;
+	}
 
 	let abertura = $('#abertura').val()
 	let agrupar_itens = $('#agrupar_itens').val()
@@ -464,7 +573,7 @@ function addProduto(id){
 			produto_id: id, 
 			lista_id: $('#lista_id').val(), 
 			qtd: qtd,
-            local_id: $('#local_id').val()
+			local_id: $('#local_id').val()
 		})
 		.done((res) => {
 			let idDup = 0
@@ -617,12 +726,21 @@ function finalizar(tipo){
 
 $(document).on('keyup', '.valor_integral_row', function(){
 	let soma = 0
-
 	let total = parseFloat($('#inp-valor_total').val())
 	$('.fatura .valor_integral_row').each(function () {
 		soma += convertMoedaToFloat($(this).val());
 	});
-	$('.total-restante').text("R$ " + convertFloatToMoeda(total-soma))
+	let resultado = total-soma;
+	if(resultado < 0){
+		$('.total-restante').text("R$ 0,00")
+		$('.d-troco').removeClass('d-none')
+		$('.troco').val(convertFloatToMoeda(resultado*-1))
+
+	}else{
+		$('.total-restante').text("R$ " + convertFloatToMoeda(total-soma))
+		$('.d-troco').addClass('d-none')
+		$('.troco').val('0,00')
+	}
 
 });
 
@@ -650,7 +768,8 @@ $("#form-pdv").on("submit", function (e) {
 
 	json.desconto = convertMoedaToFloat($('#inp-valor_desconto').val())
 	json.acrescimo = convertMoedaToFloat($('#inp-valor_acrescimo').val())
-	// console.log(">>>>>>>> salvando ", json);
+	console.log(">>>>>>>> salvando ", json);
+	// return
 	// alert('teste')
 	$.post(path_url + 'api/frenteCaixa/store', json)
 	.done((success) => {

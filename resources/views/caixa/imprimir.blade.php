@@ -95,14 +95,19 @@
 
     <table>
         <tr>
-            <td class="" style="width: 233px;">
-                Total de vendas: <strong>{{ number_format($item->valor_fechamento, 2, ',', '.') }}</strong>
+            <td class="" style="width: 333px;">
+                Total de vendas: <strong>{{ number_format($totalVendas, 2, ',', '.') }}</strong>
             </td>
-            <td class="" style="width: 233px;">
+            <td class="" style="width: 333px;">
                 Data de abertura: <strong>{{ \Carbon\Carbon::parse($item->created_at)->format('d/m/Y H:i') }}</strong>
             </td>
-            <td class="" style="width: 233px;">
+            <td class="" style="width: 333px;">
                 Data de fechamento: <strong>{{ \Carbon\Carbon::parse($item->updated_at)->format('d/m/Y H:i') }}</strong>
+            </td>
+        </tr>
+        <tr>
+            <td class="" style="width: 333px;">
+                Total de compras: <strong>{{ number_format($totalCompras, 2, ',', '.') }}</strong>
             </td>
         </tr>
     </table>
@@ -146,11 +151,8 @@
         </thead>
 
         <tbody>
-            @php
-            $soma = 0;
-            @endphp
 
-            @foreach($vendas as $v)
+            @foreach($data as $v)
             <tr>
                 <td class="b-top">{{ $v->cliente->razao_social ?? 'NÃO IDENTIFCADO' }}</td>
                 <td class="b-top">{{ \Carbon\Carbon::parse($v->created_at)->format('d/m/Y H:i:s')}}</td>
@@ -177,34 +179,19 @@
                 <td class="b-top">--</td>
                 @endif
 
-                <td class="b-top">{{ $v->tipo }}</td>
+                <td class="b-top" style="width: 100px">{{ $v->tipo }}</td>
                 @if($v->tipo != 'OS')
-                <td class="b-top">{{ __moeda($v->total) }}</td>
+                <td class="b-top" style="width: 100px">{{ __moeda($v->total) }}</td>
                 @else
-                <td class="b-top">{{ __moeda($v->valor) }}</td>
+                <td class="b-top" style="width: 100px">{{ __moeda($v->valor) }}</td>
                 @endif
 
-                <td class="b-top">{{ __moeda($v->desconto) }}</td>
+                <td class="b-top" style="width: 100px">{{ __moeda($v->desconto) }}</td>
             </tr>
 
-            @php
-            if($v->tipo != 'OS'){
-                $soma += $v->total;
-            }else{
-                $soma += $v->valor;
-            }
-            @endphp
 
             @endforeach
         </tbody>
-    </table>
-
-    <table>
-        <tr>
-            <td class="b-top" style="width: 700px;">
-                Soma: <strong style="font-size: 17px">R$ {{number_format($soma, 2, ',', '.')}}</strong>
-            </td>
-        </tr>
     </table>
 
     @php
@@ -290,7 +277,7 @@
     <table>
         <tr>
             <td class="b-bottom" style="width: 233px;">
-                Soma de vendas: <strong>R$ {{number_format($soma, 2, ',', '.')}}</strong>
+                Soma de vendas: <strong>R$ {{number_format($totalVendas, 2, ',', '.')}}</strong>
             </td>
             <td class="b-bottom" style="width: 233px;">
                 Soma de sangria: <strong>R$ {{number_format($somaSangria, 2, ',', '.')}}</strong>
@@ -302,7 +289,7 @@
 
         <tr>
             <td class="b-bottom" style="width: 233px;">
-                Valor em caixa: <strong>R$ {{number_format($somaSuprimento + $soma - $somaSangria, 2, ',', '.')}}</strong>
+                Valor em caixa: <strong>R$ {{number_format($somaSuprimento + $totalVendas - $somaSangria, 2, ',', '.')}}</strong>
             </td>
             <td class="b-bottom" style="width: 233px;">
                 Contagem da gaveta: <strong>R$ {{number_format($item->valor_dinheiro, 2, ',', '.')}}</strong>
@@ -317,7 +304,7 @@
     <table style="margin-top: -20px">
         <thead>
             <tr>
-                <td width="180">PRODUTO</td>
+                <td width="280">PRODUTO</td>
                 <td width="100">QUANTIDADE</td>
                 <td width="120">VALOR DE VENDA</td>
                 <td width="120">VALOR DE COMPRA</td>

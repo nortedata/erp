@@ -4,12 +4,14 @@
     <div class="row">
         <div class="card">
             <div class="card-body">
+                @if(!__isSuporte())
                 <div class="col-md-2">
                     <a href="{{ route('empresas.create') }}" class="btn btn-success">
                         <i class="ri-add-circle-fill"></i>
                         Nova Empresa
                     </a>
                 </div>
+                @endif
                 <hr class="mt-3">
                 <div class="col-lg-12">
                     {!!Form::open()->fill(request()->all())
@@ -48,7 +50,9 @@
                                     <th>Ativa</th>
                                     <th>Plano</th>
                                     <th>Data de cadastro</th>
+
                                     <th width="10%">Ações</th>
+
                                 </tr>
                             </thead>
                             <tbody>
@@ -85,6 +89,8 @@
 
                                     <td>
                                         <form action="{{ route('empresas.destroy', $item->id) }}" method="post" id="form-{{$item->id}}" style="width: 300px">
+                                            @if(!__isSuporte())
+
                                             @method('delete')
                                             <a class="btn btn-warning btn-sm" href="{{ route('empresas.edit', [$item->id]) }}">
                                                 <i class="ri-pencil-fill"></i>
@@ -93,6 +99,7 @@
                                             <button type="button" class="btn btn-delete btn-sm btn-danger">
                                                 <i class="ri-delete-bin-line"></i>
                                             </button>
+                                            @endif
 
                                             <div class="btn-group">
                                                 <button type="button" class="btn btn-sm btn-light dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">  

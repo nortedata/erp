@@ -96,8 +96,8 @@
                                     <td>{{ $item->chave }}</td>
                                     <td>{{ $item->mdfe_numero > 0 ? $item->mdfe_numero : '--' }}</td>
                                     <td>{{ $item->veiculoTracao->marca }} - {{ $item->veiculoTracao->placa }} </td>
-                                    <td>{{ $item->quantidade_carga }}</td>
-                                    <td>{{ __moeda( $item->valor_carga) }}</td>
+                                    <td>{{ number_format($item->quantidade_carga, 3, '.', '') }}</td>
+                                    <td>{{ __moeda($item->valor_carga) }}</td>
                                     <td>
                                         @if($item->api)
                                         <span class="text-success">API</span>

@@ -6,6 +6,10 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
+                <button type="button" class="btn btn-dark px-5 btn-gerar-fatura mb-2">
+                    <i class="ri-list-indefinite"></i>
+                    Gerar Fatura
+                </button>
                 <div class="row">
                     <div class="col-md-4">
                         {!! Form::select('tipo_pagamento_row', 'Tipo de Pagamento',['' => 'Selecione'] + $tiposPagamento)->attrs(['class' => 'form-select']) !!}
@@ -67,7 +71,7 @@
                         </tbody>
                         <tfoot>
                             <tr>
-                                <td>Soma pagamento:</td>
+                                <td colspan="2">Soma pagamento:</td>
                                 @isset($data)
                                 <td class="sum-payment">R$ {{ __moeda($data->valor_total) }}</td>
                                 @else

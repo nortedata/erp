@@ -46,6 +46,20 @@
                             </div>
                             <hr class="mt-4">
                             <h5 class="text-success">Para recebimento dos planos</h5>
+
+                            <div class="col-md-2">
+                                {!!Form::select('banco_plano', 'Conta para recebimento', ['mercado_pago' => 'Mercado pago', 'asaas' => 'Asaas'])
+                                ->required()
+                                ->attrs(['class' => 'form-select'])
+                                !!}
+                            </div>
+                            <div class="col-md-10"></div>
+
+                            <div class="col-md-12">
+                                {!!Form::text('asaas_token', 'Asaas Token')
+                                !!}
+                            </div>
+
                             <div class="col-md-6">
                                 {!!Form::text('mercadopago_public_key', 'Mercado Pago Public Key')
                                 !!}

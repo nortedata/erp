@@ -70,6 +70,7 @@ return new class extends Migration
             // alter table localizacaos add column perc_ap_cred decimal(10,2) default 0;
             // alter table localizacaos add column mensagem_aproveitamento_credito text;
             
+
             $table->timestamps();
         });
     }

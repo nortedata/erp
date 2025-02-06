@@ -149,6 +149,7 @@ Route::group(['prefix' => 'produtos-ecommerce'], function () {
 });
 
 Route::get('/paymentStatus/{id}', 'PaymentController@status');
+Route::get('/payment-status-asaas', 'PaymentController@statusAsaas');
 
 Route::group(['prefix' => 'empresas'], function () {
     Route::get('/', 'EmpresaController@pesquisa');
@@ -194,10 +195,13 @@ Route::group(['prefix' => 'metas'], function () {
     Route::get('/vendas-funcionario-grafico', 'MetaController@vendasFuncionarioGrafico'); 
     Route::get('/os-funcionario', 'MetaController@ordemServicoFuncionario');
     Route::get('/os-funcionario-grafico', 'MetaController@ordemServicoFuncionarioGrafico');
+
+    Route::get('/vendas-periodo', 'MetaController@vendasPeriodo');
 });
 
 Route::get('/produtos-composto', 'ProdutoController@pesquisaCompostos');
 Route::get('/produtos-combo', 'ProdutoController@pesquisaCombo');
+Route::get('/produtos-filtro', 'ProdutoController@pesquisaFiltro');
 Route::get('/produtos-reserva', 'ProdutoController@pesquisaReserva');
 Route::group(['prefix' => 'produtos'], function () {
     Route::get('/', 'ProdutoController@pesquisa');
@@ -224,6 +228,9 @@ Route::group(['prefix' => 'produtos'], function () {
     Route::get('/valida-atacado', 'ProdutoController@validaAtacado');
     Route::get('/dados-produto-unico/{id}', 'ProdutoController@dadosProdutoUnico');
     Route::get('/info', 'ProdutoController@info');
+    Route::get('/linha-dimensao', 'ProdutoController@linhaDimensao');
+    Route::get('/get-dimensao-edit', 'ProdutoController@getDimensaoEdit');
+    Route::post('/alterar-gerencia-estoque', 'ProdutoController@alterarGerenciamentoEstoque');
     
 });
 
@@ -308,6 +315,8 @@ Route::group(['prefix' => 'frenteCaixa'], function () {
     Route::get('/buscaFuncionario/{id}', 'FrontBoxController@buscaFuncionario');
     Route::get('/venda-suspensas', 'FrontBoxController@vendasSuspensas');
     Route::get('/gerar-fatura', 'FrontBoxController@gerarFatura');
+    Route::get('/gerar-fatura-pdv', 'FrontBoxController@gerarFaturaPdv');
+    Route::get('/gerar-fatura-pdv2', 'FrontBoxController@gerarFaturaPdv2');
 
     Route::get('/categorias-page', 'FrontBoxController@categoriasPage');
     Route::get('/marcas-page', 'FrontBoxController@marcasPage');

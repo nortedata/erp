@@ -6,14 +6,35 @@
 		<div class="card">
 			<div class="card-body">
 
-				<h5>META GERAL MÊS: <strong>R$ {{ __moeda($totalMeta) }}</strong></h5>
-				<h5>TOTAL VENDIDO MÊS: <strong>R$ {{ __moeda($somaVendasMes) }}</strong></h5>
+				<div class="row">
+					<div class="col-md-2">
+						<label>Período</label>
+						<select class="form-select" id="inp-periodo">
+							@foreach($periodosMeta as $p)
+							<option selected value="{{ $p }}">{{ $p }}</option>
+							@endforeach
+						</select>
+					</div>
+				</div>
+				<br>
+				<h5>META GERAL MÊS: <strong class="meta-geral">R$ {{ __moeda($totalMeta) }}</strong></h5>
+				<h5>TOTAL VENDIDO MÊS: <strong class="total-mes">R$ {{ __moeda(0) }}</strong></h5>
 
 				<div class="progress-w-percent">
-					<span class="progress-value fw-bold">{{ __calcPercentual($totalMeta, $somaVendasMes) }}%</span>
-					<div class="progress progress-sm">
-						<div class="progress-bar bg-success" style="width: {{ __calcPercentual($totalMeta, $somaVendasMes) }}%;" aria-valuemin="0" aria-valuemax="100"></div>
+					<span class="progress-value fw-bold"></span>
+					<div class="progress progress-lg">
+						<div class="progress-bar bg-success" aria-valuemin="0" aria-valuemax="100"></div>
 					</div>
+				</div>
+
+				<div class="valor-meta-superior d-none">
+					<h4>Soma das vendas do mês superou a meta estipulada!</h4>
+					<h5>Total vendido - total da meta: <strong class="total-diferenca text-success">R$ {{ __moeda(0) }}</strong></h5>
+				</div>
+
+				<div class="valor-meta-baixo d-none">
+					<h4>Soma das vendas ainda não superou a meta estipulada!</h4>
+					<h5>Total da meta - Total vendido: <strong class="total-diferenca text-danger">R$ {{ __moeda(0) }}</strong></h5>
 				</div>
 
 				<span class="c-circular-progress c-circular-progress--4"></span>

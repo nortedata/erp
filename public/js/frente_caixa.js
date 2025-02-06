@@ -87,6 +87,52 @@ $(function () {
 
 })
 
+$('.btn-gerar-fatura').click(() => {
+    $('#pagamento_multiplo').modal('hide')
+    $('#modal_fatura_venda').modal('show')
+    $('.lbl-total_fatura').text("R$ " + convertFloatToMoeda(total_venda))
+    
+})
+
+$('.btn-store-fatura').click(() => {
+    console.clear()
+
+    if(!$('#inp-parcelas_fatura').val()){
+        swal("Erro", "Informe a quantidade de parcelas!", "error")
+        return;
+    }
+    if(!$('#inp-intervalo_fatura').val()){
+        swal("Erro", "Informe o intervalo!", "error")
+        return;
+    }
+    let data = {
+        entrada_fatura: $('#inp-entrada_fatura').val(),
+        parcelas_fatura: $('#inp-parcelas_fatura').val(),
+        intervalo_fatura: $('#inp-intervalo_fatura').val(),
+        primeiro_vencimento_fatura: $('#inp-primeiro_vencimento_fatura').val(),
+        tipo_pagamento_fatura: $('#inp-tipo_pagamento_fatura').val(),
+        total: total_venda
+    }
+    console.log(data)
+    $.get(path_url + "api/frenteCaixa/gerar-fatura-pdv", data)
+    .done((success) => {
+        // console.log(success)
+        $('#pagamento_multiplo').modal('show')
+        setTimeout(() => {
+            $(".table-payment tbody").html(success)
+            $('#modal_fatura_venda').modal('hide')
+            calcTotalPayment()
+            validateButtonSave()
+
+        }, 100)
+        
+
+    })
+    .fail((err) => {
+        console.log(err);
+    });
+})
+
 $('.btn-vendas-suspensas').click(() => {
     $.get(path_url + "api/frenteCaixa/venda-suspensas",
     {
@@ -426,6 +472,7 @@ function selectCat(id) {
     {
         lista_id: $('#lista_id').val(),
         usuario_id: $('#usuario_id').val(),
+        empresa_id: $('#empresa_id').val(),
         id: id
     })
     .done((e) => {
@@ -465,6 +512,7 @@ $(function () {
                 { 
                     produto_id: product_id,
                     lista_id: $('#lista_id').val(),
+                    local_id: $('#local_id').val(),
                 })
                 .done((e) => {
                     if(e.variacao_modelo_id){
@@ -1279,7 +1327,7 @@ function validateButtonSave() {
 
     let total = convertMoedaToFloat($(".total-venda").text())
     var tipo = $('#inp-tipo_pagamento').val()
-    var tipo_row = $('#inp-tipo_pagamento_row').val()
+    var tipo_row = $('.table-payment').length ? $('.table-payment tbody tr').length : null
 
     var valor_recebido = convertMoedaToFloat($('#inp-valor_recebido').val())
     if (total > 0 && (tipo || tipo_row)) {
@@ -1688,6 +1736,7 @@ $("#form-pdv").on("submit", function (e) {
     json.desconto = convertMoedaToFloat($('#valor_desconto').text())
     json.acrescimo = convertMoedaToFloat($('#valor_acrescimo').text())
     console.log(">>>>>>>> salvando ", json);
+    // return;
     $.post(path_url + 'api/frenteCaixa/store', json)
     .done((success) => {
         if (emitirNfce == true) {

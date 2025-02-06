@@ -102,6 +102,8 @@
         !!}
     </div>
 
+    <p class="text-danger">A função "Auto cadastro cliente" se marcada este plano será incluído ao cliente quando o mesmo se cadastrar!</p>
+
     <div class="col-12"></div>
 
     <div class="row m-3">

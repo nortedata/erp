@@ -83,6 +83,11 @@
         !!}
     </div>
 
+    <div class="col-md-4">
+        {!!Form::tel('token_sieg', 'Token SIEG')
+        !!}
+    </div>
+
     <div class="col-12" style="text-align: right;">
         <button type="submit" class="btn btn-success px-5" id="btn-store">Salvar</button>
     </div>

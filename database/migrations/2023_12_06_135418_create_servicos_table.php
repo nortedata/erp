@@ -44,7 +44,28 @@ return new class extends Migration
             $table->string('hash_delivery', 50)->nullable();
             $table->text('descricao');
             $table->boolean('destaque_marketplace')->nullable();
-            
+
+            $table->decimal('aliquota_ir', 7, 2)->nullable();
+            $table->decimal('aliquota_csll', 7, 2)->nullable();
+            $table->decimal('valor_deducoes', 16, 7)->nullable();
+            $table->decimal('desconto_incondicional', 16, 7)->nullable();
+            $table->decimal('desconto_condicional', 16, 7)->nullable();
+            $table->decimal('outras_retencoes', 16, 7)->nullable();
+            $table->string('estado_local_prestacao_servico', 2)->nullable();
+            $table->string('natureza_operacao', 100)->nullable();
+            $table->string('codigo_cnae', 30)->nullable();
+
+            // alter table servicos add column codigo_cnae varchar(30) default null;
+            // alter table servicos add column natureza_operacao varchar(100) default null;
+            // alter table servicos add column estado_local_prestacao_servico varchar(2) default null;
+            // alter table servicos add column aliquota_ir decimal(7,2) default null;
+            // alter table servicos add column aliquota_csll decimal(7,2) default null;
+            // alter table servicos add column valor_deducoes decimal(16,7) default null;
+            // alter table servicos add column desconto_incondicional decimal(16,7) default null;
+            // alter table servicos add column desconto_condicional decimal(16,7) default null;
+            // alter table servicos add column outras_retencoes decimal(16,7) default null;
+
+
             // alter table servicos add column imagem varchar(25) default null;
             // alter table servicos add column status boolean default 1;
             // alter table servicos add column reserva boolean default 0;

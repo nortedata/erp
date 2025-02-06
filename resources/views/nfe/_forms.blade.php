@@ -351,7 +351,7 @@
 
                                     @if(isset($item))
 
-                                    @foreach ($item->itens as $prod)
+                                    @foreach ($item->itens as $key => $prod)
 
                                     @isset($isOrdemServico)
                                     @include('ordem_servico.partials.itens', ['prod' => $prod])
@@ -364,11 +364,30 @@
                                     @include('mercado_livre_pedidos.partials.itens', ['prod' => $prod, 'cfop_estadual' => $item->cliente->cidade->uf])
                                     @elseif(isset($isPedidoWoocommerce))
                                     @include('woocommerce_pedidos.partials.itens', ['prod' => $prod, 'cfop_estadual' => $item->cliente->cidade->uf])
-
+                                    @elseif(isset($isPedidoNuvemShop))
+                                    @include('woocommerce_pedidos.partials.itens', ['prod' => $prod, 'cfop_estadual' => $item->cliente->cidade->uf])
                                     @else
 
                                     <tr class="dynamic-form">
                                         <td class="sticky-col first-col">
+                                            <input type="hidden" class="_key" name="_key[]" value="{{ $key }}">
+                                            <div class="dimensoes-hidden dh_{{ $key }}">
+                                                @if(isset($prod->itensDimensao) && sizeof($prod->itensDimensao) > 0)
+                                                @foreach($prod->itensDimensao as $it)
+                                                <input type='hidden' name='dimensao_altura[]' value='{{ $it->altura }}' />
+                                                <input type='hidden' name='dimensao_espessura[]' value='{{ $it->espessura }}' />
+                                                <input type='hidden' name='dimensao_largura[]' value='{{ $it->largura }}' />
+                                                <input type='hidden' name='dimensao_m2_total[]' value='{{ $it->m2_total }}' />
+                                                <input type='hidden' name='dimensao_observacao[]' value='{{ $it->observacao }}' />
+                                                <input type='hidden' name='dimensao_quantidade[]' value='{{ $it->quantidade }}' />
+                                                <input type='hidden' name='dimensao_sub_total[]' value='{{ $it->sub_total }}' />
+                                                <input type='hidden' name='dimensao_valor_unitario_m2[]' value='{{ $it->valor_unitario_m2 }}' />
+                                                @endforeach
+                                                @endif
+
+                                                <input type='hidden' name='_line[]' value='{{ $key }}' />
+
+                                            </div>
                                             <select class="form-control select2 produto_id" name="produto_id[]" id="inp-produto_id">
                                                 <option value="{{ $prod->produto_id }}">{{ $prod->produto->nome }}</option>
                                             </select>
@@ -377,6 +396,9 @@
                                             @endif
                                             <input name="variacao_id[]" type="hidden" value="{{ $prod->variacao_id }}">
                                             <div style="width: 500px;"></div>
+                                            @if(isset($prod->itensDimensao) && sizeof($prod->itensDimensao) > 0)
+                                            <a onclick="alterarDimensoesItem('{{ $prod->id }}', '{{ $key }}')" href="#!">Alterar dimensões</a>
+                                            @endif
                                         </td>
                                         <td width="80">
                                             <input style="width: 150px" value="{{ __moeda($prod->quantidade) }}" class="form-control qtd next" type="tel" name="quantidade[]" id="inp-quantidade">
@@ -474,6 +496,10 @@
                                     @else
                                     <tr class="dynamic-form">
                                         <td class="sticky-col first-col">
+                                            <input type="hidden" class="_key" name="_key[]" value="0">
+                                            <div class="dimensoes-hidden">
+
+                                            </div>
                                             <select required class="form-control select2 produto_id" name="produto_id[]" id="inp-produto_id">
                                             </select>
                                             <div style="width: 400px;"></div>
@@ -486,7 +512,7 @@
                                             <input style="width: 120px" class="form-control moeda valor_unit next" type="tel" name="valor_unitario[]" id="inp-valor_unitario">
                                         </td>
                                         <td width="150">
-                                            <input style="width: 120px" readonly class="form-control moeda sub_total next" type="tel" name="sub_total[]" id="inp-subtotal">
+                                            <input style="width: 120px" readonly class="form-control moeda sub_total sub_total_new next" type="tel" name="sub_total[]" id="inp-subtotal">
                                         </td>
                                         <td width="120">
                                             <input style="width: 120px" class="form-control percentual" type="tel" name="perc_icms[]" id="inp-perc_icms">

@@ -223,6 +223,12 @@ class EmpresaController extends Controller
             $t->delete();
         }
 
+        $data = \App\Models\ContaEmpresa::where('empresa_id', $empresa_id)->get();
+        foreach($data as $t){
+            $t->itens()->delete();
+            $t->delete();
+        }
+        
         $data = \App\Models\WoocommercePedido::where('empresa_id', $empresa_id)->get();
         foreach($data as $t){
             $t->itens()->delete();

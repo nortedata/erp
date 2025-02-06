@@ -37,7 +37,7 @@ class CaixaController extends Controller
             return redirect()->route('caixa.create');
         }
         $valor_abertura = $item->valor_abertura;
-        $vendas = [];
+
         $somaTiposPagamento = [];
         $contas = [];
         $nfce = Nfce::where('empresa_id', request()->empresa_id)->where('caixa_id', $item->id)
@@ -51,8 +51,23 @@ class CaixaController extends Controller
         $ordens = OrdemServico::where('empresa_id',  request()->empresa_id)->where('caixa_id', $item->id)
         ->get();
 
-        $vendas = $this->agrupaVendas($nfce, $nfe, $ordens);
-        $somaTiposPagamento = $this->somaTiposPagamento($vendas);
+        $compras = Nfe::where('empresa_id',  request()->empresa_id)->where('caixa_id', $item->id)->where('tpNF', 0)
+        ->where('orcamento', 0)
+        ->get();
+
+        $totalVendas = Nfe::where('empresa_id',  request()->empresa_id)->where('caixa_id', $item->id)->where('tpNF', 1)
+        ->where('orcamento', 0)
+        ->sum('total');
+
+        $totalVendas +=  Nfce::where('empresa_id', request()->empresa_id)->where('caixa_id', $item->id)
+        ->sum('total');
+
+        $totalCompras = Nfe::where('empresa_id',  request()->empresa_id)->where('caixa_id', $item->id)->where('tpNF', 0)
+        ->where('orcamento', 0)
+        ->sum('total');
+
+        $data = $this->agrupaDados($nfce, $nfe, $ordens, $compras);
+        $somaTiposPagamento = $this->somaTiposPagamento($data);
         $contas = $this->agrupaContas($pagar, $receber);
         $somaTiposContas = $this->somaTiposContas($contas);
 
@@ -73,10 +88,12 @@ class CaixaController extends Controller
             $contasEmpresa = ContaEmpresa::where('empresa_id', request()->empresa_id)->get();
             return view('caixa.index', compact(
                 'item',
-                'vendas',
+                'data',
                 'somaTiposPagamento',
                 'valor_abertura',
                 'somaServicos',
+                'totalVendas',
+                'totalCompras',
                 'suprimentos',
                 'sangrias',
                 'contas',
@@ -91,21 +108,32 @@ class CaixaController extends Controller
         }
     }
 
-    private function agrupaVendas($nfce, $nfe, $ordens = null)
+    private function agrupaDados($nfce, $nfe, $ordens, $compras)
     {
         $temp = [];
         foreach ($nfe as $v) {
-            $v->tipo = 'NFe';
+            $v->tipo = 'Pedido';
+            $v->receita = 1;
             array_push($temp, $v);
         }
         foreach ($nfce as $v) {
             $v->tipo = 'PDV';
+            $v->receita = 1;
             array_push($temp, $v);
         }
 
         if($ordens != null){
             foreach ($ordens as $v) {
                 $v->tipo = 'OS';
+                $v->receita = 1;
+                array_push($temp, $v);
+            }
+        }
+
+        if($compras != null){
+            foreach ($compras as $v) {
+                $v->tipo = 'Compra';
+                $v->receita = 0;
                 array_push($temp, $v);
             }
         }
@@ -143,7 +171,7 @@ class CaixaController extends Controller
         $tipos = $this->preparaTipos();
 
         foreach ($vendas as $v) {
-            if ($v->estado != 'cancelado') {
+            if ($v->estado != 'cancelado' && $v->receita == 1) {
                 if ($v->fatura && sizeof($v->fatura) > 0) {
                     if ($v->fatura) {
                         foreach ($v->fatura as $f) {
@@ -242,8 +270,23 @@ class CaixaController extends Controller
         $ordens = OrdemServico::where('empresa_id',  request()->empresa_id)->where('caixa_id', $item->id)
         ->get();
 
-        $vendas = $this->agrupaVendas($nfce, $nfe, $ordens);
-        $somaTiposPagamento = $this->somaTiposPagamento($vendas);
+        $compras = Nfe::where('empresa_id',  request()->empresa_id)->where('caixa_id', $item->id)->where('tpNF', 0)
+        ->where('orcamento', 0)
+        ->get();
+
+        $totalCompras = Nfe::where('empresa_id',  request()->empresa_id)->where('caixa_id', $item->id)->where('tpNF', 0)
+        ->where('orcamento', 0)
+        ->sum('total');
+
+        $totalVendas = Nfe::where('empresa_id',  request()->empresa_id)->where('caixa_id', $item->id)->where('tpNF', 1)
+        ->where('orcamento', 0)
+        ->sum('total');
+
+        $totalVendas +=  Nfce::where('empresa_id', request()->empresa_id)->where('caixa_id', $item->id)
+        ->sum('total');
+
+        $data = $this->agrupaDados($nfce, $nfe, $ordens, $compras);
+        $somaTiposPagamento = $this->somaTiposPagamento($data);
         $suprimentos = [];
         $sangrias = [];
         $contas = [];
@@ -262,11 +305,14 @@ class CaixaController extends Controller
         ->where('nfces.empresa_id', request()->empresa_id)->where('nfces.caixa_id', $item->id)
         ->sum('sub_total');
 
+
         return view('caixa.show', compact(
             'item',
-            'vendas',
+            'data',
             'somaTiposPagamento',
             'suprimentos',
+            'totalCompras',
+            'totalVendas',
             'sangrias',
             'contas',
             'receber',
@@ -279,7 +325,6 @@ class CaixaController extends Controller
     {
 
         $item = Caixa::FindOrFail($id);
-        $vendas = [];
         $somaTiposPagamento = [];
 
         $nfce = Nfce::where('empresa_id', request()->empresa_id)->where('caixa_id', $item->id)
@@ -291,9 +336,15 @@ class CaixaController extends Controller
         $nfe = Nfe::where('empresa_id',  request()->empresa_id)->where('caixa_id', $item->id)->where('tpNF', 1)
         ->where('orcamento', 0)
         ->get();
+        $ordens = OrdemServico::where('empresa_id',  request()->empresa_id)->where('caixa_id', $item->id)
+        ->get();
 
-        $vendas = $this->agrupaVendas($nfce, $nfe);
-        $somaTiposPagamento = $this->somaTiposPagamento($vendas);
+        $compras = Nfe::where('empresa_id',  request()->empresa_id)->where('caixa_id', $item->id)->where('tpNF', 0)
+        ->where('orcamento', 0)
+        ->get();
+
+        $data = $this->agrupaDados($nfce, $nfe, $ordens, $compras);
+        $somaTiposPagamento = $this->somaTiposPagamento($data);
         $suprimentos = [];
         $sangrias = [];
         $contas = [];
@@ -316,16 +367,29 @@ class CaixaController extends Controller
 
         $contasEmpresa = ContaEmpresa::where('empresa_id', request()->empresa_id)
         ->where('status', 1)->get();
+
+        $totalVendas = Nfe::where('empresa_id',  request()->empresa_id)->where('caixa_id', $item->id)->where('tpNF', 1)
+        ->where('orcamento', 0)
+        ->sum('total');
+
+        $totalVendas +=  Nfce::where('empresa_id', request()->empresa_id)->where('caixa_id', $item->id)
+        ->sum('total');
+
+        $totalCompras = Nfe::where('empresa_id',  request()->empresa_id)->where('caixa_id', $item->id)->where('tpNF', 0)
+        ->where('orcamento', 0)
+        ->sum('total');
         
         return view('caixa.fechar_empresa', compact(
             'item',
-            'vendas',
+            'data',
             'somaTiposPagamento',
             'suprimentos',
             'sangrias',
             'contas',
             'receber',
             'pagar',
+            'totalVendas',
+            'totalCompras',
             'contasEmpresa',
             'valor_abertura',
             'somaServicos'
@@ -412,8 +476,12 @@ class CaixaController extends Controller
         $ordens = OrdemServico::where('empresa_id',  request()->empresa_id)->where('caixa_id', $item->id)
         ->get();
 
-        $vendas = $this->agrupaVendas($nfce, $nfe, $ordens);
-        $somaTiposPagamento = $this->somaTiposPagamento($vendas);
+        $compras = Nfe::where('empresa_id',  request()->empresa_id)->where('caixa_id', $item->id)->where('tpNF', 0)
+        ->where('orcamento', 0)
+        ->get();
+
+        $data = $this->agrupaDados($nfce, $nfe, $ordens, $compras);
+        $somaTiposPagamento = $this->somaTiposPagamento($data);
 
         $usuario = User::findOrFail(Auth::user()->id);
 
@@ -424,25 +492,38 @@ class CaixaController extends Controller
         ->where('nfces.empresa_id', request()->empresa_id)->where('nfces.caixa_id', $item->id)
         ->sum('sub_total');
 
-        $produtos = $this->totalizaProdutos($vendas);
+        $totalVendas = Nfe::where('empresa_id',  request()->empresa_id)->where('caixa_id', $item->id)->where('tpNF', 1)
+        ->where('orcamento', 0)
+        ->sum('total');
+
+        $totalVendas +=  Nfce::where('empresa_id', request()->empresa_id)->where('caixa_id', $item->id)
+        ->sum('total');
+
+        $totalCompras = Nfe::where('empresa_id',  request()->empresa_id)->where('caixa_id', $item->id)->where('tpNF', 0)
+        ->where('orcamento', 0)
+        ->sum('total');
+
+        $produtos = $this->totalizaProdutos($data);
         $p = view('caixa.imprimir', compact(
             'item',
-            'vendas',
+            'data',
             'usuario',
             'somaTiposPagamento',
             'config',
             'sangrias',
             'somaServicos',
             'suprimentos',
+            'totalCompras',
+            'totalVendas',
             'produtos'
         ));
 
         $domPdf = new Dompdf(["enable_remote" => true]);
         $domPdf->loadHtml($p);
         $pdf = ob_get_clean();
-        $domPdf->setPaper("A4");
+        $domPdf->setPaper("A4", "landscape");
         $domPdf->render();
-        $domPdf->stream("Fechamento caixa.pdf", array("Attachment" => false));
+        $domPdf->stream("Relatório de caixa.pdf", array("Attachment" => false));
     }
 
     public function imprimir80($id)
@@ -456,23 +537,40 @@ class CaixaController extends Controller
         $ordens = OrdemServico::where('empresa_id',  request()->empresa_id)->where('caixa_id', $item->id)
         ->get();
 
-        $vendas = $this->agrupaVendas($nfce, $nfe, $ordens);
-        $somaTiposPagamento = $this->somaTiposPagamento($vendas);
+        $compras = Nfe::where('empresa_id',  request()->empresa_id)->where('caixa_id', $item->id)->where('tpNF', 0)
+        ->where('orcamento', 0)
+        ->get();
+
+        $data = $this->agrupaDados($nfce, $nfe, $ordens, $compras);
+        $somaTiposPagamento = $this->somaTiposPagamento($data);
 
         $usuario = User::findOrFail(Auth::user()->id);
 
         $sangrias = SangriaCaixa::where('caixa_id', $item->id)->get();
+
+        $totalVendas = Nfe::where('empresa_id',  request()->empresa_id)->where('caixa_id', $item->id)->where('tpNF', 1)
+        ->where('orcamento', 0)
+        ->sum('total');
+
+        $totalVendas +=  Nfce::where('empresa_id', request()->empresa_id)->where('caixa_id', $item->id)
+        ->sum('total');
+
+        $totalCompras = Nfe::where('empresa_id',  request()->empresa_id)->where('caixa_id', $item->id)->where('tpNF', 0)
+        ->where('orcamento', 0)
+        ->sum('total');
 
         $suprimentos = SuprimentoCaixa::where('caixa_id', $item->id)->get();
         $somaServicos = ItemServicoNfce::join('nfces', 'nfces.id', '=', 'item_servico_nfces.nfce_id')
         ->where('nfces.empresa_id', request()->empresa_id)->where('nfces.caixa_id', $item->id)
         ->sum('sub_total');
 
-        $produtos = $this->totalizaProdutos($vendas);
+        $produtos = $this->totalizaProdutos($data);
         $p = view('caixa.imprimir_80', compact(
             'item',
-            'vendas',
+            'data',
             'usuario',
+            'totalVendas',
+            'totalCompras',
             'somaTiposPagamento',
             'config',
             'sangrias',
@@ -481,7 +579,7 @@ class CaixaController extends Controller
             'produtos'
         ));
         $height = 250;
-        $height += sizeof($vendas)*32;
+        $height += sizeof($data)*32;
         $height += sizeof($produtos)*30;
 
         $domPdf = new Dompdf(["enable_remote" => true]);
@@ -548,8 +646,12 @@ class CaixaController extends Controller
         $pagar = ContaPagar::where('empresa_id', request()->empresa_id)->where('caixa_id', $item->id)->get();
         $receber = ContaReceber::where('empresa_id', request()->empresa_id)->where('caixa_id', $item->id)->get();
 
-        $vendas = $this->agrupaVendas($nfce, $nfe, $ordens);
-        $somaTiposPagamento = $this->somaTiposPagamento($vendas);
+        $compras = Nfe::where('empresa_id',  request()->empresa_id)->where('caixa_id', $item->id)->where('tpNF', 0)
+        ->where('orcamento', 0)
+        ->get();
+
+        $data = $this->agrupaDados($nfce, $nfe, $ordens, $compras);
+        $somaTiposPagamento = $this->somaTiposPagamento($data);
         $contasEmpresa = ContaEmpresa::where('empresa_id', request()->empresa_id)
         ->where('local_id', $item->local_id)
         ->where('status', 1)->get();

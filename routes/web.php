@@ -155,6 +155,8 @@ Route::middleware(['authh', 'validaEmpresa'])->group(function () {
             Route::get('log', 'UpdateFileController@log')->name('update-file.log');
         });
 
+        Route::get('set-version', 'UpdateFileController@setVersion');
+
         Route::resource('ncm', 'NcmController');
         Route::resource('logs', 'LogController');
         Route::resource('notificacao-super', 'NotificacaoSuperController');
@@ -235,6 +237,8 @@ Route::post('nfe-import-zip-store-files', 'NfeController@importZipStoreFiles')->
 Route::get('/nfe-duplicar/{id}', 'NfeController@duplicar')->name('nfe.duplicar');
 Route::post('nfe-send-email', 'NfeController@sendEmail')->name('nfe.send-email');
 Route::get('nfe-metas', 'NfeController@metas')->name('nfe.metas');
+Route::get('nfe-sieg-teste', 'NfeController@siegTeste');
+Route::get('asaas-teste', 'AsaasController@index');
 
 Route::get('nfce-import-zip', 'NfceController@importZip')->name('nfce.import-zip');
 Route::post('nfce-import-zip-store', 'NfceController@importZipStore')->name('nfce.import-zip-store');
@@ -329,6 +333,7 @@ Route::put('woocommerce-pedido-set-cliente/{id}', 'WoocommercePedidoController@s
 Route::get('woocommerce-gerar-nfe/{id}', 'WoocommercePedidoController@gerarNfe')->name('woocommerce-pedidos.gerar-nfe');
 
 Route::resource('contas-empresa', 'ContaEmpresaController');
+Route::resource('suporte', 'SuporteController')->middleware('validaSuporte');
 Route::resource('contas-boleto', 'ContaBoletoController');
 Route::resource('remessa-boleto', 'RemessaBoletoController');
 Route::get('remessa-boleto-download/{id}', 'RemessaBoletoController@download')->name('remessa-boleto.download');
@@ -351,10 +356,13 @@ Route::resource('cash-back-config', 'CashBackConfigController');
 Route::resource('tef-config', 'TefConfigController');
 Route::resource('tef-registros', 'TefRegistroController');
 Route::resource('usuario-super', 'UsuarioSuperController');
+Route::get('produto-tributacao-local/{id}', 'ProdutoTributacaoLocalController@index')->name('produto-tributacao-local.index');
+Route::put('produto-tributacao-local/{id}', 'ProdutoTributacaoLocalController@update')->name('produto-tributacao-local.update');
 
 Route::get('teste-tef', 'TefController@teste');
 Route::resource('email-config', 'EmailConfigController');
 Route::resource('escritorio-contabil', 'EscritorioContabilController');
+Route::resource('importador', 'ImportadorController');
 
 Route::resource('sped-config', 'SpedConfigController');
 Route::resource('sped', 'SpedController');
@@ -418,7 +426,7 @@ Route::middleware(['verificaEmpresa', 'validaPlano'])->group(function () {
 
     Route::resource('devolucao', 'DevolucaoController');
     Route::resource('localizacao', 'LocalizacaoController');
-    Route::get('localizacao-delete-logo', 'LocalizacaoController@removerLogo')->name('localizacao.delete-logo');
+    Route::get('localizacao-delete-logo/{id}', 'LocalizacaoController@removerLogo')->name('localizacao.delete-logo');
     
     Route::get('/devolucao-xml', 'DevolucaoController@xml')->name('devolucao.xml');
     Route::post('/devolucao-store-xml', 'DevolucaoController@storeXml')->name('devolucao.store-xml');
@@ -498,7 +506,11 @@ Route::middleware(['verificaEmpresa', 'validaPlano'])->group(function () {
 
     Route::get('produtos-gerar-codigo-ean', 'ProdutoController@gerarCodigoEan');
     Route::get('produtos-reajuste', 'ProdutoController@reajuste')->name('produtos.reajuste');
+    Route::get('produtos-upload-imagens', 'ProdutoController@uploadImagens')->name('produtos.upload-imagens');
     Route::post('produtos-reajuste-update', 'ProdutoController@reajusteUpdate')->name('produtos-reajuste.update');
+    Route::post('produtos-upload-multiple', 'ProdutoController@uploadMultiple')->name('produtos.upload-multiple');
+    Route::post('produtos-vincular-imagens', 'ProdutoController@vincularImagens')->name('produtos.vincular-imagens');
+    Route::get('produtos-vincula-imagens', 'ProdutoController@vinculaImagens')->name('produtos.vincula-imagens');
 
     Route::resource('transportadoras', 'TransportadoraController');
     Route::delete('transportadoras-destroy-select', 'TransportadoraController@destroySelecet')->name('transportadoras.destroy-select');
@@ -865,4 +877,5 @@ Route::get('config-delete-logo', 'ConfigController@removerLogo')->name('config.d
 
 Route::resource('payment', 'PaymentController');
 Route::get('payment/pix/{transacao_id}', 'PaymentController@pix')->name('payment.pix');
+Route::get('payment-asaas/{plano_id}', 'PaymentController@asaas')->name('payment.asaas');
 });

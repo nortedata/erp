@@ -158,6 +158,7 @@
                     <div class="row m-3">
                         <div class="col-md-2 mt-3">
                             {!!Form::select('gerenciar_estoque', 'Gerenciar estoque', [1 => 'Sim', 0 => 'Não'])->attrs(['class' => 'form-select'])
+                            ->value($configGerenciaEstoque)
                             !!}
                         </div>
                         <div class="table-responsive">
@@ -192,39 +193,72 @@
                                 </thead>
                                 <tbody>
 
-                                    @foreach ($dadosXml['itens'] as $prod)
-                                    <tr class="dynamic-form">
+                                    @foreach ($dadosXml['itens'] as $key => $prod)
+                                    <tr class="dynamic-form line_{{$key}}">
 
                                         <td class="sticky-col first-col">
                                             <input class="cadastrar_produto" type="hidden" name="cadastrar_produto[]" value="{{ $prod->id == 0 ? 1 : 0 }}"> 
-                                            <input type="hidden" name="nome_produto[]" value="{{ $prod->xProd }}">
-                                            <input type="hidden" name="codigo_barras[]" value="{{ $prod->codigo_barras }}">
+                                            <input class="produto_nome" type="hidden" name="nome_produto[]" value="{{ $prod->xProd }}">
+                                            <input type="hidden" class="_codigo_barras" name="codigo_barras[]" value="{{ $prod->codigo_barras }}">
                                             <input type="hidden" name="cProd[]" value="{{ $prod->codigo }}">
                                             <input type="hidden" name="cest[]" value="{{ $prod->cest }}">
+
+                                            <input type="hidden" class="_produto_id" name="_produto_id[]" value="{{ $prod->id }}">
+
+                                            <input type="hidden" class="_categoria_id" name="_categoria_id[]" value="{{ $prod->categoria_id }}">
+                                            <input type="hidden" class="_margem" name="_margem[]" value="{{ $prod->margem }}">
+
+                                            <input type="hidden" class="_referencia" name="_referencia[]" value="{{ $prod->refernecia }}">
+                                            <input type="hidden" class="_referencia_balanca" name="_referencia_balanca[]" value="{{ $prod->referencia_balanca }}">
+
+                                            <input type="hidden" class="_exportar_balanca" name="_exportar_balanca[]" value="{{ $prod->exportar_balanca }}">
+
+                                            <input type="hidden" class="_observacao" name="_observacao[]" value="{{ $prod->observacao }}">
+                                            <input type="hidden" class="_observacao2" name="_observacao2[]" value="{{ $prod->observacao2 }}">
+                                            <input type="hidden" class="_observacao3" name="_observacao3[]" value="{{ $prod->observacao3 }}">
+                                            <input type="hidden" class="_observacao4" name="_observacao4[]" value="{{ $prod->observacao4 }}">
+                                            <input type="hidden" class="_disponibilidade" name="_disponibilidade[]" value="{{ $prod->disponibilidade }}">
+
+
+                                            <input type="hidden" class="_marca_id" name="_marca_id[]" value="{{ $prod->marca_id }}">
+
+                                            <input type="hidden" class="_estoque_minimo" name="_estoque_minimo[]" value="{{ $prod->estoque_minimo }}">
+                                            <input type="hidden" class="_gerenciar_estoque" name="_gerenciar_estoque[]" value="{{ $prod->gerenciar_estoque }}">
+
+                                            <input type="hidden" class="_check" value="0">
+                                            
                                             <select class="form-select produto_id" name="produto_id[]">
                                                 <option value="{{ $prod->id }}">
                                                     {{ $prod->xProd }}
                                                 </option>
                                             </select>
+                                            <input type="hidden" value="{{ $key }}" class="_key">
+                                            <button data-key="{{ $key }}" title="Alterar dados do produto" style="margin-top: 3px;" class="btn btn-primary btn-sm btn-modal-altera" type="button">
+                                                <i class="ri-box-1-fill"></i>
+                                            </button>
+
                                             @if($prod->id == 0)
                                             <span class="text-danger">*Produto será cadastrado no sistema</span>
+                                            @else
+                                            <span class="text-primary">*Produto já esta cadastrado no sistema</span>
                                             @endif
+                                            <i class="ri-information-line" onclick="modalXml('{{ $prod->nomeXml }}', '{{ $prod->valorXml }}', '{{ $prod->cfopXml }}')"></i>
                                             <div style="width: 400px"></div>
                                         </td>
                                         <td>
-                                            <input readonly style="width: 120px" value="{{ $prod->unidade }}" class="form-control" type="text" name="unidade[]">
+                                            <input readonly style="width: 120px" value="{{ $prod->unidade }}" class="form-control unidade" type="text" name="unidade[]">
                                         </td> 
                                         <td>
                                             <input readonly style="width: 120px" value="{{ __moedaInput($prod->quantidade) }}" class="form-control qtd" type="tel" name="quantidade[]" id="inp-quantidade">
                                         </td>
                                         <td>
-                                            <input readonly style="width: 120px" value="{{ __moedaInput($prod->valor_unitario) }}" class="form-control moeda valor_unit" type="tel" name="valor_unitario[]" id="inp-valor_unitario">
+                                            <input readonly style="width: 120px" value="{{ __moedaInput($prod->valor_unitario) }}" class="form-control moeda valor_unit valor_compra" type="tel" name="valor_unitario[]" id="inp-valor_unitario">
                                         </td>
                                         <td>
                                             <input readonly style="width: 120px" value="{{ __moedaInput($prod->sub_total) }}" class="form-control moeda sub_total" type="tel" name="sub_total[]" id="inp-subtotal">
                                         </td>
                                         <td>
-                                            <input style="width: 120px" value="{{ __moedaInput($prod->valor_unitario + ($prod->valor_unitario * $lucroPadraoProduto)/100) }}" class="form-control moeda valor_unit" type="tel" name="valor_venda[]" id="inp-valor_unitario">
+                                            <input style="width: 120px" value="{{ __moedaInput($prod->valor_unitario + ($prod->valor_unitario * $lucroPadraoProduto)/100) }}" class="form-control moeda valor_unit valor_venda" type="tel" name="valor_venda[]" id="inp-valor_unitario">
                                         </td>
                                         <td>
                                             <input required style="width: 150px" value="1" class="form-control" data-mask="000" type="tel" name="conversao_estoque[]">
@@ -294,13 +328,13 @@
                                 </tbody>
                             </table>
                         </div>
-                        <div class="row col-12 col-lg-2 mt-3">
+                        <!-- <div class="row col-12 col-lg-2 mt-3">
                             <br>
                             <button type="button" class="btn btn-dark btn-add-tr px-2">
                                 <i class="ri-add-fill"></i>
                                 Adicionar Produto
                             </button>
-                        </div>
+                        </div> -->
                         <div class="mt-3">
                             <h5>Total de Produtos: <strong class="total_prod">R$</strong></h5>
                         </div>

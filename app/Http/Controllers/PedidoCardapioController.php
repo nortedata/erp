@@ -223,6 +223,9 @@ class PedidoCardapioController extends Controller
         $funcionarios = Funcionario::where('empresa_id', request()->empresa_id)->get();
 
         $itens = $pedido->itens;
+        foreach($itens as $i){
+            $i->valor_unitario = $i->sub_total/$i->quantidade;
+        }
         $caixa = __isCaixaAberto();
 
         $config = ConfigGeral::where('empresa_id', request()->empresa_id)->first();

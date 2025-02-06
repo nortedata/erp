@@ -8,13 +8,18 @@ use App\Models\Cte;
 use App\Models\Empresa;
 use App\Services\CTeService;
 use App\Utils\EmailUtil;
+use App\Utils\SiegUtil;
 
 class CTePainelController extends Controller
 {
 
     protected $emailUtil;
-    public function __construct(EmailUtil $util){
+    protected $siegUtil;
+
+    public function __construct(EmailUtil $util, SiegUtil $siegUtil){
         $this->emailUtil = $util;
+        $this->siegUtil = $siegUtil;
+
     }
 
     public function emitir(Request $request){
@@ -70,6 +75,12 @@ class CTePainelController extends Controller
                     $this->emailUtil->enviarXmlContador($empresa->id, $fileDir, 'CTe', $item->chave);
                 }catch(\Exception $e){
 
+                }
+
+                try{
+                    $fileDir = public_path('xml_cte/').$item->chave.'.xml';
+                    $this->siegUtil->enviarXml($item->empresa_id, $fileDir);
+                }catch(\Exception $e){
                 }
 
                 return response()->json($data, 200);
@@ -161,6 +172,13 @@ class CTePainelController extends Controller
                 $motivo = $doc['infEvento']['xMotivo'];
                 $cStat = $doc['infEvento']['cStat'];
                 if($cStat == 135){
+
+                    try{
+                        $fileDir = public_path('xml_cte_cancelada/').$item->chave.'.xml';
+                        $this->siegUtil->enviarXml($item->empresa_id, $fileDir);
+                    }catch(\Exception $e){
+                    }
+
                     return response()->json("[$cStat] $motivo", 200);
                 }else{
                     return response()->json("[$cStat] $motivo", 401);
@@ -197,9 +215,15 @@ class CTePainelController extends Controller
         $cte = $cte_service->cartaCorrecao($item, $request->grupo, $request->campo, $request->motivo);
 
         if(!isset($cte['erro'])){
-
             return response()->json($cte['infEvento']['cStat']." - ". $cte['infEvento']['xMotivo'], 200);
         }else{
+
+            try{
+                $fileDir = public_path('xml_cte_correcao/').$item->chave.'.xml';
+                $this->siegUtil->enviarXml($item->empresa_id, $fileDir);
+            }catch(\Exception $e){
+            }
+
             return response()->json($cte['data'], $cte['status']);
         }
 

@@ -256,7 +256,7 @@
             <button type="button" id="btn-remove-imagem" class="btn btn-link-danger btn-sm btn-danger">x</button>
             @isset($item)
             <img id="file-ip-1-preview" src="{{ $item->img }}">
-            <a href="{{ route('localizacao.delete-logo') }}">remover imagem</a>
+            <a href="{{ route('localizacao.delete-logo', [$item->id]) }}">remover imagem</a>
             @else
             <img id="file-ip-1-preview" src="/imgs/no-image.png">
             @endif

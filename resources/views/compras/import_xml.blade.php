@@ -1,4 +1,11 @@
 @extends('layouts.app', ['title' => 'Importação de XML'])
+@section('css')
+<style type="text/css">
+    .ri-information-line:hover{
+        cursor: pointer;
+    }
+</style>
+@endsection
 @section('content')
 
 <div class="card mt-1">
@@ -30,6 +37,9 @@
         {!!Form::close()!!}
     </div>
 </div>
+
+@include('modals._altera_produto_xml')
+@include('modals._modal_show_xml')
 @section('js')
 <script src="/js/nfe.js"></script>
 <script src="/js/import_xml.js"></script>

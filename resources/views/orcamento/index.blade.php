@@ -62,7 +62,7 @@
                                     <td>{{ $item->cliente ? $item->cliente->cpf_cnpj : "--" }}</td>
                                     <td>{{ $item->numero ? $item->id : '' }}</td>
                                     <td>{{ __moeda($item->total) }}</td>
-                                    <td>{{ __data_pt($item->created_at, 0) }}</td>
+                                    <td>{{ __data_pt($item->created_at) }}</td>
                                     <td width="300">
                                         <form action="{{ route('orcamentos.destroy', $item->id) }}" method="post" id="form-{{$item->id}}">
                                             @method('delete')

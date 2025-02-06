@@ -44,6 +44,7 @@ return new class extends Migration
             $table->decimal('desconto', 12, 2)->nullable();
             $table->decimal('valor_cashback', 10,2)->nullable();
             $table->decimal('acrescimo', 12, 2)->nullable();
+            $table->decimal('valor_entrega', 12, 2)->nullable();
             $table->string('observacao', 200)->nullable();
             $table->boolean('api')->default(0);
             $table->timestamp('data_emissao')->nullable();
@@ -65,6 +66,7 @@ return new class extends Migration
             // alter table nfces add column data_emissao timestamp default CURRENT_TIMESTAMP;
             // alter table nfces add column dinheiro_recebido decimal(10, 2) default 0;
             // alter table nfces add column troco decimal(10, 2) default 0;
+            // alter table nfces add column valor_entrega decimal(10, 2) default 0;
             // alter table nfces add column tipo_pagamento varchar(2) default '';
 
             // alter table nfces add column bandeira_cartao varchar(2) default 99;

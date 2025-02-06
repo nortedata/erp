@@ -14,7 +14,8 @@ class Servico extends Model
         'tempo_adicional', 'valor_adicional', 'tempo_tolerancia', 'comissao', 'codigo_servico', 'aliquota_iss',
         'aliquota_pis', 'aliquota_cofins', 'aliquota_inss', 'imagem', 'status', 'codigo_tributacao_municipio',
         'reserva', 'padrao_reserva_nfse', 'marketplace', 'hash_delivery', 'descricao', 'destaque_marketplace',
-        'numero_sequencial'
+        'numero_sequencial', 'aliquota_ir', 'aliquota_csll', 'valor_deducoes', 'desconto_incondicional', 'desconto_condicional',
+        'outras_retencoes', 'estado_local_prestacao_servico', 'natureza_operacao', 'codigo_cnae'
     ];
 
     protected $appends = [ 'imgApp' ];

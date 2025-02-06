@@ -102,7 +102,7 @@
 
     <div class="card mt-4">
 
-        <div class="card-body row">
+        <div class="card-body row g-2">
             <h4 class="">Tributação</h4>
 
             <div class="col-md-2">
@@ -119,6 +119,49 @@
             </div>
             <div class="col-md-2">
                 {!!Form::tel('aliquota_inss', '% INSS')->attrs(['class' => 'percentual'])
+                !!}
+            </div>
+
+            <div class="col-md-2">
+                {!!Form::tel('aliquota_ir', '% IR')->attrs(['class' => 'percentual'])
+                !!}
+            </div>
+            <div class="col-md-2">
+                {!!Form::tel('aliquota_csll', '% CSLL')->attrs(['class' => 'percentual'])
+                !!}
+            </div>
+            <div class="col-md-2">
+                {!!Form::tel('valor_deducoes', 'Deduções')->attrs(['class' => 'moeda'])
+                ->value(isset($item) ? __moeda($item->valor_deducoes) : '')
+                !!}
+            </div>
+            <div class="col-md-2">
+                {!!Form::tel('desconto_incondicional', 'Desconto incondicional')->attrs(['class' => 'moeda'])
+                ->value(isset($item) ? __moeda($item->desconto_incondicional) : '')
+                !!}
+            </div>
+            <div class="col-md-2">
+                {!!Form::tel('desconto_condicional', 'Desconto condicional')->attrs(['class' => 'moeda'])
+                ->value(isset($item) ? __moeda($item->desconto_condicional) : '')
+                !!}
+            </div>
+            <div class="col-md-2">
+                {!!Form::tel('outras_retencoes', 'Outras retenções')->attrs(['class' => 'moeda'])
+                ->value(isset($item) ? __moeda($item->outras_retencoes) : '')
+                !!}
+            </div>
+            <div class="col-md-2">
+                {!!Form::tel('codigo_cnae', 'Cód. CNAE')->attrs(['class' => ''])
+                !!}
+            </div>
+            <div class="col-md-2">
+
+                {!!Form::select('estado_local_prestacao_servico', 'UF do local de prestação', \App\Models\Cidade::estados())->attrs(['class' => 'form-select'])
+                !!}
+            </div>
+
+            <div class="col-md-4">
+                {!!Form::tel('natureza_operacao', 'Natureza de Operação')->attrs(['class' => ''])
                 !!}
             </div>
         </div>

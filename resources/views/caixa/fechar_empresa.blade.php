@@ -56,7 +56,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @forelse($vendas as $i)
+                                @forelse($data as $i)
                                 <tr>
                                     <td>{{ $i->tipo }}</td>
                                     <td>{{ __data_pt($i->created_at, 0) }}</td>
@@ -180,7 +180,7 @@
                 </div>
 
                 <div class="col-md-3 m-3">
-                    @if(sizeof($vendas) == 0)
+                    @if(sizeof($data) == 0)
                     <h3>Caixa sem movimentação!</h3>
                     @else
 

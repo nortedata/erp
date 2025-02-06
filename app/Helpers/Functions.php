@@ -7,6 +7,8 @@ use App\Models\UsuarioLocalizacao;
 use App\Models\AcaoLog;
 use App\Models\ApiLog;
 use App\Models\ApiConfig;
+use App\Models\ConfigGeral;
+use App\Models\ProdutoTributacaoLocal;
 use App\Models\MarketPlaceConfig;
 use Illuminate\Support\Facades\Auth;
 
@@ -33,6 +35,45 @@ function __validaObjetoEmpresa($objeto)
 		}
 	}
 	return true;
+}
+
+function __tipoMenu()
+{
+	if(!Auth::user()->empresa){
+		return env('MENU_PADRAO');
+	}
+	$empresa_id = Auth::user()->empresa->empresa_id;
+	$config = ConfigGeral::where('empresa_id', $empresa_id)->first();
+	if($config == null){
+		return env('MENU_PADRAO');
+	}
+	return $config->tipo_menu;
+}
+
+function __dataTopBar()
+{
+	if(!Auth::user()->empresa){
+		return 'light';
+	}
+	$empresa_id = Auth::user()->empresa->empresa_id;
+	$config = ConfigGeral::where('empresa_id', $empresa_id)->first();
+	if($config == null){
+		return 'light';
+	}
+	return $config->cor_top_bar;
+}
+
+function __dataMenuBar()
+{
+	if(!Auth::user()->empresa){
+		return 'light';
+	}
+	$empresa_id = Auth::user()->empresa->empresa_id;
+	$config = ConfigGeral::where('empresa_id', $empresa_id)->first();
+	if($config == null){
+		return 'light';
+	}
+	return $config->cor_menu;
 }
 
 function __moeda($valor, $casas_decimais = 2)
@@ -73,6 +114,11 @@ function __isMaster()
 		return 1;
 	}
 	return 0;
+}
+
+function __isSuporte()
+{
+	return Auth::user()->suporte;
 }
 
 function __isEmpresaMaster($empresa)
@@ -174,7 +220,7 @@ function __isActivePlan($empresa, $menu){
 	if(!$empresa) return false;
 	$plano = $empresa->empresa->plano;
 	if($plano){
-		$modulos = json_decode($plano->plano->modulos);
+		$modulos = json_decode($plano->plano->modulos) ?? [];
 		if(in_array($menu, $modulos)) return true;
 		else return false;
 	}
@@ -317,3 +363,69 @@ function __isProdutoServicoDelivery($empresa_id){
 	if(__isSegmentoProduto($empresa_id) && __isSegmentoServico($empresa_id)) return 1;
 	return 0;
 }
+
+function __tributacaoProdutoLocal($item, $campo, $local_id){
+	$itemLocal = ProdutoTributacaoLocal::where('produto_id', $item->id)
+	->where('local_id', $local_id)->first();
+
+	if($itemLocal != null){
+		return $itemLocal[$campo];
+	}
+	return $item[$campo];
+}
+
+function __tributacaoProdutoLocalNcm($item, $local_id){
+	$itemLocal = ProdutoTributacaoLocal::where('produto_id', $item->id)
+	->where('local_id', $local_id)->first();
+	if($itemLocal != null){
+		return $itemLocal->_ncm ? [$itemLocal->ncm => $itemLocal->_ncm->descricao] : [];
+	}
+	return $item->_ncm ? [$item->ncm => $item->_ncm->descricao] : [];
+}
+
+function __primeiroLocal($local_id, $empresa_id){
+	$local = Localizacao::where('empresa_id', $empresa_id)
+	->where('status', 1)->first();
+	return $local_id == $local->id;
+}
+
+function __tributacaoProdutoLocalVenda($produto, $local_id){
+
+	$itemLocal = ProdutoTributacaoLocal::where('produto_id', $produto->id)
+	->where('local_id', $local_id)->first();
+	
+	if($itemLocal == null || __primeiroLocal($local_id, $produto->empresa_id)){
+		return $produto;
+	}
+
+	$produto->ncm = $itemLocal->ncm;
+	$produto->perc_icms = $itemLocal->perc_icms;
+	$produto->perc_pis = $itemLocal->perc_pis;
+	$produto->perc_cofins = $itemLocal->perc_cofins;
+	$produto->perc_ipi = $itemLocal->perc_ipi;
+
+	$produto->cest = $itemLocal->cest;
+	$produto->origem = $itemLocal->origem;
+	$produto->cst_csosn = $itemLocal->cst_csosn;
+	$produto->cst_pis = $itemLocal->cst_pis;
+	$produto->cst_cofins = $itemLocal->cst_cofins;
+
+	$produto->cst_ipi = $itemLocal->cst_ipi;
+	$produto->valor_unitario = $itemLocal->valor_unitario;
+	$produto->cfop_estadual = $itemLocal->cfop_estadual;
+	$produto->cfop_outro_estado = $itemLocal->cfop_outro_estado;
+
+	return $produto;
+}
+
+function __valorProdutoLocal($produto, $local_id){
+	$itemLocal = ProdutoTributacaoLocal::where('produto_id', $produto->id)
+	->where('local_id', $local_id)->first();
+	
+	if($itemLocal == null || __primeiroLocal($local_id, $produto->empresa_id)){
+		return $produto->valor_unitario;
+	}
+
+	return $itemLocal->valor_unitario;
+}
+

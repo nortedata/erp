@@ -92,7 +92,7 @@ class SangriaController extends Controller
         $domPdf->set_paper(array(0,0,214,220));
         $domPdf->render();
         $domPdf->stream("Comprovante de sangria.pdf", array("Attachment" => false));
-
+        exit();
     }
 
     private function somaTotalEmCaixa()

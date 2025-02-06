@@ -53,6 +53,10 @@ class HomeController extends Controller
             return redirect()->route('empresas.index');
         }
 
+        if(__isSuporte()){
+            return redirect()->route('suporte.index');
+        }
+
         $totalNfe = Nfe::where('empresa_id', request()->empresa_id)
         ->where(function($q) {
             $q->where('estado', 'aprovado')->orWhere('estado', 'cancelado');

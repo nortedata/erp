@@ -770,7 +770,7 @@
 
                             <div class="col-md-6 col-12">
                                 {!!Form::select('produto_id', 'Produto')
-                                ->attrs(['class' => 'form-select'])
+                                ->attrs(['class' => 'form-select produtos_filtro'])
                                 !!}
                             </div>
 

@@ -39,6 +39,9 @@ return new class extends Migration
 
             $table->boolean('definir_vendedor_pdv_off')->default(0);
             $table->string('acessos_pdv_off', 255)->nullable();
+            $table->enum('tipo_menu', ['vertical', 'horizontal'])->default('vertical');
+            $table->enum('cor_menu', ['light', 'brand', 'dark'])->default('light');
+            $table->enum('cor_top_bar', ['light', 'brand', 'dark'])->default('light');
 
             // alter table config_gerals add column confirmar_itens_prevenda boolean default 0;
             // alter table config_gerals modify column balanca_digito_verificador integer default null;
@@ -64,6 +67,9 @@ return new class extends Migration
 
             // alter table config_gerals add column definir_vendedor_pdv_off boolean default 0;
             // alter table config_gerals add column acessos_pdv_off varchar(255) default null;
+            // alter table config_gerals add column tipo_menu enum('vertical', 'horizontal') default 'light';
+            // alter table config_gerals add column cor_menu enum('light', 'brand', 'dark') default 'light';
+            // alter table config_gerals add column cor_top_bar enum('light', 'brand', 'dark') default 'light';
 
             $table->timestamps();
         });

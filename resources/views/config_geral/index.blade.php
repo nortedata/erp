@@ -124,8 +124,18 @@
                                     </div>
 
                                     <div class="col-md-2">
-                                        {!!Form::select('gerenciar_estoque', 'Gerenciar estoque', ['0' => 'Não', '1' => 'Sim'])->attrs(['class' => 'form-select'])
-                                        !!}
+                                        <label class="form-label">Gerenciar estoque</label>
+                                        <div class="input-group input-group-merge" style="margin-top: -8px">
+                                            <select class="form-select" name="gerenciar_estoque" id="inp-gerenciar_estoque">
+                                                <option @if($item && $item->gerenciar_estoque == 0) selected @endif value="0">Não</option>
+                                                <option @if($item && $item->gerenciar_estoque == 1) selected @endif value="1">Sim</option>
+                                            </select>
+                                            <div class="input-group-text">
+                                                <span onclick="alterarParaTodosEstoque()">
+                                                    Alterar
+                                                </span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -174,6 +184,26 @@
                                 </div>
                             </div>
 
+                            <h5 class="card-header bg-primary text-white">Configuração</h5>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-2">
+                                        {!!Form::select('tipo_menu', 'Tipo do menu', ['vertical' => 'Vertical', 'horizontal' => 'Horizontal'])->attrs(['class' => 'form-select'])
+                                        !!}
+                                    </div>
+
+                                    <div class="col-md-2">
+                                        {!!Form::select('cor_menu', 'Cor do menu', ['light' => 'Light', 'brand' => 'Brand', 'dark' => 'Dark'])->attrs(['class' => 'form-select'])
+                                        !!}
+                                    </div>
+
+                                    <div class="col-md-2">
+                                        {!!Form::select('cor_top_bar', 'Cor da barra superior', ['light' => 'Light', 'brand' => 'Brand', 'dark' => 'Dark'])->attrs(['class' => 'form-select'])
+                                        !!}
+                                    </div>
+                                </div>
+                            </div>
+
                             <hr class="mt-2">
                             <div class="col-12" style="text-align: right;">
                                 <button type="submit" class="btn btn-success px-5" id="btn-store">Salvar</button>
@@ -186,4 +216,38 @@
         </div>
     </div>
 </div>
+@endsection
+
+@section('js')
+<script type="text/javascript">
+    function alterarParaTodosEstoque(){
+        swal({
+            title: "Você está certo?",
+            text: "Todos os produtos serão alterados!",
+            icon: "warning",
+            buttons: true,
+            buttons: ["Cancelar", "Alterar"],
+            dangerMode: true,
+        }).then((isConfirm) => {
+            if (isConfirm) {
+                let gerenciar_estoque = $('#inp-gerenciar_estoque').val()
+                let empresa_id = $('#empresa_id').val()
+
+                $.post(path_url + 'api/produtos/alterar-gerencia-estoque', {
+                    gerenciar_estoque: gerenciar_estoque,
+                    empresa_id: $('#empresa_id').val(),
+                }).done((res) => {
+                    console.log(res)
+                    swal("Sucesso", "Produtos alterados", "success")
+
+                }).fail((err) => {
+                    console.log(err)
+                    swal("Erro", err.responseJSON, "error")
+                })
+            } else {
+                swal("", "Nada foi alterado!", "info");
+            }
+        });
+    }
+</script>
 @endsection

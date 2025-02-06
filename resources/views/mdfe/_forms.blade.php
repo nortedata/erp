@@ -63,10 +63,13 @@
         {!! Form::tel('cnpj_contratante', 'CNPJ do contratante')->attrs(['class' => 'cpf_cnpj'])->required() !!}
     </div>
     <div class="col-md-2">
-        {!! Form::tel('quantidade_carga', 'Quantidade da carga')->attrs(['class' => 'qtd_carga', 'data-mask' => '00000.000', 'data-mask-reverse' => 'true'])->required() !!}
+        {!! Form::tel('quantidade_carga', 'Quantidade da carga')->attrs(['class' => 'qtd_carga', 'data-mask' => '00000000.000', 'data-mask-reverse' => 'true'])->required()
+        ->value(isset($item) ? number_format($item->quantidade_carga, 3) : '')
+         !!}
     </div>
     <div class="col-md-2">
-        {!! Form::tel('valor_carga', 'Valor da carga')->attrs(['class' => 'moeda'])->required() !!}
+        {!! Form::tel('valor_carga', 'Valor da carga')->attrs(['class' => 'moeda'])->required()
+        ->value(isset($item) ? __moedaInput($item->valor_carga) : '') !!}
     </div>
     <div class="col-md-3">
         {!! Form::select(
@@ -596,32 +599,35 @@
                         @foreach ($item->infoDescarga as $i)
                         <tr>
                             <td>
-                                <input readonly type="sel" name="tp_und_transp_row[]" class="form-control" value="{{ $i->tp_unid_transp }}">
+                                <input readonly style="width: 150px" type="sel" name="tp_und_transp_row[]" class="form-control" value="{{ $i->tp_unid_transp }}">
                             </td>
                             <td>
-                                <input readonly type="text" name="id_und_transp_row[]" class="form-control" value="{{ $i->id_unid_transp }}">
+                                <input readonly style="width: 150px" type="text" name="id_und_transp_row[]" class="form-control" value="{{ $i->id_unid_transp }}">
                             </td>
                             <td>
-                                <input readonly type="tel" name="quantidade_rateio_row[]" class="form-control" value="{{ $i->quantidade_rateio }}">
+                                <input style="width: 150px" readonly type="tel" name="quantidade_rateio_row[]" class="form-control" value="{{ $i->quantidade_rateio }}">
                             </td>
                             <td>
-                                <input readonly type="tel" name="quantidade_rateio_carga_row[]" class="form-control" value="{{ $i->unidadeCarga->quantidade_rateio }}">
+                                <input readonly style="width: 150px" type="tel" name="quantidade_rateio_carga_row[]" class="form-control" value="{{ $i->unidadeCarga->quantidade_rateio }}">
                             </td>
                             <td>
                                 <input readonly type="tel" name="chave_nfe_row[]" class="form-control" value="{{ isset($i->nfe->chave) ? $i->nfe->chave : '' }}">
+                                <div style="width: 400px"></div>
                             </td>
                             <td>
                                 <input readonly type="tel" name="chave_cte_row[]" class="form-control" value="{{ isset($i->cte->chave) ? $i->cte->chave : '' }}">
+                                <div style="width: 400px"></div>
+
                             </td>
                             <td>
-                                <input readonly type="tel" name="municipio_descarregamento" class="form-control" value="{{ $i->cidade->nome }}">
+                                <input readonly style="width: 250px" type="text" name="municipio_descarregamento" class="form-control" value="{{ $i->cidade->info }}">
                                 <input readonly type="hidden" name="municipio_descarregamento_row[]" class="form-control" value="{{ $i->cidade->id }}">
                             </td>
                             <td>
-                                <input readonly type="tel" name="lacres_transporte_row[]" class="form-control" value="{{ json_encode($i->lacresTransp->pluck('numero')->toArray()) }}">
+                                <input style="width: 150px" readonly type="tel" name="lacres_transporte_row[]" class="form-control" value="{{ json_encode($i->lacresTransp->pluck('numero')->toArray()) }}">
                             </td>
                             <td>
-                                <input readonly type="tel" name="lacres_unidade_row[]" class="form-control" value="{{ json_encode($i->lacresUnidCarga->pluck('numero')->toArray()) }}">
+                                <input style="width: 150px" readonly type="tel" name="lacres_unidade_row[]" class="form-control" value="{{ json_encode($i->lacresUnidCarga->pluck('numero')->toArray()) }}">
                             </td>
                             <td>
                                 <button class="btn btn-sm btn-danger btn-delete-row">

@@ -881,6 +881,21 @@
             }
             @endphp
 
+            @if(sizeof($i->itensDimensao) > 0)
+            <tr>
+                <th colspan="">Dimensões</th>
+            </tr>
+            @foreach($i->itensDimensao as $id)
+            <tr>
+                <th class="b-top" colspan="5" style="text-align: left;">
+                    Largura: {{ $id->largura }}, Altura: {{ $id->altura }}, Quantidade: {{ $id->quantidade }},
+                    M2 Tot.: {{ $id->m2_total }}, Espessura: {{ $id->espessura }}, Observação: {{ $id->observacao }}
+                </th>
+            </tr>
+            @endforeach
+
+            @endif
+
             @endforeach
         </tbody>
     </table>
@@ -968,7 +983,7 @@
         <tr>
             @if($item->funcionario_id)
             <td class="" style="width: 250px;">
-                Funcionário: <strong>{{ $item->vendedor_setado->funcionario->nome }}</strong>
+                Funcionário: <strong>{{ $item->funcionario->nome }}</strong>
             </td>
             @endif
             <td class="" style="width: 238px;">

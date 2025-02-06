@@ -10,6 +10,8 @@ use App\Models\UnidadeMedida;
 use App\Models\PadraoTributacaoProduto;
 use App\Models\CategoriaNuvemShop;
 use App\Models\CategoriaProduto;
+use App\Models\ProdutoLocalizacao;
+use App\Models\ProdutoVariacao;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use App\Utils\NuvemShopUtil;
@@ -57,14 +59,18 @@ class NuvemShopProdutoController extends Controller
             return redirect()->route('nuvem-shop-auth.index');
         }
 
-        
         $this->validaCategorias($request->empresa_id);
         $api = new \TiendaNube\API($store_info['store_id'], $store_info['access_token'], 'Awesome App ('.$store_info['email'].')');
 
         if($search != ""){
             $produtos = (array)$api->get("products?q='".$search."'&per_page=21");
         }else{
-            $produtos = (array)$api->get("products?page=".$page."&per_page=12");
+            try{
+                $produtos = (array)$api->get("products?page=".$page."&per_page=21");
+            }catch(\Exception $e){
+                session()->flash("flash_error", $e->getMessage());
+                return redirect()->route('nuvem-shop-produtos.index', ['page='.$page-1]);
+            }
         }
         $data = $produtos['body'];
 
@@ -74,8 +80,18 @@ class NuvemShopProdutoController extends Controller
             if(is_array($res)){
                 $produtosIsert[] = $res;
             }
+
+            $produto = Produto::where('empresa_id', $request->empresa_id)
+            ->where('nuvem_shop_id', $p->id)
+            ->first();
+            if($produto){
+                $p->variacoes = $produto->variacoes;
+            }
+
         }
+
         if(sizeof($produtosIsert) > 0){
+
             $empresa = Empresa::findOrFail(request()->empresa_id);
             $listaCTSCSOSN = Produto::listaCSOSN();
             if ($empresa->tributacao == 'Regime Normal') {
@@ -91,7 +107,7 @@ class NuvemShopProdutoController extends Controller
                 compact('produtosIsert', 'padraoTributacao', 'listaCTSCSOSN', 'padroes', 'categorias', 'unidades'));
         }
 
-        return view('nuvem_shop_produtos.index', compact('data', 'page'));
+        return view('nuvem_shop_produtos.index', compact('data', 'page', 'search'));
     }
 
 
@@ -128,13 +144,17 @@ class NuvemShopProdutoController extends Controller
         if(sizeof($nuvemShopProduto->variants) > 0){
             $variacoes = [];
             foreach($nuvemShopProduto->variants as $v){
+                $variacaoNome = isset($v->values[0]) ? $v->values[0]->pt : '';
+                $variacaoNome .= isset($v->values[1]) ? ' ' . $v->values[1]->pt : '';
                 $dataVariacao = [
                     '_id' => $v->id,
                     'quantidade' => $v->stock,
                     'valor' => $v->price,
-                    'nome' => '',
+                    'nome' => $variacaoNome,
                     'valor_nome' => ''
                 ];
+                // dd($v);
+                // dd($dataVariacao);
                 array_push($variacoes, $dataVariacao);
             }
 
@@ -149,7 +169,6 @@ class NuvemShopProdutoController extends Controller
         DB::transaction(function () use ($request) {
             $contInserts = 0;
             $contUpdates = 0;
-            // dd($request->all());
             try{
                 for($i=0; $i<sizeof($request->nuvem_shop_id); $i++){
 
@@ -182,23 +201,32 @@ class NuvemShopProdutoController extends Controller
                         ];
                         $produto = Produto::create($data);
 
-                        ProdutoLocalizacao::updateOrCreate([
-                            'produto_id' => $produto->id, 
-                            'localizacao_id' => $request->local_id
-                        ]);
+                        if(isset($request->local_id)){
+                            ProdutoLocalizacao::updateOrCreate([
+                                'produto_id' => $produto->id, 
+                                'localizacao_id' => $request->local_id
+                            ]);
+                        }else{
+                            $locais = isset($request->locais) ? $request->locais : [];
+                            for($j=0; $j<sizeof($locais); $j++){
+                                ProdutoLocalizacao::updateOrCreate([
+                                    'produto_id' => $produto->id, 
+                                    'localizacao_id' => $locais[$j]
+                                ]);
+                            }
+                        }
 
                         if($request->nuvem_shop_id_row){
                             for($j=0; $j<sizeof($request->nuvem_shop_id_row); $j++){
                                 if($request->nuvem_shop_id[$i] == $request->nuvem_shop_id_row[$j]){
                                     $dataVariacao = [
                                         'produto_id' => $produto->id,
-                                        '_id' => $request->variacao_id[$j],
-                                        'quantidade' => __convert_value_bd($request->variacao_quantidade[$j]),
                                         'valor' => __convert_value_bd($request->variacao_valor[$j]),
-                                        'nome' => $request->variacao_nome[$j],
-                                        'valor_nome' => $request->variacao_valor_nome[$j]
+                                        'codigo_barras' => '',
+                                        'referencia' => '',
+                                        'descricao' => $request->variacao_nome[$j]
                                     ];
-                                // VariacaoNuvemShop::create($dataVariacao);
+                                    ProdutoVariacao::create($dataVariacao);
                                 }
                             }
                         }
@@ -218,8 +246,8 @@ class NuvemShopProdutoController extends Controller
                 session()->flash("flash_success", "Total de produtos inseridos: $contInserts, atualizados: " .$contUpdates);
 
             }catch(\Exception $e){
-                echo $e->getLine();
-                die;
+                // echo __getError($e);
+                // die;
                 session()->flash("flash_error", $e->getMessage());
             }
         });
@@ -258,6 +286,7 @@ public function destroy($id){
             $item->movimentacoes()->delete();
             $item->composicao()->delete();
             $item->itemPreVenda()->delete();
+            $item->locais()->delete();
             if($item->estoque){
                 $item->estoque->delete();
             }
@@ -291,36 +320,70 @@ public function update(Request $request, $id){
         $produto = (array)$api->get("products/$item->nuvem_shop_id");
         $produto = $produto['body'];
 
-        if(sizeof($produto->variants) == 1){
-            $dataProduto = [
-                'price' => __convert_value_bd($request->nuvem_shop_valor),
-                'promotional_price' => __convert_value_bd($request->nuvem_shop_valor_promocional),
-                'barcode' => $request->codigo_barras,
-                "weight" => $request->peso_nuvem_shop,
-                "width" => $request->largura_nuvem_shop,
-                "height" => $request->altura_nuvem_shop,
-                "depth" => $request->comprimento_nuvem_shop,
-            ];
+        if(isset($request->variacao_id)){
 
-            if($request->estoque){
-                $dataProduto['stock'] = $request->estoque;
+            for($i=0; $i<sizeof($request->variacao_id); $i++){
+                $variation_id = $request->variacao_id[$i];
+                $price = $request->variacao_valor[$i];
+                $estoque = $request->variacao_quantidade[$i];
 
-                $estoque = $item->estoque;
-                if(!$estoque){
-                    $this->utilEstoque->incrementaEstoque($item->id, $request->estoque, null);
-                }else{
-                    $estoque->quantidade = $request->estoque;
-                    $estoque->save();
+
+                $dataVariacao = [
+                    'produto_id' => $item->id,
+                    'valor' => __convert_value_bd($request->variacao_valor[$i]),
+                    'codigo_barras' => '',
+                    'referencia' => '',
+                    'descricao' => $request->variacao_nome[$i]
+                ];
+                ProdutoVariacao::create($dataVariacao);
+
+                $dataProduto = [
+                    'price' => __convert_value_bd($price),
+                    'barcode' => $request->codigo_barras,
+                    "weight" => $request->peso_nuvem_shop,
+                    "width" => $request->largura_nuvem_shop,
+                    "height" => $request->altura_nuvem_shop,
+                    "depth" => $request->comprimento_nuvem_shop,
+                ];
+                if($estoque){
+
+                    $dataProduto['stock'] = $estoque;
                 }
-
-                $transacao = Estoque::where('produto_id', $item->id)->first();
-                $tipo = 'incremento';
-                $codigo_transacao = $transacao->id;
-                $tipo_transacao = 'alteracao_estoque';
-                $this->utilEstoque->movimentacaoProduto($item->id, $request->estoque, $tipo, $codigo_transacao, $tipo_transacao, \Auth::user()->id);
+                $api->put("products/$item->nuvem_shop_id/variants/".$variation_id, $dataProduto);
             }
 
-            $api->put("products/$item->nuvem_shop_id/variants/".$produto->variants[0]->id, $dataProduto);
+        }else{
+            if(sizeof($produto->variants) == 1){
+                $dataProduto = [
+                    'price' => __convert_value_bd($request->nuvem_shop_valor),
+                    'promotional_price' => __convert_value_bd($request->nuvem_shop_valor_promocional),
+                    'barcode' => $request->codigo_barras,
+                    "weight" => $request->peso_nuvem_shop,
+                    "width" => $request->largura_nuvem_shop,
+                    "height" => $request->altura_nuvem_shop,
+                    "depth" => $request->comprimento_nuvem_shop,
+                ];
+
+                if($request->estoque){
+                    $dataProduto['stock'] = $request->estoque;
+
+                    $estoque = $item->estoque;
+                    if(!$estoque){
+                        $this->utilEstoque->incrementaEstoque($item->id, $request->estoque, null);
+                    }else{
+                        $estoque->quantidade = $request->estoque;
+                        $estoque->save();
+                    }
+
+                    $transacao = Estoque::where('produto_id', $item->id)->first();
+                    $tipo = 'incremento';
+                    $codigo_transacao = $transacao->id;
+                    $tipo_transacao = 'alteracao_estoque';
+                    $this->utilEstoque->movimentacaoProduto($item->id, $request->estoque, $tipo, $codigo_transacao, $tipo_transacao, \Auth::user()->id);
+                }
+
+                $api->put("products/$item->nuvem_shop_id/variants/".$produto->variants[0]->id, $dataProduto);
+            }
         }
         session()->flash("flash_success", "Produto atualizado!");
     }catch(\Exception $e){

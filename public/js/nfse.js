@@ -81,8 +81,17 @@ function getSerico(servico_id) {
         $('#inp-aliquota_pis').val(res.aliquota_pis)
         $('#inp-aliquota_inss').val(res.aliquota_inss)
         $('#inp-aliquota_iss').val(res.aliquota_iss)
+        $('#inp-aliquota_ir').val(res.aliquota_ir)
+        $('#inp-aliquota_csll').val(res.aliquota_csll)  
         $('#inp-codigo_tributacao_municipio').val(res.codigo_tributacao_municipio)
+        $('#inp-estado_local_prestacao_servico').val(res.estado_local_prestacao_servico).change()
 
+        $('#inp-valor_deducoes').val(convertFloatToMoeda(res.valor_deducoes))
+        $('#inp-desconto_incondicional').val(convertFloatToMoeda(res.desconto_incondicional))
+        $('#inp-desconto_condicional').val(convertFloatToMoeda(res.desconto_condicional))
+        $('#inp-outras_retencoes').val(convertFloatToMoeda(res.outras_retencoes))
+        $('#inp-natureza_operacao').val(res.natureza_operacao)
+        
     })
     .fail((err) => {
         console.error(err)

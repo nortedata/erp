@@ -547,6 +547,7 @@ function addProdutos(id) {
         qtd: 0,
         lista_id: $('#lista_id').val(),
         usuario_id: $('#usuario_id').val(),
+        local_id: $('#local_id').val(),
     })
     .done((e) => {
         if(!e){
@@ -728,6 +729,7 @@ $(".btn-add-item").click(() => {
                     value_unit: value_unit,
                     sub_total: sub_total,
                     product_id: product_id,
+                    local_id: $('#local_id').val(),
                 };
                 $.get(path_url + "api/frenteCaixa/linhaProdutoVenda", dataRequest)
                 .done((e) => {
@@ -736,6 +738,7 @@ $(".btn-add-item").click(() => {
                 })
                 .fail((e) => {
                     console.log(e);
+                    swal("Erro", e.responseJSON, "error")
                 });
             } else {
                 swal(

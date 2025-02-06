@@ -4,7 +4,6 @@
 <div class="card mt-1">
     <div class="card-header">
         <h4>Arquivos XML NFe Importados</h4>
-        
     </div>
     <div class="card-body">
         <hr class="mt-3">
@@ -28,7 +27,7 @@
                 </div>
             </div>
             {!!Form::close()!!}
-
+            @php $cont = 0; @endphp
             <div class="col-md-12 mt-3">
                 <div class="table-responsive">
                     <table class="table table-striped table-centered mb-0">
@@ -46,9 +45,10 @@
                             <tr>
                                 <td>{{ $item->fornecedor ? $item->fornecedor->info : '--' }}</td>
                                 <td>{{ $item->numero }}</td>
-                                <td>{{ $item->chave }}</td>
+                                <td>{{ $item->chave_importada }}</td>
                                 <td>{{ __moeda($item->total) }}</td>
                             </tr>
+                            @php $cont++; @endphp
                             @endif
                             @endforeach
                         </tbody>
@@ -63,6 +63,7 @@
             </div>
 
             @if(sizeof($data) > 0)
+            <p>Total de registros: <strong>{{ $cont }}</strong></p>
             <br>
             <div class="row">
                 <div class="col-md-6">
@@ -80,8 +81,7 @@
                     <form method="get" action="{{ route('nfe-importa-xml.envio-contador') }}">
                         <input type="hidden" name="start_date" value="{{ request()->start_date }}">
                         <input type="hidden" name="end_date" value="{{ request()->end_date }}">
-                        <input type="hidden" name="estado" value="{{ request()->estado }}">
-                        <input type="hidden" name="local_id" value="{{ request()->local_id }}">
+
                         <button class="btn btn-success">
                             <i class="ri-mail-send-fill"></i>
                             Enviar XML para o contador

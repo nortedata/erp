@@ -171,7 +171,7 @@ class RemessaBoletoController extends Controller
 
                 $remessaFileName = $this->util->geraRemessa($boletos, $tipo, $contaBoleto->banco, $dataRemessa);
                 $file = file_get_contents(public_path('remessas_boleto/'.$remessaFileName));
-                dd($file);
+                // dd($file);
                 // die;
                 $remessaBoleto = RemessaBoleto::create([
                     'nome_arquivo' => $remessaFileName,

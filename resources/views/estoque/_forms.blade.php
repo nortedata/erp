@@ -22,7 +22,7 @@
                     <tr>
                         <td>
                             @if($l->local)
-                            <input type="hidden" readonly class="form-control" required name="local_id[]" value="{{ $l->id }}">
+                            <input type="hidden" readonly class="form-control" required name="local_id[]" value="{{ $l->local_id }}">
                             <input readonly class="form-control" required value="{{ $l->local->descricao }}">
                             @else
                             <input type="hidden" readonly class="form-control" required name="local_id[]" value="{{ $firstLocation->id }}">
@@ -31,7 +31,7 @@
                             @endif
                         </td>
                         <td>
-                            <input class="form-control quantidade" value="{{ number_format($l->quantidade, 3) }}" required name="quantidade[]">
+                            <input @if($item->produto->unidade == 'UN' || $item->produto->unidade == 'UNID') data-mask="000000" @endif class="form-control quantidade" @if($item->produto->unidade == 'UN' || $item->produto->unidade == 'UNID') value="{{ number_format($l->quantidade, 0) }}" @else value="{{ number_format($l->quantidade, 3) }}" @endif required name="quantidade[]">
                         </td>
                     </tr>
 
@@ -43,8 +43,10 @@
     @else
     <div class="col-md-2">
         {!!Form::text('quantidade', 'Quantidade')
-        ->attrs(['class' => 'quantidade'])->required()
-        ->value(isset($item) ? number_format($item->quantidade, 3, '.', '') : '')
+        ->attrs(['class' => 'quantidade'])
+        ->attrs(($item->produto->unidade == 'UN' || $item->produto->unidade == 'UNID') ? ['data-mask' => '000000'] : ['class' => 'quantidade'])
+        ->required()
+        ->value(isset($item) ? (($item->produto->unidade == 'UN' || $item->produto->unidade == 'UNID') ? number_format($item->quantidade, 0) : number_format($item->quantidade, 3, '.', '')) : '')
         !!}
     </div>
 
@@ -61,7 +63,6 @@
         </select>
     </div>
     @endif
-
     @endif
 
     <input name="produto_variacao_id" id="produto_variacao_id" type="hidden">

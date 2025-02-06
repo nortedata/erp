@@ -14,13 +14,17 @@ use NFePHP\DA\NFe\Danfe;
 use App\Models\Contigencia;
 use App\Utils\EmailUtil;
 use Mail;
+use App\Utils\SiegUtil;
 
 class NFePainelController extends Controller
 {
 
     protected $emailUtil;
-    public function __construct(EmailUtil $util){
+    protected $siegUtil;
+    
+    public function __construct(EmailUtil $util, SiegUtil $siegUtil){
         $this->emailUtil = $util;
+        $this->siegUtil = $siegUtil;
 
         if (!is_dir(public_path('xml_nfe'))) {
             mkdir(public_path('xml_nfe'), 0777, true);
@@ -121,9 +125,14 @@ class NFePainelController extends Controller
 
                     try{
                         $fileDir = public_path('xml_nfe/').$nfe->chave.'.xml';
-                        $this->emailUtil->enviarXmlContador($empresa->id, $fileDir, 'NFe', $nfe->chave);
+                        $this->emailUtil->enviarXmlContador($nfe->empresa_id, $fileDir, 'NFe', $nfe->chave);
                     }catch(\Exception $e){
+                    }
 
+                    try{
+                        $fileDir = public_path('xml_nfe/').$nfe->chave.'.xml';
+                        $this->siegUtil->enviarXml($nfe->empresa_id, $fileDir);
+                    }catch(\Exception $e){
                     }
 
                     return response()->json($data, 200);
@@ -200,6 +209,13 @@ class NFePainelController extends Controller
                 if($cStat == 135){
                     $descricaoLog = "CANCELADA $nfe->chave";
                     __createLog($nfe->empresa_id, 'NFe', 'cancelar', $descricaoLog);
+
+                    try{
+                        $fileDir = public_path('xml_nfe_cancelada/').$nfe->chave.'.xml';
+                        $this->siegUtil->enviarXml($nfe->empresa_id, $fileDir);
+                    }catch(\Exception $e){
+                    }
+
                     return response()->json("[$cStat] $motivo", 200);
                 }else{
                     $descricaoLog = "ERRO CANCELAR: $nfe->chave";
@@ -247,6 +263,13 @@ class NFePainelController extends Controller
 
                     $descricaoLog = "CORRIGIDA $nfe->chave";
                     __createLog($nfe->empresa_id, 'NFe', 'corrigir', $descricaoLog);
+
+                    try{
+                        $fileDir = public_path('xml_nfe_correcao/').$nfe->chave.'.xml';
+                        $this->siegUtil->enviarXml($nfe->empresa_id, $fileDir);
+                    }catch(\Exception $e){
+                    }
+
                     return response()->json("[$cStat] $motivo", 200);
                 }else{
                     $descricaoLog = "ERRO CORRIGIR: $nfe->chave";

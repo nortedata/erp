@@ -11,7 +11,7 @@ class CategoriaProduto extends Model
 
     protected $fillable = [ 
         'empresa_id', 'nome', 'cardapio', 'nome_en', 'nome_es', 'tipo_pizza', 'delivery', 'ecommerce',
-        'hash_ecommerce', 'hash_delivery', 'reserva', 'categoria_id'
+        'hash_ecommerce', 'hash_delivery', 'reserva', 'categoria_id', '_id_import'
     ];
 
     public function produtos(){

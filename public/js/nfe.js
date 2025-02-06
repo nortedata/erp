@@ -110,7 +110,7 @@ $('body').on('change', '.cliente_id', function () {
                     usuario_id: $('#usuario_id').val(),
                     local_id: $('#inp-local_id').length ? $('#inp-local_id').val() : null
                 };
-                console.log(query)
+                // console.log(query)
                 return query;
             },
             processResults: function (response) {
@@ -125,6 +125,10 @@ $('body').on('change', '.cliente_id', function () {
                     o.id = v.id;
                     if(v.codigo_variacao){
                         o.codigo_variacao = v.codigo_variacao
+                    }
+
+                    if(v.tipo_dimensao == 1){
+                        o.espessura = v.espessura
                     }
 
                     o.text = v.nome
@@ -171,77 +175,85 @@ $('body').on('change', '.cliente_id', function () {
                 );
             return;
         }
-    // $table.find("select.select2").select2("destroy");
-    var $tr = $table.find(".dynamic-form").first();
-    $tr.find("select.select2").select2("destroy");
-    var $clone = $tr.clone();
-    $clone.show();
+        // $table.find("select.select2").select2("destroy");
+        var $tr = $table.find(".dynamic-form").first();
+        console.log($tr)
+        $tr.find("select.select2").select2("destroy");
+        var $clone = $tr.clone();
+        $clone.show();
 
-    $clone.find("input,select").val("");
-    $clone.find("span").html("");
-    
-    $table.append($clone);
-    setTimeout(function () {
-        $("tbody select.select2").select2({
-            language: "pt-BR",
-            width: "100%",
-            theme: "bootstrap4"
-        });
+        $clone.find("input,select").val("");
+        let lines = $('.dynamic-form').length
+        $clone.find("._key").val(lines-1);
+        $clone.find("span").html("");
+        $clone.find(".dimensoes-hidden").html("");
 
-        $("tbody #inp-produto_id").select2({
-            minimumInputLength: 2,
-            language: "pt-BR",
-            placeholder: "Digite para buscar o produto",
-            width: "100%",
-            theme: "bootstrap4",
-            ajax: {
-                cache: true,
-                url: path_url + "api/produtos",
-                dataType: "json",
-                data: function (params) {
-                    let empresa_id = $('#empresa_id').val()
-                    console.clear();
-                    var query = {
-                        pesquisa: params.term,
-                        empresa_id: empresa_id,
-                        local_id: $('#inp-local_id').length ? $('#inp-local_id').val() : null
-                    };
-                    return query;
+        $table.append($clone);
+        setTimeout(function () {
+            $("tbody select.select2").select2({
+                language: "pt-BR",
+                width: "100%",
+                theme: "bootstrap4"
+            });
+
+            $("tbody #inp-produto_id").select2({
+                minimumInputLength: 2,
+                language: "pt-BR",
+                placeholder: "Digite para buscar o produto",
+                width: "100%",
+                // theme: "bootstrap4",
+                ajax: {
+                    cache: true,
+                    url: path_url + "api/produtos",
+                    dataType: "json",
+                    data: function (params) {
+                        let empresa_id = $('#empresa_id').val()
+                        console.clear();
+                        var query = {
+                            pesquisa: params.term,
+                            empresa_id: empresa_id,
+                            local_id: $('#inp-local_id').length ? $('#inp-local_id').val() : null
+                        };
+                        return query;
+                    },
+                    processResults: function (response) {
+                        var results = [];
+                        let compra = 0
+                        if($('#is_compra') && $('#is_compra').val() == 1){
+                            compra = 1
+                        }
+                        $.each(response, function (i, v) {
+                            var o = {};
+                            o.id = v.id;
+                            if(v.codigo_variacao){
+                                o.codigo_variacao = v.codigo_variacao
+                            }
+
+                            if(v.tipo_dimensao == 1){
+                                o.espessura = v.espessura
+                            }
+
+                            o.text = v.nome;
+                            if(compra == 0){
+                                o.text += ' R$ ' + convertFloatToMoeda(v.valor_unitario);
+                            }else{
+                                o.text += ' R$ ' + convertFloatToMoeda(v.valor_compra);
+                            }
+                            if(v.codigo_barras){
+                                o.text += ' [' + v.codigo_barras  + ']';
+                            }
+                            o.value = v.id;
+                            results.push(o);
+                        });
+                        return {
+                            results: results,
+                        };
+                    },
                 },
-                processResults: function (response) {
-                    var results = [];
-                    let compra = 0
-                    if($('#is_compra') && $('#is_compra').val() == 1){
-                        compra = 1
-                    }
-                    $.each(response, function (i, v) {
-                        var o = {};
-                        o.id = v.id;
-                        if(v.codigo_variacao){
-                            o.codigo_variacao = v.codigo_variacao
-                        }
+            });
+        }, 100);
 
-                        o.text = v.nome;
-                        if(compra == 0){
-                            o.text += ' R$ ' + convertFloatToMoeda(v.valor_unitario);
-                        }else{
-                            o.text += ' R$ ' + convertFloatToMoeda(v.valor_compra);
-                        }
-                        if(v.codigo_barras){
-                            o.text += ' [' + v.codigo_barras  + ']';
-                        }
-                        o.value = v.id;
-                        results.push(o);
-                    });
-                    return {
-                        results: results,
-                    };
-                },
-            },
-        });
-    }, 100);
-
-})
+    })
 
     $('body').on('change', '#inp-tpNF', function () {
         let tpNF = $('#inp-tpNF').val()
@@ -269,7 +281,11 @@ $('body').on('change', '.cliente_id', function () {
             return;
         }
         let produto_id = $("#inp-produto_id").val();
-        $.get(path_url + "api/produtos/valida-atacado", { quantidade: quantidade, produto_id: $produto.val() })
+        $.get(path_url + "api/produtos/valida-atacado", { 
+            quantidade: quantidade, 
+            produto_id: $produto.val(),
+            local_id: $('#inp-local_id').val()
+        })
         .done((success) => {
             if(success){
                 $valorUnit.val(convertFloatToMoeda(success));
@@ -323,6 +339,8 @@ $('body').on('change', '.cliente_id', function () {
         let product_id = $(this).val()
 
         let codigo_variacao = $(this).select2('data')[0].codigo_variacao
+        let espessura = $(this).select2('data')[0].espessura
+
         if (product_id) {
 
             $qtd = $(this).closest('td').next().find('input');
@@ -350,51 +368,227 @@ $('body').on('change', '.cliente_id', function () {
                 entrada: $('#is_compra') ? $('#is_compra').val() : 0
             })
             .done((e) => {
-            // console.clear()
-            let cfop = e.cfop_atual
-            let is_xml = $('#is_xml') ? $('#is_xml').val() : 0
-            if(is_xml) return 1
-                $qtd.val('1')
-            let value_unit = 0
-            let compra = $('#is_compra').val()
-            if (compra == '1') {
-                if (e.valor_compra) {
-                    value_unit = e.valor_compra
-                } else {
-                    value_unit = 0
-                }
-            } else {
-                value_unit = e.valor_unitario
-            }
-            $vlUnit.val(convertFloatToMoeda(value_unit))
-            $sub.val(convertFloatToMoeda(value_unit))
-            $perc_icms.val(e.perc_icms)
-            $perc_pis.val(e.perc_pis)
-            $perc_cofins.val(e.perc_cofins)
-            $perc_ipi.val(e.perc_ipi)
-            $perc_red_bc.val(e.perc_red_bc)
-            $cfop_estadual.val(cfop)
-            $ncm.val(e.ncm)
-            $cst_csosn.val(e.cst_csosn).change()
-            $cst_pis.val(e.cst_pis).change()
-            $cst_cofins.val(e.cst_cofins).change()
-            $cst_ipi.val(e.cst_ipi).change()
-            calcTotal()
-            calTotalNfe()
-            limpaFatura()
-            $qtd.focus()
-            if(e.variacao_modelo_id && !codigo_variacao){
-                buscarVariacoes(product_id)
-            }
 
-            if(codigo_variacao > 0){
-                setarVariacao(codigo_variacao)
-            }
-        })
+                let cfop = e.cfop_atual
+                let is_xml = $('#is_xml') ? $('#is_xml').val() : 0
+                if(is_xml) return 1
+                    $qtd.val('1')
+                let value_unit = 0
+                let compra = $('#is_compra').val()
+                if (compra == '1') {
+                    if (e.valor_compra) {
+                        value_unit = e.valor_compra
+                    } else {
+                        value_unit = 0
+                    }
+                } else {
+                    value_unit = e.valor_unitario
+                }
+                $vlUnit.val(convertFloatToMoeda(value_unit))
+                $sub.val(convertFloatToMoeda(value_unit))
+                $perc_icms.val(e.perc_icms)
+                $perc_pis.val(e.perc_pis)
+                $perc_cofins.val(e.perc_cofins)
+                $perc_ipi.val(e.perc_ipi)
+                $perc_red_bc.val(e.perc_red_bc)
+                $cfop_estadual.val(cfop)
+                $ncm.val(e.ncm)
+                $cst_csosn.val(e.cst_csosn).change()
+                $cst_pis.val(e.cst_pis).change()
+                $cst_cofins.val(e.cst_cofins).change()
+                $cst_ipi.val(e.cst_ipi).change()
+                calcTotal()
+                calTotalNfe()
+                limpaFatura()
+                $qtd.focus()
+                if(e.variacao_modelo_id && !codigo_variacao){
+                    buscarVariacoes(product_id)
+                }
+
+                if(codigo_variacao > 0){
+                    setarVariacao(codigo_variacao)
+                }
+
+                if(parseFloat(espessura) > 0){
+                    KEY = null
+                    $('#dados_dimensao').modal('show')
+                    $('#dimensao_total').val('')
+                    $('#dados_dimensao .modal-title').text(e.nome)
+                    $('#dados_dimensao #dimensao_valor_unitario_m2').val(convertFloatToMoeda(e.valor_unitario))
+                    $('#dados_dimensao #dimensao_espessura').val(convertFloatToMoeda(e.espessura))
+                    $('#btn-salvar-dimensao').text('Salvar')
+
+                }
+            })
             .fail((e) => {
                 console.log(e)
             })
         }
+    })
+
+    var KEY = null
+    function alterarDimensoesItem(id, key){
+        KEY = key
+        DIMENSOES = []
+        $.get(path_url + "api/produtos/get-dimensao-edit", {id: id})
+        .done(res => {
+            $('#dados_dimensao').modal('show')
+            $('#dados_dimensao table tbody').html(res.view)
+            $('#dados_dimensao .modal-title').text(res.produto.nome)
+            $('#dados_dimensao #dimensao_espessura').val(convertFloatToMoeda(res.produto.espessura))
+            $('#dados_dimensao #dimensao_valor_unitario_m2').val(convertFloatToMoeda(res.produto.valor_unitario))
+            $('#btn-salvar-dimensao').text('Editar')
+            let cont = 0;
+            res.data.map((x) => {
+                let js = {
+                    key: cont,
+                    dimensao_valor_unitario_m2: x.valor_unitario_m2,
+                    dimensao_largura: x.largura,
+                    dimensao_altura: x.altura,
+                    dimensao_quantidade: x.quantidade,
+                    dimensao_m2_total: x.m2_total,
+                    dimensao_espessura: x.espessura,
+                    dimensao_sub_total: x.sub_total,
+                    dimensao_observacao: x.observacao,
+                }
+                DIMENSOES.push(js)
+                cont++
+
+            })
+
+            setTimeout(() => {
+                calculaTotalDimensao()
+            }, 100)
+        })
+        .fail(err => {
+            console.log(err)
+        })
+    }
+
+    $(document).on("blur", "#dimensao_quantidade", function () {
+        calculaDimensao()
+    })
+
+    function calculaDimensao(){
+        let qtd = parseFloat($('#dimensao_quantidade').val())
+        let dimensao_valor_unitario_m2 = convertMoedaToFloat($('#dimensao_valor_unitario_m2').val())
+        let dimensao_largura = parseFloat($('#dimensao_largura').val())
+        let dimensao_altura = parseFloat($('#dimensao_altura').val())
+
+        let m2 = qtd * (dimensao_largura/1000) * (dimensao_altura/1000)
+        $('#dimensao_m2_total').val(m2.toFixed(3))
+        $('#dimensao_sub_total').val(convertFloatToMoeda(m2*dimensao_valor_unitario_m2))
+    }
+
+    var DIMENSOES = []
+    $(document).on("click", "#btn-add-dimensao", function () {
+
+        let dimensao_valor_unitario_m2 = $('#dimensao_valor_unitario_m2').val()
+        let dimensao_largura = $('#dimensao_largura').val()
+        let dimensao_altura = $('#dimensao_altura').val()
+        let dimensao_quantidade = $('#dimensao_quantidade').val()
+        let dimensao_m2_total = $('#dimensao_m2_total').val()
+        let dimensao_espessura = $('#dimensao_espessura').val()
+        let dimensao_sub_total = $('#dimensao_sub_total').val()
+        let dimensao_observacao = $('#dimensao_observacao').val()
+
+        let data = {
+            dimensao_valor_unitario_m2: dimensao_valor_unitario_m2,
+            dimensao_largura: dimensao_largura,
+            dimensao_altura: dimensao_altura,
+            dimensao_quantidade: dimensao_quantidade,
+            dimensao_m2_total: dimensao_m2_total,
+            dimensao_espessura: dimensao_espessura,
+            dimensao_sub_total: dimensao_sub_total,
+            dimensao_observacao: dimensao_observacao,
+        }
+
+        DIMENSOES.push(data)
+
+        $.get(path_url + "api/produtos/linha-dimensao", data)
+        .done(res => {
+            // console.log(res)
+            $('#dados_dimensao table tbody').append(res)
+            calculaTotalDimensao()
+
+            $('#dimensao_largura').val('')
+            $('#dimensao_altura').val('')
+            $('#dimensao_quantidade').val('')
+            $('#dimensao_m2_total').val('')
+            $('#dimensao_sub_total').val('')
+            $('#dimensao_largura').focus()
+        })
+        .fail(err => {
+            console.log(err)
+        })
+    })
+
+    $(document).on("click", ".btn-remove-tr-dimensao", function () {
+        let key = $(this).data('key')
+        $line = $(this).closest('tr')
+        $line.remove()
+        DIMENSOES = DIMENSOES.filter((x) => {
+            return x.key != key
+        })
+        console.log(DIMENSOES)
+        calculaTotalDimensao()
+    })
+
+    function calculaTotalDimensao(){
+        setTimeout(() => {
+            let total = 0
+            $("#dados_dimensao .sub_total").each(function () {
+                total += convertMoedaToFloat($(this).text())
+            })
+            $('#dimensao_total').val(convertFloatToMoeda(total))
+        }, 100)
+    }
+
+    $(document).on("click", "#btn-salvar-dimensao", function () {
+        let salvar = $("#btn-salvar-dimensao").text() == 'Salvar' ? 1 : 0
+        $('.dimensoes-hidden').html('')
+        if(salvar == 1){
+            DIMENSOES.map((x, i) => {
+
+                let l = $('.table-produtos .dynamic-form').length-1
+
+                let input = "<input type='hidden' name='dimensao_altura[]' value='"+x.dimensao_altura+"' />"
+                input += "<input type='hidden' name='dimensao_espessura[]' value='"+x.dimensao_espessura+"' />"
+                input += "<input type='hidden' name='dimensao_largura[]' value='"+x.dimensao_largura+"' />"
+                input += "<input type='hidden' name='dimensao_m2_total[]' value='"+x.dimensao_m2_total+"' />"
+                input += "<input type='hidden' name='dimensao_observacao[]' value='"+x.dimensao_observacao+"' />"
+                input += "<input type='hidden' name='dimensao_quantidade[]' value='"+x.dimensao_quantidade+"' />"
+                input += "<input type='hidden' name='dimensao_sub_total[]' value='"+x.dimensao_sub_total+"' />"
+                input += "<input type='hidden' name='dimensao_valor_unitario_m2[]' value='"+x.dimensao_valor_unitario_m2+"' />"
+                input += "<input type='hidden' name='_line[]' value='"+l+"' />"
+                $('.dimensoes-hidden').last().append(input)
+            })
+        }else{
+
+            DIMENSOES.map((x, i) => {
+                let l = $('.table-produtos .dynamic-form').length-1
+
+                let input = "<input type='hidden' name='dimensao_altura[]' value='"+x.dimensao_altura+"' />"
+                input += "<input type='hidden' name='dimensao_espessura[]' value='"+x.dimensao_espessura+"' />"
+                input += "<input type='hidden' name='dimensao_largura[]' value='"+x.dimensao_largura+"' />"
+                input += "<input type='hidden' name='dimensao_m2_total[]' value='"+x.dimensao_m2_total+"' />"
+                input += "<input type='hidden' name='dimensao_observacao[]' value='"+x.dimensao_observacao+"' />"
+                input += "<input type='hidden' name='dimensao_quantidade[]' value='"+x.dimensao_quantidade+"' />"
+                input += "<input type='hidden' name='dimensao_sub_total[]' value='"+x.dimensao_sub_total+"' />"
+                input += "<input type='hidden' name='dimensao_valor_unitario_m2[]' value='"+x.dimensao_valor_unitario_m2+"' />"
+                input += "<input type='hidden' name='_line[]' value='"+KEY+"' />"
+                $('.dh_'+KEY).last().append(input)
+            })
+        }
+
+        setTimeout(() => {
+            $('#dados_dimensao').modal('hide')
+            let dimensao_total = $('#dimensao_total').val()
+            $('.valor_unit').last().val(dimensao_total)
+            $('.sub_total_new').last().val(dimensao_total)
+            calcTotal()
+        }, 100)
+
     })
 
     function setarVariacao(codigo_variacao){
@@ -520,21 +714,21 @@ $('body').on('change', '.cliente_id', function () {
                 );
             return;
         }
-    // $table.find("select.select2").select2("destroy");
-    var $tr = $table.find(".dynamic-form").first();
-    $tr.find("select.select2").select2("destroy");
-    var $clone = $tr.clone();
-    $clone.show();
-    $clone.find("input,select").val("");
-    $table.append($clone);
-    setTimeout(function () {
-        $("tbody select.select2").select2({
-            language: "pt-BR",
-            width: "100%",
-            theme: "bootstrap4"
-        });
-    }, 100);
-})
+        // $table.find("select.select2").select2("destroy");
+        var $tr = $table.find(".dynamic-form").first();
+        $tr.find("select.select2").select2("destroy");
+        var $clone = $tr.clone();
+        $clone.show();
+        $clone.find("input,select").val("");
+        $table.append($clone);
+        setTimeout(function () {
+            $("tbody select.select2").select2({
+                language: "pt-BR",
+                width: "100%",
+                theme: "bootstrap4"
+            });
+        }, 100);
+    })
 
     $(document).delegate(".btn-remove-tr", "click", function (e) {
         e.preventDefault();

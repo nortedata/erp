@@ -56,15 +56,18 @@
 		<tbody>
 			<tr>
 				<td>
-					<h6 style="text-align:left; font-size: 9px;" class="mt-20">Total de vendas: <strong>R$ {{ number_format($item->valor_fechamento, 2, ',', '.') }}</strong></h6>
+					<h6 style="text-align:left; font-size: 8px;" class="mt-20">Total de vendas: <strong>R$ {{ number_format($totalVendas, 2, ',', '.') }}</strong></h6>
+				</td>
+				<td>
+					<h6 style="margin-left:20px; font-size: 8px;" class="mt-20">Total de compras: <strong>R$ {{ number_format($totalCompras, 2, ',', '.') }}</strong></h6>
 				</td>
 			</tr>
 			<tr>
 				<td>
-					<h6 style="text-align:left; font-size: 9px;" class="mt-25">Abertura: <strong>{{ __data_pt($item->created_at) }}</strong></h6>
+					<h6 style="text-align:left; font-size: 8px;" class="mt-25">Abertura: <strong>{{ __data_pt($item->created_at) }}</strong></h6>
 				</td>
 				<td>
-					<h6 style="margin-left:20px; font-size: 9px;" class="mt-25">Fechamento: <strong>{{ __data_pt($item->updated_at_at) }}</strong></h6>
+					<h6 style="margin-left:20px; font-size: 8px;" class="mt-25">Fechamento: <strong>{{ __data_pt($item->updated_at_at) }}</strong></h6>
 				</td>
 			</tr>
 
@@ -119,11 +122,8 @@
 			</thead>
 
 			<tbody>
-				@php
-				$soma = 0;
-				@endphp
-
-				@foreach($vendas as $v)
+				
+				@foreach($data as $v)
 				<tr>
 					<td>
 						<h6 style="text-align:left; font-size: 9px; width: 107px;" class="mt-25">{{ $v->cliente->razao_social ?? 'NÃO IDENTIFCADO' }}</h6>
@@ -145,7 +145,7 @@
 
 				<tr>
 					<td>
-						<h6 style="text-align:left; font-size: 9px; width: 107px; border-bottom: 1px solid #999;" class="mt-25">{{ $v->tipo != 'OS' ? $v->estado : '' }}</h6>
+						<h6 style="text-align:left; font-size: 9px; width: 107px; border-bottom: 1px solid #999;" class="mt-25">{{ $v->tipo != 'OS' ? strtoupper($v->estado) : '' }}</h6>
 					</td>
 					<td>
 						<h6 style="text-align:left; font-size: 9px; width: 70px; border-bottom: 1px solid #999;" class="mt-25">
@@ -172,24 +172,12 @@
 					</td>
 				</tr>
 
-				@php
-				if($v->tipo != 'OS'){
-					$soma += $v->total;
-				}else{
-					$soma += $v->valor;
-				}
-				@endphp
+				
 				@endforeach
 			</tbody>
 		</tbody>
 	</table>
-	<table>
-		<tr>
-			<td>
-				<h5 class="mt-25">Soma: <strong style="font-size: 14px">R$ {{number_format($soma, 2, ',', '.')}}</strong></h5>
-			</td>
-		</tr>
-	</table>
+
 
 	@php
 	$somaSuprimento = 0;
@@ -273,7 +261,7 @@
 			<tr>
 				<td style="width: 115px;">
 					<h6 style="text-align:left; font-size: 9px;" class="mt-20">
-						Soma de vendas: <strong>R$ {{ __moeda($soma) }}</strong>
+						Soma de vendas: <strong>R$ {{ __moeda($totalVendas) }}</strong>
 					</h6>
 				</td>
 				<td style="width: 130px;">
@@ -290,7 +278,7 @@
 				</td>
 				<td style="width: 130px;">
 					<h6 style="float: right; font-size: 9px;" class="mt-20">Valor em caixa: 
-						<strong>R$ {{ __moeda($somaSuprimento + $soma - $somaSangria) }}</strong>
+						<strong>R$ {{ __moeda($somaSuprimento + $totalVendas - $somaSangria) }}</strong>
 					</h6>
 				</td>
 			</tr>

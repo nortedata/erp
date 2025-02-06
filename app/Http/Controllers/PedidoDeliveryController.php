@@ -237,7 +237,7 @@ class PedidoDeliveryController extends Controller
     public function print($id){
         $item = PedidoDelivery::findOrFail($id);
 
-        $height = 200;
+        $height = 240;
 
         $height += $item->countItens()*25;
         $config = Empresa::where('id', $item->empresa_id)->first();
@@ -359,6 +359,10 @@ class PedidoDeliveryController extends Controller
         $funcionarios = Funcionario::where('empresa_id', request()->empresa_id)->get();
 
         $itens = $pedido->itens;
+        foreach($itens as $i){
+            $i->valor_unitario = $i->sub_total/$i->quantidade;
+        }
+
         $isDelivery = 1;
         $caixa = __isCaixaAberto();
 
@@ -422,6 +426,7 @@ class PedidoDeliveryController extends Controller
         $retorno = $this->util->sendMessage($telefone, $texto, $pedido->empresa_id);
         try{
             $retorno = json_decode($retorno);
+            // dd($retorno);
             if(!$retorno->success){
                 session()->flash("flash_error", $retorno->message);
             }else{

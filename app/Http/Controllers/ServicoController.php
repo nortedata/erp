@@ -112,7 +112,13 @@ class ServicoController extends Controller
                 'tempo_adicional' => $request->tempo_adicional ?? '0',
                 'descricao' => $request->descricao ?? '',
                 'valor_adicional' => $request->valor_adicional ? __convert_value_bd($request->valor_adicional) : 0,
-                'numero_sequencial' => $numero
+                'numero_sequencial' => $numero,
+
+                'valor_deducoes' => $request->valor_deducoes ? __convert_value_bd($request->valor_deducoes) : 0,
+                'desconto_incondicional' => $request->desconto_incondicional ? __convert_value_bd($request->desconto_incondicional) : 0,
+                'desconto_condicional' => $request->desconto_condicional ? __convert_value_bd($request->desconto_condicional) : 0,
+                'outras_retencoes' => $request->outras_retencoes ? __convert_value_bd($request->outras_retencoes) : 0,
+
             ]);
 
             if ($request->marketplace) {
@@ -165,7 +171,12 @@ class ServicoController extends Controller
                 'tempo_tolerancia' => $request->tempo_tolerancia ?? 0,
                 'tempo_adicional' => $request->tempo_adicional ?? '0',
                 'descricao' => $request->descricao ?? '',
-                'valor_adicional' => $request->valor_adicional ? __convert_value_bd($request->valor_adicional) : 0
+                'valor_adicional' => $request->valor_adicional ? __convert_value_bd($request->valor_adicional) : 0,
+
+                'valor_deducoes' => $request->valor_deducoes ? __convert_value_bd($request->valor_deducoes) : 0,
+                'desconto_incondicional' => $request->desconto_incondicional ? __convert_value_bd($request->desconto_incondicional) : 0,
+                'desconto_condicional' => $request->desconto_condicional ? __convert_value_bd($request->desconto_condicional) : 0,
+                'outras_retencoes' => $request->outras_retencoes ? __convert_value_bd($request->outras_retencoes) : 0,
             ]);
 
             if ($request->marketplace) {

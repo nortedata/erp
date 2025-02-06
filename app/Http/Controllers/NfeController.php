@@ -10,6 +10,7 @@ use App\Models\Empresa;
 use App\Models\ProdutoUnico;
 use App\Models\FaturaNfe;
 use App\Models\ItemNfe;
+use App\Models\ItemDimensaoNfe;
 use App\Models\ProdutoLocalizacao;
 use App\Models\NaturezaOperacao;
 use Illuminate\Http\Request;
@@ -48,16 +49,19 @@ use App\Models\Contigencia;
 use App\Utils\EmailUtil;
 use Mail;
 use Illuminate\Support\Str;
+use App\Utils\SiegUtil;
 
 class NfeController extends Controller
 {
     protected $util;
     protected $emailUtil;
+    protected $siegUtil;
 
-    public function __construct(EstoqueUtil $util, EmailUtil $emailUtil)
+    public function __construct(EstoqueUtil $util, EmailUtil $emailUtil, SiegUtil $siegUtil)
     {
         $this->util = $util;
         $this->emailUtil = $emailUtil;
+        $this->siegUtil = $siegUtil;
 
         if (!is_dir(public_path('xml_nfe'))) {
             mkdir(public_path('xml_nfe'), 0777, true);
@@ -421,7 +425,7 @@ class NfeController extends Controller
 
     public function store(Request $request)
     {
-
+        // dd($request->all());
         try {
             $retornoCredito = $this->validaCreditoCliente($request);
             if($retornoCredito != 0){
@@ -508,7 +512,7 @@ class NfeController extends Controller
 
                     $product = Produto::findOrFail($request->produto_id[$i]);
                     $variacao_id = isset($request->variacao_id[$i]) ? $request->variacao_id[$i] : null;
-                    ItemNfe::create([
+                    $itemNfe = ItemNfe::create([
                         'nfe_id' => $nfe->id,
                         'produto_id' => (int)$request->produto_id[$i],
                         'quantidade' => __convert_value_bd($request->quantidade[$i]),
@@ -532,6 +536,32 @@ class NfeController extends Controller
                         'nItemPed' => $request->nItemPed[$i],
                         'infAdProd' => $request->infAdProd[$i],
                     ]);
+
+                    // salvar dimensoes
+                    // if($i == $request->_key[$i]){
+
+                    // }
+                    // dd($request->all());
+                    if(isset($request->dimensao_largura)){
+                        for($l=0; $l<sizeof($request->dimensao_largura); $l++){
+                            if($request->_key[$i] == $request->_line[$l]){
+
+                                ItemDimensaoNfe::create([
+                                    'item_nfe_id' => $itemNfe->id,
+                                    'valor_unitario_m2' => __convert_value_bd($request->dimensao_valor_unitario_m2[$l]),
+                                    'largura' => $request->dimensao_largura[$l],
+                                    'altura' => $request->dimensao_altura[$l],
+                                    'quantidade' => $request->dimensao_quantidade[$l],
+                                    'm2_total' => $request->dimensao_m2_total[$l],
+                                    'espessura' => $request->dimensao_espessura[$l],
+                                    'observacao' => $request->dimensao_observacao[$l] ?? '',
+                                    'sub_total' => __convert_value_bd($request->dimensao_sub_total[$l])
+                                ]);
+                            }
+                        }
+                    }
+
+
                     if (isset($request->is_compra)) {
 
                         $product->valor_compra = __convert_value_bd($request->valor_unitario[$i]);
@@ -567,7 +597,6 @@ class NfeController extends Controller
                         $this->util->movimentacaoProduto($product->id, __convert_value_bd($request->quantidade[$i]), $tipo, $codigo_transacao, $tipo_transacao, \Auth::user()->id, $variacao_id);
                     }
                 }
-
 
                 if($request->tipo_pagamento){
                     if ($request->tipo_pagamento[0] != '') {
@@ -954,14 +983,17 @@ public function update(Request $request, $id)
                 }
             }
 
-            $item->itens()->delete();
+            foreach($item->itens as $it){
+                $it->itensDimensao()->delete();
+                $it->delete();
+            }
             $item->fatura()->delete();
 
             for ($i = 0; $i < sizeof($request->produto_id); $i++) {
                 $product = Produto::findOrFail($request->produto_id[$i]);
                 $variacao_id = isset($request->variacao_id[$i]) ? $request->variacao_id[$i] : null;
 
-                ItemNfe::create([
+                $itemNfe = ItemNfe::create([
                     'nfe_id' => $item->id,
                     'produto_id' => (int)$request->produto_id[$i],
                     'quantidade' => __convert_value_bd($request->quantidade[$i]),
@@ -984,6 +1016,27 @@ public function update(Request $request, $id)
                     'nItemPed' => $request->nItemPed[$i],
                     'infAdProd' => $request->infAdProd[$i],
                 ]);
+
+                // dd($request->all());
+                if(isset($request->dimensao_largura)){
+                    if(isset($request->_line[$i])){
+                        for($l=0; $l<sizeof($request->dimensao_largura); $l++){
+                            if($i == $request->_line[$i]){
+                                ItemDimensaoNfe::create([
+                                    'item_nfe_id' => $itemNfe->id,
+                                    'valor_unitario_m2' => __convert_value_bd($request->dimensao_valor_unitario_m2[$l]),
+                                    'largura' => $request->dimensao_largura[$l],
+                                    'altura' => $request->dimensao_altura[$l],
+                                    'quantidade' => $request->dimensao_quantidade[$l],
+                                    'm2_total' => $request->dimensao_m2_total[$l],
+                                    'espessura' => $request->dimensao_espessura[$l],
+                                    'observacao' => $request->dimensao_observacao[$l] ?? '',
+                                    'sub_total' => __convert_value_bd($request->dimensao_sub_total[$l])
+                                ]);
+                            }
+                        }
+                    }
+                }
 
                 if ($product->gerenciar_estoque && $item->orcamento == 0) {
                     if (isset($request->is_compra)) {
@@ -1917,6 +1970,7 @@ private function unlinkr($dir){
 }
 
 public function metas(Request $request){
+
     $metas = MetaResultado::where('empresa_id', $request->empresa_id)
     ->where('tabela', 'Vendas')
     ->get();
@@ -1929,22 +1983,83 @@ public function metas(Request $request){
     $totalMeta = $metas->sum('valor');
     $somaVendasMes = $this->somaVendasMes($request->empresa_id);
 
-    return view('nfe.metas', compact('metas', 'totalMeta', 'somaVendasMes'));
+    $periodosMeta = $this->periodosMeta($request->empresa_id);
+    return view('nfe.metas', compact('metas', 'totalMeta', 'somaVendasMes', 'periodosMeta'));
+}
+
+private function periodosMeta($empresa_id){
+    $meses = [];
+
+    $periodoAtual = date('m/Y');
+    $primeiroPeriodo = null;
+    $data1 = Nfe::where('empresa_id', $empresa_id)
+    ->select('created_at')
+    ->orderBy('created_at', 'asc')
+    ->first();
+
+    $data2 = Nfce::where('empresa_id', $empresa_id)
+    ->select('created_at')
+    ->orderBy('created_at', 'asc')
+    ->first();
+
+    if(strtotime($data1) > strtotime($data2)){
+        $primeiroPeriodo = $data1->created_at;
+    }else{
+        $primeiroPeriodo = $data2->created_at;
+    }
+
+    $temp = $primeiroPeriodo;
+
+    $tempPeriodo = $primeiroPeriodo;
+    while($tempPeriodo != $periodoAtual){
+        $meses[] = \Carbon\Carbon::parse($temp)->format('m/Y');
+        $tempPeriodo = \Carbon\Carbon::parse($temp)->format('m/Y');
+
+        $mes = \Carbon\Carbon::parse($temp)->format('m');
+        $ano = \Carbon\Carbon::parse($temp)->format('Y');
+
+        $temp = date("Y-m-d", strtotime("+1 month", strtotime($temp)));
+    }
+    return $meses;
 }
 
 private function somaVendasMes($empresa_id){
     $soma = Nfe::where('empresa_id', $empresa_id)
     ->where('estado', '!=', 'cancelado')
     ->whereMonth('created_at', date('m'))
+    ->whereYear('created_at', date('Y'))
     ->where('orcamento', 0)
     ->sum('total');
 
     $soma += Nfce::where('empresa_id', $empresa_id)
     ->where('estado', '!=', 'cancelado')
     ->whereMonth('created_at', date('m'))
+    ->whereYear('created_at', date('Y'))
+    
     ->sum('total');
 
     return $soma;
+}
+
+public function siegTeste(Request $request){
+    $item =  Nfe::where('empresa_id', $request->empresa_id)
+    ->where('estado', 'aprovado')
+    ->orderBy('id', 'desc')
+    ->first();
+
+    if($item == null){
+        session()->flash("flash_warning", "Nenhuma NFe aprovada encontrada!");
+        return redirect()->back();
+    }
+
+    try{
+        $fileDir = public_path('xml_nfe/').$item->chave.'.xml';
+        $teste = $this->siegUtil->enviarXml($item->empresa_id, $fileDir);
+        dd($teste);
+    }catch(\Exception $e){
+        echo $e->getMessage();
+    }
+
 }
 
 }

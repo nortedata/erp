@@ -11,12 +11,16 @@ use App\Models\Produto;
 use App\Models\Cidade;
 use App\Models\ConfigGeral;
 use App\Models\Transportadora;
+use App\Models\Marca;
+use App\Models\UnidadeMedida;
 use App\Services\DFeService;
 use Illuminate\Http\Request;
 use InvalidArgumentException;
 use NFePHP\NFe\Common\Standardize;
 use NFePHP\DA\NFe\Danfe;
-use Svg\Tag\Rect;
+
+use App\Models\ProdutoLocalizacao;
+use App\Models\Localizacao;
 
 class ManifestoController extends Controller
 {
@@ -285,20 +289,54 @@ class ManifestoController extends Controller
             }
 
             $prod = new \stdClass();
+            $configGeral = ConfigGeral::where('empresa_id', request()->empresa_id)->first();
+            $configGerenciaEstoque = 0;
+            if($configGeral != null){
+                $configGerenciaEstoque = $configGeral->gerenciar_estoque;
+            }
+
+            $lucroPadraoProduto = 0;
+            if($configGeral != null){
+                $lucroPadraoProduto = $configGeral->percentual_lucro_produto;
+            }
+
+            $vCompra = (float)$item->prod->vUnCom + $vIpi + $vICMSST;
+            $vVenda = $vCompra + ($vCompra*($lucroPadraoProduto/100));
+            $caixa = __isCaixaAberto();
+            $local = $caixa->local_id;
+            $local = "[$local]";
+
+            $prod->nomeXml = $nomeProduto;
+            $prod->valorXml = $vCompra;
+            $prod->cfopXml = (string)$item->prod->CFOP;
 
             $prod->id = $produto != null ? $produto->id : 0;
             $prod->codigo = $codigo;
             $prod->xProd = $produto == null ? $nomeProduto : $produto->nome;
-            $prod->ncm = (string)$item->prod->NCM;
+            $prod->ncm = $produto == null ? (string)$item->prod->NCM : $produto->ncm;
             $prod->cest = (string)$item->prod->CEST;
             $prod->cfop = (string)$item->prod->CFOP;
             $prod->unidade = (string)$item->prod->uCom;
             $prod->valor_unitario = number_format((float)$item->prod->vUnCom + $vIpi + $vICMSST, 2, '.', '');
             $prod->quantidade = (float)$item->prod->qCom;
-            $prod->sub_total = (float)$item->prod->vProd;
-            $prod->codigo_barras = (string)$item->prod->cEAN;
-            $prod->valor_venda = $produto == null ? 0 : $produto->valor_venda;
-            $prod->valor_compra = $produto == null ? 0 : $produto->valor_compra;
+            $prod->sub_total = $prod->valor_unitario*$prod->quantidade;
+            $prod->codigo_barras = $produto == null ? (string)$item->prod->cEAN : $produto->codigo_barras;
+            $prod->valor_venda = $produto == null ? $vVenda : $produto->valor_venda;
+            $prod->valor_compra = $produto == null ? $vCompra : $produto->valor_compra;
+            $prod->margem = $lucroPadraoProduto;
+            $prod->categoria_id = $produto == null ? 0 : $produto->categoria_id;
+            $prod->estoque_minimo = $produto == null ? '' : $produto->estoque_minimo;
+            $prod->marca_id = $produto == null ? 0 : $produto->marca_id;
+            $prod->gerenciar_estoque = $produto == null ? $configGerenciaEstoque : $produto->gerenciar_estoque;
+
+            $prod->refernecia = $produto == null ? '' : $produto->refernecia;
+            $prod->referencia_balanca = $produto == null ? '' : $produto->referencia_balanca;
+            $prod->exportar_balanca = $produto == null ? 0 : $produto->exportar_balanca;
+            $prod->observacao = $produto == null ? '' : $produto->observacao;
+            $prod->observacao2 = $produto == null ? '' : $produto->observacao2;
+            $prod->observacao3 = $produto == null ? '' : $produto->observacao3;
+            $prod->observacao4 = $produto == null ? '' : $produto->observacao4;
+            $prod->disponibilidade = $produto == null ? $local : json_encode($produto->locais->pluck('localizacao_id')->toArray());
 
 
             $arr = (array_values((array)$item->imposto->ICMS));
@@ -418,9 +456,16 @@ class ManifestoController extends Controller
         if($configGeral != null){
             $lucroPadraoProduto = $configGeral->percentual_lucro_produto;
         }
+
         $isCompra = 1;
+
+        $categorias = CategoriaProduto::where('empresa_id', request()->empresa_id)->get();
+        $marcas = Marca::where('empresa_id', request()->empresa_id)->get();
+
+        $unidades = UnidadeMedida::where('empresa_id', request()->empresa_id)
+        ->where('status', 1)->get();
         return view('compras.import_xml', compact('dadosXml', 'transportadoras', 'cidades', 'naturezas', 'fornecedor', 
-            'lucroPadraoProduto', 'isCompra'));
+            'lucroPadraoProduto', 'isCompra', 'configGerenciaEstoque', 'unidades', 'categorias', 'marcas', 'caixa'));
 
     }
 

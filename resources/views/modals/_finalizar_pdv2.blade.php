@@ -6,6 +6,10 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
+                <button type="button" class="btn btn-dark px-5 btn-gerar-fatura mb-2">
+                    <i class="ri-list-indefinite"></i>
+                    Gerar Fatura
+                </button>
                 <div class="row g-2">
                     <div class="col-md-3">
                         {!! Form::tel('cliente_cpf_cnpj', 'CPF/CNPJ na nota? (opcional)')->attrs(['class' => 'cpf_cnpj']) !!}
@@ -92,7 +96,13 @@
                                 <tfoot>
                                     <tr>
                                         <td colspan="2">Restante</td>
-                                        <td colspan="3" class="total-restante"></td>
+                                        <td colspan="1" class="total-restante"></td>
+                                        <td colspan="2">
+                                            <div class="col-md-6 d-troco d-none">
+                                                <label>Troco</label>
+                                                <input type="tel" class="form-control moeda troco" name="troco">
+                                            </div>
+                                        </td>
                                     </tr>
                                 </tfoot>
                             </table>

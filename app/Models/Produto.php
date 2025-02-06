@@ -28,7 +28,8 @@ class Produto extends Model
 		'codigo_barras3', 'sub_categoria_id', 'valor_atacado', 'quantidade_atacado', 'oferta_delivery',
 		'woocommerce_id', 'woocommerce_slug', 'woocommerce_link', 'woocommerce_valor', 'woocommerce_type',
 		'woocommerce_status', 'woocommerce_descricao', 'woocommerce_stock_status', 'categorias_woocommerce', 'tipo_unico', 
-		'balanca_pdv', 'mercado_livre_modelo', 'valor_minimo_venda', 'exportar_balanca', 'referencia_xml'
+		'balanca_pdv', 'mercado_livre_modelo', 'valor_minimo_venda', 'exportar_balanca', 'referencia_xml', 'tipo_dimensao', 
+		'espessura', '_id_import', 'observacao', 'observacao2', 'observacao3', 'observacao4'
 	];
 
 	protected $appends = [ 'imgApp' ];
@@ -233,15 +234,16 @@ class Produto extends Model
 
 	public static function verificaCadastrado($ean, $nome, $referencia, $empresa_id)
 	{
+
 		$prod = null;
-		$prod = Produto::where('referencia', $referencia)
+		$prod = Produto::where('referencia_xml', $referencia)
 		->where('empresa_id', $empresa_id)
 		->first();
 
 		if ($prod != null) return $prod;
 
 		if (!$prod) {
-			$prod = Produto::where('nome', $nome)
+			$prod = Produto::where('nome', (string)$nome)
 			->where('empresa_id', $empresa_id)
 			->first();
 			if ($prod) {

@@ -21,7 +21,7 @@ return new class extends Migration
             $table->decimal('percentual_alteracao', 5, 2);
             $table->string('tipo_pagamento', 2)->nullable();
             $table->foreignId('funcionario_id')->nullable()->constrained('funcionarios');
-
+            
             $table->timestamps();
         });
     }

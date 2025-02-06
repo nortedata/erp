@@ -217,5 +217,17 @@ class LocalizacaoController extends Controller
         $this->validate($request, $rules, $messages);
     }
 
+    public function removerLogo($id){
+        try{
+            $item = Localizacao::findOrFail($id);
+            $this->util->unlinkImage($item, '/logos');
+            $item->logo = '';
+            $item->save();
+            session()->flash("flash_success", "Logo removida!");
+        }catch(\Exception $e){
+            session()->flash("flash_error", "Algo deu errado: " . $e->getMessage());
+        }
+        return redirect()->back();
+    }
 
 }

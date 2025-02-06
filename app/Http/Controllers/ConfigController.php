@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\Plano;
 use App\Models\PlanoEmpresa;
 use App\Models\UsuarioEmpresa;
+use App\Models\ConfigGeral;
 use App\Utils\UploadUtil;
 use App\Utils\EmpresaUtil;
 use Illuminate\Support\Facades\DB;
@@ -98,6 +99,14 @@ class ConfigController extends Controller
                     'logo' => $file_name,
                 ]);
                 $empresa = Empresa::create($request->all());
+
+                ConfigGeral::create([
+                    'empresa_id' => $empresa->id,
+                    'tipo_menu' => env('MENU_PADRAO'),
+                    'balanca_valor_peso' => 'valor',
+                    'notificacoes' => '[]',
+                    'tipos_pagamento_pdv' => '[]',
+                ]);
                 
                 if ($request->usuario) {
                     $usuario = User::create([

@@ -29,6 +29,13 @@ class UsuarioSuperController extends Controller
         return view('usuarios_super.index', compact('data', 'empresa'));
     }
 
+    public function create()
+    {
+
+        $empresas = Empresa::all();
+        return view('usuarios_super.create', compact('empresas'));
+    }
+
     public function edit($id)
     {
         $item = User::findOrFail($id);
@@ -90,6 +97,32 @@ class UsuarioSuperController extends Controller
             }
             $usuario->assignRole($role->name);
             session()->flash("flash_success", "Usuário alterado!");
+        } catch (\Exception $e) {
+            session()->flash("flash_error", "Algo deu errado: " . $e->getMessage());
+        }
+        return redirect()->route('usuario-super.index');
+    }
+
+    public function store(Request $request)
+    {
+        try {
+            // dd($request->all());
+            $usuario = User::create([
+                'password' => Hash::make($request->password),
+                'email' => $request->email,
+                'name' => $request->name,
+                'suporte' => $request->suporte,
+            ]);
+
+
+            if($request->empresa){
+                UsuarioEmpresa::create([
+                    'empresa_id' => $request->empresa,
+                    'usuario_id' => $usuario->id
+                ]);
+            }
+
+            session()->flash("flash_success", "Usuário criado!");
         } catch (\Exception $e) {
             session()->flash("flash_error", "Algo deu errado: " . $e->getMessage());
         }

@@ -32,7 +32,10 @@ return new class extends Migration
             $table->string('complemento', 60)->nullable();
 
             $table->string('antt', 20)->nullable();
+            $table->integer('_id_import')->nullable();
 
+            // alter table transportadoras add column _id_import integer default null;
+            
             $table->timestamps();
         });
     }

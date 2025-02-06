@@ -13,7 +13,7 @@ class Cliente extends Model
         'empresa_id', 'razao_social', 'nome_fantasia', 'cpf_cnpj', 'ie', 'contribuinte', 'consumidor_final',
         'email', 'telefone', 'cidade_id', 'rua', 'cep', 'numero', 'bairro', 'complemento', 'status', 'uid',
         'senha', 'token', 'valor_cashback', 'nuvem_shop_id', 'valor_credito', 'limite_credito',
-        'lista_preco_id'
+        'lista_preco_id', '_id_import'
     ];
 
     protected $appends = [ 'endereco', 'info' ];

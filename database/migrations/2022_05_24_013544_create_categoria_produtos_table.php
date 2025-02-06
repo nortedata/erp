@@ -27,6 +27,7 @@ return new class extends Migration
             $table->string('hash_delivery', 50)->nullable();
 
             $table->foreignId('categoria_id')->nullable()->constrained('categoria_produtos');
+            $table->integer('_id_import')->nullable();
 
 
             // alter table categoria_produtos add column tipo_pizza boolean default 0;
@@ -37,6 +38,7 @@ return new class extends Migration
             // alter table categoria_produtos add column hash_delivery varchar(50) default null;
 
             // alter table categoria_produtos add column categoria_id integer default null;
+            // alter table categoria_produtos add column _id_import integer default null;
 
             
             $table->timestamps();

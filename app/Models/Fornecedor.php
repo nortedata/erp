@@ -11,7 +11,7 @@ class Fornecedor extends Model
 
     protected $fillable = [
         'empresa_id', 'razao_social', 'nome_fantasia', 'cpf_cnpj', 'ie', 'contribuinte', 'consumidor_final',
-        'email', 'telefone', 'cidade_id', 'rua', 'cep', 'numero', 'bairro', 'complemento'
+        'email', 'telefone', 'cidade_id', 'rua', 'cep', 'numero', 'bairro', 'complemento', '_id_import'
     ];
 
     protected $appends = [ 'endereco', 'info' ];

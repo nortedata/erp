@@ -40,6 +40,10 @@ return new class extends Migration
 
             $table->string('token_api', 50);
             $table->string('token_integra_notas', 255)->nullable();
+
+            $table->enum('banco_plano', ['mercado_pago', 'asaas'])->default('mercado_pago');
+            $table->string('asaas_token', 255)->nullable();
+
             
             // alter table configuracao_supers add column sms_key varchar(120) default null;
             // alter table configuracao_supers add column token_whatsapp varchar(120) default null;
@@ -61,6 +65,9 @@ return new class extends Migration
             
             // alter table configuracao_supers add column token_api varchar(50) default null;
             // alter table configuracao_supers add column token_integra_notas varchar(255) default null;
+
+            // alter table configuracao_supers add column asaas_token varchar(255) default null;
+            // alter table configuracao_supers add column banco_plano enum('mercado_pago', 'asaas') default 'mercado_pago';
             
             $table->timestamps();
         });

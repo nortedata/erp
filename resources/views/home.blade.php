@@ -31,7 +31,7 @@
                     <input id="inp-local_id" type="hidden" value="{{ __getLocalAtivo() ? __getLocalAtivo()->id : '' }}" name="local_id">
                     @endif
                 </div>
-                <div class="row">
+                <div class="row mt-2">
                     @if($msgPlano != "")
                     <div class="col-lg-12 mb-2">
                         <p class="text-danger">{{ $msgPlano }}</p>

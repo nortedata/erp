@@ -24,7 +24,7 @@
         <input readonly type="tel" name="valor_unitario[]" class="form-control value-unit" value="{{ __moeda($item->valor_unitario) }}">
     </td>
     <td>
-        <input readonly type="tel" name="subtotal_item[]" class="form-control subtotal-item" value="{{ __moeda($subtotal) }}">
+        <input readonly type="tel" name="subtotal_item[]" class="form-control subtotal-item" value="{{ __moedaInput($subtotal) }}">
     </td>
     <td>
         <button type="button" class="btn btn-danger btn-sm btn-delete-row"><i class="ri-delete-bin-line"></i></button>

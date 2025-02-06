@@ -259,73 +259,77 @@
                                     @endforeach
                                     @else
                                     <tr class="dynamic-form">
-                                        <td width="250">
+                                        <td>
                                             <select required class="form-control select2 produto_id" name="produto_id[]" id="inp-produto_id">
                                             </select>
 
                                             <input name="variacao_id[]" type="hidden" value="">
-
+                                            <div style="width: 400px;"></div>
                                         </td>
-                                        <td width="80">
-                                            <input class="form-control qtd" type="tel" name="quantidade[]" id="inp-quantidade">
+                                        <td>
+                                            <input style="width: 120px;" class="form-control qtd" type="tel" name="quantidade[]" id="inp-quantidade">
                                         </td>
-                                        <td width="120">
-                                            <input class="form-control moeda valor_unit" type="tel" name="valor_unitario[]" id="inp-valor_unitario">
+                                        <td>
+                                            <input style="width: 120px;" class="form-control moeda valor_unit" type="tel" name="valor_unitario[]" id="inp-valor_unitario">
                                         </td>
-                                        <td width="150">
-                                            <input class="form-control moeda sub_total" type="tel" name="sub_total[]" id="inp-subtotal">
+                                        <td>
+                                            <input style="width: 120px;" class="form-control moeda sub_total" type="tel" name="sub_total[]" id="inp-subtotal">
                                         </td>
-                                        <td width="120">
-                                            <input class="form-control" type="tel" name="perc_icms[]" id="inp-perc_icms">
+                                        <td>
+                                            <input style="width: 120px;" class="form-control" type="tel" name="perc_icms[]" id="inp-perc_icms">
                                         </td>
-                                        <td width="120">
-                                            <input class="form-control" type="tel" name="perc_pis[]" id="inp-perc_pis">
+                                        <td>
+                                            <input style="width: 120px;" class="form-control" type="tel" name="perc_pis[]" id="inp-perc_pis">
                                         </td>
-                                        <td width="120">
-                                            <input class="form-control" type="tel" name="perc_cofins[]" id="inp-perc_cofins">
+                                        <td>
+                                            <input style="width: 120px;" class="form-control" type="tel" name="perc_cofins[]" id="inp-perc_cofins">
                                         </td>
-                                        <td width="120">
-                                            <input class="form-control" type="tel" name="perc_ipi[]" id="inp-perc_ipi">
+                                        <td>
+                                            <input style="width: 120px;" class="form-control" type="tel" name="perc_ipi[]" id="inp-perc_ipi">
                                         </td>
-                                        <td width="120">
-                                            <input class="form-control percentual ignore" type="tel" name="perc_red_bc[]" id="inp-perc_red_bc">
+                                        <td>
+                                            <input style="width: 120px;" class="form-control percentual ignore" type="tel" name="perc_red_bc[]" id="inp-perc_red_bc">
                                         </td>
-                                        <td width="120">
-                                            <input class="form-control ignore" type="tel" name="cfop[]" id="inp-cfop_estadual">
+                                        <td>
+                                            <input style="width: 120px;" class="form-control ignore" type="tel" name="cfop[]" id="inp-cfop_estadual">
                                         </td>
-                                        <td width="150">
-                                            <input class="form-control ignore" type="tel" name="ncm[]" id="inp-cfop_outro_estado">
+                                        <td>
+                                            <input style="width: 150px;" class="form-control ignore" type="tel" name="ncm[]" id="inp-cfop_outro_estado">
                                         </td>
-                                        <td width="120">
-                                            <input class="form-control codigo_beneficio_fiscal ignore" type="text" name="codigo_beneficio_fiscal[]">
+                                        <td>
+                                            <input style="width: 120px;" class="form-control codigo_beneficio_fiscal ignore" type="text" name="codigo_beneficio_fiscal[]">
                                         </td>
-                                        <td width="250">
+                                        <td>
                                             <select name="cst_csosn[]" class="form-control select2">
                                                 @foreach(App\Models\Produto::listaCSTCSOSN() as $key => $c)
                                                 <option value="{{$key}}">{{$c}}</option>
                                                 @endforeach
                                             </select>
+                                            <div style="width: 350px;"></div>
                                         </td>
-                                        <td width="250">
+                                        <td>
                                             <select name="cst_pis[]" class="form-control select2">
                                                 @foreach(App\Models\Produto::listaCST_PIS_COFINS() as $key => $c)
                                                 <option value="{{$key}}">{{$c}}</option>
                                                 @endforeach
                                             </select>
+                                            <div style="width: 250px;"></div>
                                         </td>
-                                        <td width="250">
+                                        <td>
                                             <select name="cst_cofins[]" class="form-control select2">
                                                 @foreach(App\Models\Produto::listaCST_PIS_COFINS() as $key => $c)
                                                 <option value="{{$key}}">{{$c}}</option>
                                                 @endforeach
                                             </select>
+                                            <div style="width: 250px;"></div>
                                         </td>
-                                        <td width="250">
+                                        <td>
                                             <select name="cst_ipi[]" class="form-control select2">
                                                 @foreach(App\Models\Produto::listaCST_IPI() as $key => $c)
                                                 <option value="{{$key}}">{{$c}}</option>
                                                 @endforeach
                                             </select>
+                                            <div style="width: 250px;"></div>
                                         </td>
                                         <td width="30"> 
                                             <button class="btn btn-danger btn-remove-tr">

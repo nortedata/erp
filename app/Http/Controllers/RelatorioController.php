@@ -981,9 +981,12 @@ class RelatorioController extends Controller
                 return $query->join('categoria_produtos', 'categoria_produtos.id', '=', 'produtos.categoria_id')
                 ->where('produtos.categoria_id', $categoria_id);
             })
+            ->when(!empty($produto_id), function ($query) use ($produto_id) {
+                return $query->where('item_nves.produto_id', $produto_id);
+            })
             ->when(!empty($marca_id), function ($query) use ($marca_id) {
                 return $query->join('marcas', 'marcas.id', '=', 'produtos.marca_id')
-                ->where('produtos.marca_id', $categoria_id);
+                ->where('produtos.marca_id', $marca_id);
             })
             ->when(!empty($local_id), function ($query) use ($local_id) {
                 return $query->join('produto_localizacaos', 'produto_localizacaos.produto_id', '=', 'produtos.id')
@@ -1010,9 +1013,12 @@ class RelatorioController extends Controller
                 return $query->join('categoria_produtos', 'categoria_produtos.id', '=', 'produtos.categoria_id')
                 ->where('produtos.categoria_id', $categoria_id);
             })
+            ->when(!empty($produto_id), function ($query) use ($produto_id) {
+                return $query->where('item_nfces.produto_id', $produto_id);
+            })
             ->when(!empty($marca_id), function ($query) use ($marca_id) {
                 return $query->join('marcas', 'marcas.id', '=', 'produtos.marca_id')
-                ->where('produtos.marca_id', $categoria_id);
+                ->where('produtos.marca_id', $marca_id);
             })
             ->when(!empty($local_id), function ($query) use ($local_id) {
                 return $query->join('produto_localizacaos', 'produto_localizacaos.produto_id', '=', 'produtos.id')

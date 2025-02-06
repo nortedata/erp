@@ -32,6 +32,7 @@ return new class extends Migration
             $table->decimal('perc_ipi', 5,2)->nullable();
             $table->boolean('padrao')->default(0);
             $table->boolean('sobrescrever_cfop')->default(0);
+            $table->integer('_id_import')->nullable();
 
             // alter table natureza_operacaos add column cst_csosn varchar(3) default null;
             // alter table natureza_operacaos add column cst_pis varchar(3) default null;
@@ -54,6 +55,7 @@ return new class extends Migration
             // alter table natureza_operacaos modify column perc_ipi decimal(5, 2) default null;
             // alter table natureza_operacaos add column padrao boolean default 0;
             // alter table natureza_operacaos add column sobrescrever_cfop boolean default 0;
+            // alter table natureza_operacaos add column _id_import integer default null;
             
             $table->timestamps();
         });

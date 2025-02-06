@@ -199,7 +199,6 @@
 						<table class="table">
 							<thead>
 								<tr>
-									<th>Tipo</th>
 									<th>Variação</th>
 									<th>Valor</th>
 									<th>Quantidade</th>
@@ -212,9 +211,7 @@
 									<td>
 										<input readonly class="form-control" type="" value="{{ $v['nome'] }}" name="variacao_nome[]">
 									</td>
-									<td>
-										<input readonly class="form-control" type="" value="{{ $v['valor_nome'] }}" name="variacao_valor_nome[]">
-									</td>
+									
 									<td>
 										<input readonly class="form-control moeda" type="tel" value="{{ __moeda($v['valor']) }}" name="variacao_valor[]">
 									</td>
