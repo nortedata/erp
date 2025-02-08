@@ -119,7 +119,8 @@ $remember = (isset($_COOKIE['ckRemember'])) ? ($_COOKIE['ckRemember']) : '';
 
                 <!-- Footer-->
                 <footer class="footer footer-alt">
-                    <p class="text-muted">Não tem uma conta? <a href="{{ route('register') }}" class="text-muted ms-1"><b>Inscrever-se</b></a></p>
+                    <p>Não tem uma conta? <a href="{{ route('register') }}" class="ms-1"><b>Inscrever-se</b></a></p>
+                    <!-- <p class="text-muted">Não tem uma conta? <a href="{{ route('register') }}" class="text-muted ms-1"><b>Inscrever-se</b></a></p> -->
                 </footer>
 
             </div> <!-- end .card-body -->
