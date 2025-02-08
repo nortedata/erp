@@ -486,7 +486,7 @@
                                 </a>
 
                                 @if($isVendaSuspensa == 0)
-                                <button type="button" id="btn-suspender" class="btn btn-light btn-sm w-50 mt-2" style="margin-top: -20px">
+                                <button type="button" id="btn-suspender" accesskey="x" class="btn btn-light btn-sm w-50 mt-2" style="margin-top: -20px">
                                     <i class="ri-timer-line"></i>
                                     Suspender Venda
                                 </button>
@@ -503,7 +503,7 @@
                                     Editar venda
                                 </button>
                                 @else
-                                <button type="button" class="btn btn-success w-100 mt-4" disabled id="salvar_venda">
+                                <button type="button" class="btn btn-success w-100 mt-4" accesskey="s" disabled id="salvar_venda">
                                     <i class="ri-checkbox-line"></i>
                                     Finalizar venda
                                 </button>
