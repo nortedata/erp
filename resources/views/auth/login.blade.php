@@ -24,11 +24,11 @@ $remember = (isset($_COOKIE['ckRemember'])) ? ($_COOKIE['ckRemember']) : '';
         }
     }
 
-    .logo-mob{
+    /* .logo-mob{
         margin-top: -80px;
         height: 170px;
 
-    }
+    } */
 </style>
 @endsection
 <div class="auth-fluid">
